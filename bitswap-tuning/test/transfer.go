@@ -3,17 +3,15 @@ package test
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ipfs/go-cid"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 
+	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
-	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -23,6 +21,7 @@ import (
 
 // NOTE: To run use:
 // ./testground run data-exchange/transfer --builder=docker:go --runner="local:docker" --dep="github.com/ipfs/go-bitswap=master"
+// testground run single --plan=bitswap-tuning --testcase=baseline --builder=docker:go --runner=local:docker --instances=2
 
 // Transfer data from S seeds to L leeches
 func Transfer(runenv *runtime.RunEnv) error {
@@ -44,6 +43,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 	defer cancel()
 
 	client := sync.MustBoundClient(ctx, runenv)
+	nwClient := network.NewClient(client, runenv)
 
 	/// --- Tear down
 	defer func() {
@@ -71,6 +71,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 	if err != nil {
 		return err
 	}
+	// Type of node and identifiers assigned.
 	grpseq, nodetp, tpindex, err := parseType(ctx, runenv, client, h, seq)
 	if err != nil {
 		return err
@@ -112,7 +113,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 	/// --- Warm up
 
 	// Set up network (with traffic shaping)
-	latency, bandwidthMB, err := utils.SetupNetwork(ctx, runenv, client, nodetp, tpindex)
+	latency, bandwidthMB, err := utils.SetupNetwork(ctx, runenv, nwClient, nodetp, tpindex)
 	if err != nil {
 		return fmt.Errorf("Failed to set up network: %w", err)
 	}
@@ -148,16 +149,17 @@ func Transfer(runenv *runtime.RunEnv) error {
 			defer cancel()
 
 			isFirstRun := runNum == 1
-			runId := fmt.Sprintf("%d-%d", sizeIndex, runNum)
+			runID := fmt.Sprintf("%d-%d", sizeIndex, runNum)
 
 			// Wait for all nodes to be ready to start the run
-			err = signalAndWaitForAll("start-run-" + runId)
+			err = signalAndWaitForAll("start-run-" + runID)
 			if err != nil {
 				return err
 			}
 
 			runenv.RecordMessage("Starting run %d / %d (%d bytes)", runNum, runCount, fileSize)
 			var bsnode *utils.Node
+			// Create identifier for specific file size.
 			rootCidTopic := getRootCidTopic(sizeIndex)
 
 			switch nodetp {
@@ -170,7 +172,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 
 				// If this is the first run for this file size
 				if isFirstRun {
-					seedGenerated := sync.State("seed-generated-" + runId)
+					seedGenerated := sync.State("seed-generated-" + runID)
 					var start time.Time
 					if genSeedSerial {
 						// Each seed generates the seed data in series, to avoid
@@ -245,7 +247,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 			}
 
 			// Wait for all nodes to be ready to dial
-			err = signalAndWaitForAll("ready-to-connect-" + runId)
+			err = signalAndWaitForAll("ready-to-connect-" + runID)
 			if err != nil {
 				return err
 			}
@@ -258,7 +260,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 			runenv.RecordMessage("Dialed %d other nodes", len(dialed))
 
 			// Wait for all nodes to be connected
-			err = signalAndWaitForAll("connect-complete-" + runId)
+			err = signalAndWaitForAll("connect-complete-" + runID)
 			if err != nil {
 				return err
 			}
@@ -283,7 +285,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 			}
 
 			// Wait for all leeches to have downloaded the data from seeds
-			err = signalAndWaitForAll("transfer-complete-" + runId)
+			err = signalAndWaitForAll("transfer-complete-" + runID)
 			if err != nil {
 				return err
 			}
@@ -328,159 +330,6 @@ func Transfer(runenv *runtime.RunEnv) error {
 	}
 
 	/// --- Ending the test
-
-	return nil
-}
-
-func parseType(ctx context.Context, runenv *runtime.RunEnv, client *sync.Client, h host.Host, seq int64) (int64, utils.NodeType, int, error) {
-	leechCount := runenv.IntParam("leech_count")
-	passiveCount := runenv.IntParam("passive_count")
-
-	grpCountOverride := false
-	if runenv.TestGroupID != "" {
-		grpLchLabel := runenv.TestGroupID + "_leech_count"
-		if runenv.IsParamSet(grpLchLabel) {
-			leechCount = runenv.IntParam(grpLchLabel)
-			grpCountOverride = true
-		}
-		grpPsvLabel := runenv.TestGroupID + "_passive_count"
-		if runenv.IsParamSet(grpPsvLabel) {
-			passiveCount = runenv.IntParam(grpPsvLabel)
-			grpCountOverride = true
-		}
-	}
-
-	var nodetp utils.NodeType
-	var tpindex int
-	grpseq := seq
-	seqstr := fmt.Sprintf("- seq %d / %d", seq, runenv.TestInstanceCount)
-	grpPrefix := ""
-	if grpCountOverride {
-		grpPrefix = runenv.TestGroupID + " "
-
-		var err error
-		grpseq, err = getNodeSetSeq(ctx, client, h, runenv.TestGroupID)
-		if err != nil {
-			return grpseq, nodetp, tpindex, err
-		}
-
-		seqstr = fmt.Sprintf("%s (%d / %d of %s)", seqstr, grpseq, runenv.TestGroupInstanceCount, runenv.TestGroupID)
-	}
-
-	// Note: seq starts at 1 (not 0)
-	switch {
-	case grpseq <= int64(leechCount):
-		nodetp = utils.Leech
-		tpindex = int(grpseq) - 1
-	case grpseq > int64(leechCount+passiveCount):
-		nodetp = utils.Seed
-		tpindex = int(grpseq) - 1 - (leechCount + passiveCount)
-	default:
-		nodetp = utils.Passive
-		tpindex = int(grpseq) - 1 - leechCount
-	}
-
-	runenv.RecordMessage("I am %s %d %s", grpPrefix+nodetp.String(), tpindex, seqstr)
-
-	return grpseq, nodetp, tpindex, nil
-}
-
-func getNodeSetSeq(ctx context.Context, client *sync.Client, h host.Host, setID string) (int64, error) {
-	topic := sync.NewTopic("nodes"+setID, &peer.AddrInfo{})
-
-	return client.Publish(ctx, topic, host.InfoFromHost(h))
-}
-
-func setupSeed(ctx context.Context, runenv *runtime.RunEnv, node *utils.Node, fileSize int, seedIndex int) (cid.Cid, error) {
-	tmpFile := utils.RandReader(fileSize)
-	ipldNode, err := node.Add(ctx, tmpFile)
-	if err != nil {
-		return cid.Cid{}, err
-	}
-
-	if !runenv.IsParamSet("seed_fraction") {
-		return ipldNode.Cid(), nil
-	}
-	seedFrac := runenv.StringParam("seed_fraction")
-	if seedFrac == "" {
-		return ipldNode.Cid(), nil
-	}
-
-	parts := strings.Split(seedFrac, "/")
-	if len(parts) != 2 {
-		return cid.Cid{}, fmt.Errorf("Invalid seed fraction %s", seedFrac)
-	}
-	numerator, nerr := strconv.ParseInt(parts[0], 10, 64)
-	denominator, derr := strconv.ParseInt(parts[1], 10, 64)
-	if nerr != nil || derr != nil {
-		return cid.Cid{}, fmt.Errorf("Invalid seed fraction %s", seedFrac)
-	}
-
-	nodes, err := getLeafNodes(ctx, ipldNode, node.Dserv)
-	if err != nil {
-		return cid.Cid{}, err
-	}
-	var del []cid.Cid
-	for i := 0; i < len(nodes); i++ {
-		idx := i + seedIndex
-		if idx%int(denominator) >= int(numerator) {
-			del = append(del, nodes[i].Cid())
-		}
-	}
-	if err := node.Dserv.RemoveMany(ctx, del); err != nil {
-		return cid.Cid{}, err
-	}
-
-	runenv.RecordMessage("Retained %d / %d of blocks from seed, removed %d / %d blocks", numerator, denominator, len(del), len(nodes))
-	return ipldNode.Cid(), nil
-}
-
-func getLeafNodes(ctx context.Context, node ipld.Node, dserv ipld.DAGService) ([]ipld.Node, error) {
-	if len(node.Links()) == 0 {
-		return []ipld.Node{node}, nil
-	}
-
-	var leaves []ipld.Node
-	for _, l := range node.Links() {
-		child, err := l.GetNode(ctx, dserv)
-		if err != nil {
-			return nil, err
-		}
-		childLeaves, err := getLeafNodes(ctx, child, dserv)
-		if err != nil {
-			return nil, err
-		}
-		leaves = append(leaves, childLeaves...)
-	}
-
-	return leaves, nil
-}
-
-func getRootCidTopic(id int) *sync.Topic {
-	return sync.NewTopic(fmt.Sprintf("root-cid-%d", id), &cid.Cid{})
-}
-
-func emitMetrics(runenv *runtime.RunEnv, bsnode *utils.Node, runNum int, seq int64, grpseq int64,
-	latency time.Duration, bandwidthMB int, fileSize int, nodetp utils.NodeType, tpindex int, timeToFetch time.Duration) error {
-
-	stats, err := bsnode.Bitswap.Stat()
-	if err != nil {
-		return fmt.Errorf("Error getting stats from Bitswap: %w", err)
-	}
-
-	latencyMS := latency.Milliseconds()
-	id := fmt.Sprintf("latencyMS:%d/bandwidthMB:%d/run:%d/seq:%d/groupName:%s/groupSeq:%d/fileSize:%d/nodeType:%s/nodeTypeIndex:%d",
-		latencyMS, bandwidthMB, runNum, seq, runenv.TestGroupID, grpseq, fileSize, nodetp, tpindex)
-	if nodetp == utils.Leech {
-		runenv.RecordMetric(utils.MetricTimeToFetch(id), float64(timeToFetch))
-	}
-	runenv.RecordMetric(utils.MetricMsgsRcvd(id), float64(stats.MessagesReceived))
-	runenv.RecordMetric(utils.MetricDataSent(id), float64(stats.DataSent))
-	runenv.RecordMetric(utils.MetricDataRcvd(id), float64(stats.DataReceived))
-	runenv.RecordMetric(utils.MetricDupDataRcvd(id), float64(stats.DupDataReceived))
-	runenv.RecordMetric(utils.MetricBlksSent(id), float64(stats.BlocksSent))
-	runenv.RecordMetric(utils.MetricBlksRcvd(id), float64(stats.BlocksReceived))
-	runenv.RecordMetric(utils.MetricDupBlksRcvd(id), float64(stats.DupBlksReceived))
 
 	return nil
 }

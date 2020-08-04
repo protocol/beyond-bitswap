@@ -13,6 +13,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
@@ -54,6 +55,7 @@ func Fuzz(runenv *runtime.RunEnv) error {
 	defer cancel()
 
 	client := sync.MustBoundClient(ctx, runenv)
+	nwClient := network.NewClient(client, runenv)
 
 	/// --- Tear down
 	defer func() {
@@ -98,7 +100,7 @@ func Fuzz(runenv *runtime.RunEnv) error {
 	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
 
 	// Set up network (with traffic shaping)
-	err = setupFuzzNetwork(ctx, runenv, client)
+	err = setupFuzzNetwork(ctx, runenv, nwClient)
 	if err != nil {
 		return fmt.Errorf("Failed to set up network: %w", err)
 	}
@@ -364,19 +366,13 @@ func Fuzz(runenv *runtime.RunEnv) error {
 }
 
 // Set up traffic shaping with random latency and bandwidth
-func setupFuzzNetwork(ctx context.Context, runenv *runtime.RunEnv, client *sync.Client) error {
+func setupFuzzNetwork(ctx context.Context, runenv *runtime.RunEnv, nwClient *network.Client) error {
 	if !runenv.TestSidecar {
 		return nil
 	}
 
 	// Wait for the network to be initialized.
-	if err := client.WaitNetworkInitialized(ctx, runenv); err != nil {
-		return err
-	}
-
-	// TODO: just put the unique testplan id inside the runenv?
-	hostname, err := os.Hostname()
-	if err != nil {
+	if err := nwClient.WaitNetworkInitialized(ctx); err != nil {
 		return err
 	}
 
@@ -385,21 +381,20 @@ func setupFuzzNetwork(ctx context.Context, runenv *runtime.RunEnv, client *sync.
 	bandwidth := 1 + rnd.Intn(100)
 
 	state := sync.State("network-configured")
-	topic := sync.NetworkTopic(hostname)
-	cfg := &sync.NetworkConfig{
+
+	cfg := &network.Config{
 		Network: "default",
 		Enable:  true,
-		Default: sync.LinkShape{
+		Default: network.LinkShape{
 			Latency:   latency,
 			Bandwidth: uint64(bandwidth * 1024 * 1024),
 			Jitter:    (latency * 10) / 100,
 		},
-		State: state,
+		CallbackState:  state,
+		CallbackTarget: runenv.TestInstanceCount,
 	}
 
-	_, err = client.PublishAndWait(ctx, topic, cfg, state, runenv.TestInstanceCount)
-	if err != nil {
-		return fmt.Errorf("failed to configure network: %w", err)
-	}
+	nwClient.ConfigureNetwork(ctx, cfg)
+
 	return nil
 }

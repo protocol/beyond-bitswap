@@ -2,18 +2,18 @@ package utils
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"strings"
 	"time"
 
+	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 )
 
 // SetupNetwork instructs the sidecar (if enabled) to setup the network for this
 // test case.
-func SetupNetwork(ctx context.Context, runenv *runtime.RunEnv, client *sync.Client,
+func SetupNetwork(ctx context.Context, runenv *runtime.RunEnv,
+	nwClient *network.Client,
 	nodetp NodeType, tpindex int) (time.Duration, int, error) {
 
 	if !runenv.TestSidecar {
@@ -21,13 +21,7 @@ func SetupNetwork(ctx context.Context, runenv *runtime.RunEnv, client *sync.Clie
 	}
 
 	// Wait for the network to be initialized.
-	if err := client.WaitNetworkInitialized(ctx, runenv); err != nil {
-		return 0, 0, err
-	}
-
-	// TODO: just put the unique testplan id inside the runenv?
-	hostname, err := os.Hostname()
-	if err != nil {
+	if err := nwClient.WaitNetworkInitialized(ctx); err != nil {
 		return 0, 0, err
 	}
 
@@ -39,23 +33,21 @@ func SetupNetwork(ctx context.Context, runenv *runtime.RunEnv, client *sync.Clie
 	jitterPct := runenv.IntParam("jitter_pct")
 	bandwidth := runenv.IntParam("bandwidth_mb")
 
-	cfg := &sync.NetworkConfig{
+	cfg := &network.Config{
 		Network: "default",
 		Enable:  true,
-		Default: sync.LinkShape{
+		Default: network.LinkShape{
 			Latency:   latency,
 			Bandwidth: uint64(bandwidth) * 1024 * 1024,
 			Jitter:    (time.Duration(jitterPct) * latency) / 100,
 		},
-		State: "network-configured",
+		CallbackState:  sync.State("network-configured"),
+		CallbackTarget: runenv.TestInstanceCount,
 	}
 
 	runenv.RecordMessage("%s %d has %s latency (%d%% jitter) and %dMB bandwidth", nodetp, tpindex, latency, jitterPct, bandwidth)
 
-	_, err = client.PublishAndWait(ctx, sync.NetworkTopic(hostname), cfg, "network-configured", runenv.TestInstanceCount)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to configure network: %w", err)
-	}
+	nwClient.ConfigureNetwork(ctx, cfg)
 
 	return latency, bandwidth, nil
 }
