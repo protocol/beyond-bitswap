@@ -1,8 +1,8 @@
 #!/bin/sh
 
 FILE_SIZE=15728640,31457280,47185920,57671680
-RUN_COUNT=5
-INSTANCES=2
+RUN_COUNT=1
+INSTANCES=3
 LEECH_COUNT=1
 PASSIVE_COUNT=0
 LATENCY=5
@@ -10,12 +10,13 @@ JITTER=10
 BANDWIDTH=150
 PARALLEL_GEN=100
 
+TESTGROUND_BIN="testground"
+#TODO: Add an option to save the results for future analysis.
 
 echo "Cleaning previous results..."
 
 rm -rf ./results
 mkdir ./results
-
 echo "Starting test..."
 
 #TODO: Test cases determine the test scenario.
@@ -23,7 +24,7 @@ echo "Starting test..."
 # configuration parameters.
 # TODO: 
 run_bitswap(){
-    testground run single \
+    $TESTGROUND_BIN run single \
         --plan=bitswap-tuning \
         --testcase=transfer \
         --builder=docker:go \
@@ -33,13 +34,14 @@ run_bitswap(){
         -tp latency_ms=$4 \
         -tp jitter_pct=$5 \
         -tp parallel_gen_mb=$6 \
-        -tp leech_count=$7
+        -tp leech_count=$7 \
+        -tp bandwidth_mb=$8
         # | tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'
     
 }
 
 run_test() {
-    testground run single \
+    $TESTGROUND_BIN run single \
         --plan=bitswap-tuning \
         --testcase=transfer \
         --builder=docker:go \
@@ -47,17 +49,18 @@ run_test() {
 }
 
 run() {
-    TESTID=`run_bitswap $1 $2 $3 $4 $5 $6 $7 | tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'`
+    echo "Running test with ($1, $2, $3, $4, $5, $6, $7, $8) (INSTANCES, FILE_SIZE, RUN_COUNT, LATENCY, JITTER, BANDWIDTH)"
+    TESTID=`run_bitswap $1 $2 $3 $4 $5 $6 $7 $8 | tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'`
     echo $TESTID
     echo "Finished test $TESTID"
-    testground collect --runner=local:docker $TESTID
+    $TESTGROUND_BIN collect --runner=local:docker $TESTID
     tar xzvf $TESTID.tgz
     rm $TESTID.tgz
     mv $TESTID results/
     echo "Collected results"
 }
 
-run $INSTANCES $FILE_SIZE $RUN_COUNT $LATENCY $JITTER $PARALLEL_GEN $LEECH_COUNT
-BANDWIDTH=100
-run $INSTANCES $FILE_SIZE $RUN_COUNT $LATENCY $JITTER $PARALLEL_GEN $LEECH_COUNT
+run $INSTANCES $FILE_SIZE $RUN_COUNT $LATENCY $JITTER $PARALLEL_GEN $LEECH_COUNT $BANDWIDTH
+# BANDWIDTH=100
+# run $INSTANCES $FILE_SIZE $RUN_COUNT $LATENCY $JITTER $PARALLEL_GEN $LEECH_COUNT $BANDWIDTH
 python3 process.py
