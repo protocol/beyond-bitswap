@@ -156,8 +156,14 @@ func emitMetrics(runenv *runtime.RunEnv, bsnode *utils.Node, runNum int, seq int
 	}
 
 	latencyMS := latency.Milliseconds()
-	id := fmt.Sprintf("latencyMS:%d/bandwidthMB:%d/run:%d/seq:%d/groupName:%s/groupSeq:%d/fileSize:%d/nodeType:%s/nodeTypeIndex:%d",
+	instance := runenv.TestInstanceCount
+	leechCount := runenv.IntParam("leech_count")
+	passiveCount := runenv.IntParam("passive_count")
+
+	id := fmt.Sprintf("topology:(%d,%d,%d)/latencyMS:%d/bandwidthMB:%d/run:%d/seq:%d/groupName:%s/groupSeq:%d/fileSize:%d/nodeType:%s/nodeTypeIndex:%d",
+		instance-leechCount-passiveCount, leechCount, passiveCount,
 		latencyMS, bandwidthMB, runNum, seq, runenv.TestGroupID, grpseq, fileSize, nodetp, tpindex)
+
 	if nodetp == utils.Leech {
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", id), float64(timeToFetch))
 	}
