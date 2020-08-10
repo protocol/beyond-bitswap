@@ -190,7 +190,8 @@ func Baseline(runenv *runtime.RunEnv) error {
 						start = time.Now()
 					}
 					runenv.RecordMessage("Generating seed data of %d bytes", fileSize)
-
+					// TODO: Here is where we generate the seed. According to the use case the seed may be generated differently
+					// to create more complex DAG structres
 					rootCid, err := setupSeed(ctx, runenv, bsnode, fileSize, int(seedIndex))
 					if err != nil {
 						return fmt.Errorf("Failed to set up seed: %w", err)
@@ -252,6 +253,7 @@ func Baseline(runenv *runtime.RunEnv) error {
 				return err
 			}
 
+			// TODO: Configure here the number of connection per peers.
 			// Dial all peers
 			dialed, err := utils.DialOtherPeers(ctx, h, addrInfos)
 			if err != nil {

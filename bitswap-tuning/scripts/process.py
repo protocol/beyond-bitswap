@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 
 from matplotlib import pyplot as plt
 import numpy as np
@@ -225,7 +226,7 @@ def plot_bw_overhead(byFileSize, byTopology):
 
         ax.set_ylabel('Number of messages')
         # ax.set_ylabel('File Size (MB)') 
-        ax.set_title('Average number of blocks exchanged '+ t)
+        ax.set_title('Data received '+ t)
         ax.set_xticks(x)
         ax.set_xticklabels(labels)
         ax.legend()
@@ -302,6 +303,9 @@ if __name__ == "__main__":
     byFileSize = groupBy(agg, "fileSize")
     byBandwidth = groupBy(agg, "bandwidthMB")
     byTopology = groupBy(agg, "topology")
+    if args.plots is None:
+        print("[!!] No plots provided...")
+        sys.exit()
 
     if "latency" in args.plots:
         plot_latency(byLatency, byBandwidth, byFileSize)

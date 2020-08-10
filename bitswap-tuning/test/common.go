@@ -85,10 +85,12 @@ func setupSeed(ctx context.Context, runenv *runtime.RunEnv, node *utils.Node, fi
 		return cid.Cid{}, err
 	}
 
+	//TODO: Explore this seed_fraction parameter.
 	if !runenv.IsParamSet("seed_fraction") {
 		return ipldNode.Cid(), nil
 	}
 	seedFrac := runenv.StringParam("seed_fraction")
+	runenv.RecordMessage(">>>>>>> THIS IS SEED_FRACTION: %d", seedFrac)
 	if seedFrac == "" {
 		return ipldNode.Cid(), nil
 	}
