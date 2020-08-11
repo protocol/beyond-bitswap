@@ -13,6 +13,8 @@ github.com/adlrocha/go-bitswap v0.2.20-0.20200806120326-85180af7f751 h1:nSdKkywM
 github.com/adlrocha/go-bitswap v0.2.20-0.20200806120326-85180af7f751/go.mod h1:C7TwBgHnu89Q8sHsTJP7IhUqF9XYLe71P4tT5adgmYo=
 github.com/adlrocha/go-bitswap v0.2.20-0.20200807084541-c90cd10de144 h1:yCY6FvVHPFyx4sYIBTzKsiOK3ADy4WdVWZ9Ql1IlsV4=
 github.com/adlrocha/go-bitswap v0.2.20-0.20200807084541-c90cd10de144/go.mod h1:Wxv8HCi8VSTvaeMmuvWf8dg7Q2UPwMC1r3av3gCqiEk=
+github.com/adlrocha/go-bitswap v0.2.20-0.20200811113214-8663be04154d h1:Yw/1mNkUD5XGkIMuowi8MNEaWkXBEaDJt7QlKjmyvBg=
+github.com/adlrocha/go-bitswap v0.2.20-0.20200811113214-8663be04154d/go.mod h1:Wxv8HCi8VSTvaeMmuvWf8dg7Q2UPwMC1r3av3gCqiEk=
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -726,6 +728,8 @@ github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/syndtr/goleveldb v1.0.0/go.mod h1:ZVVdQEZoIme9iO1Ch2Jdy24qqXrMMOU6lpPAyBWyWuQ=
 github.com/testground/sdk-go v0.2.3 h1:Fyxu1qRrW7D5nMWg9I/CV6TqN085OXNBvBNO4LnX8Qo=
 github.com/testground/sdk-go v0.2.3/go.mod h1:3ewI3dydDseP7eCO1MHGh+67simvbkcUnguPYssFqiA=
+github.com/testground/sdk-go v0.2.4 h1:n290IL49MSyEa64rc8LsXBqmKqVgLd/GmeXuxTUbWOE=
+github.com/testground/sdk-go v0.2.4/go.mod h1:3ewI3dydDseP7eCO1MHGh+67simvbkcUnguPYssFqiA=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/warpfork/go-wish v0.0.0-20180510122957-5ad1f5abf436/go.mod h1:x6AKhvSSexNrVSrViXSHUEbICjmGXhtgABaHIySUSGw=
 github.com/warpfork/go-wish v0.0.0-20190328234359-8b3e70f8e830 h1:8kxMKmKzXXL4Ru1nyhvdms/JjWt+3YLpvRb/bAjO/y0=

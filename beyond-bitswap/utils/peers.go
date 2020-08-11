@@ -22,7 +22,8 @@ func AddrInfosFromChan(peerCh chan *peer.AddrInfo, count int) ([]peer.AddrInfo, 
 	return ais, nil
 }
 
-func DialOtherPeers(ctx context.Context, self core.Host, ais []peer.AddrInfo) ([]peer.AddrInfo, error) {
+// DialOtherPeers connects to a set of peers in the experiment.
+func DialOtherPeers(ctx context.Context, self core.Host, ais []peer.AddrInfo, maxConnections int) ([]peer.AddrInfo, error) {
 	// Grab list of other peers that are available for this Run
 	var toDial []peer.AddrInfo
 	for _, ai := range ais {

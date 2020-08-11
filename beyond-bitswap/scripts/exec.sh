@@ -26,14 +26,6 @@ run_bitswap(){
     
 }
 
-run_test() {
-    $TESTGROUND_BIN run single \
-        --plan=bitswap-tuning \
-        --testcase=transfer \
-        --builder=docker:go \
-        --runner=local:docker --instances=$1 
-}
-
 run() {
     echo "Running test with ($1, $2, $3, $4, $5, $6, $7, $8, $9) (TESTCASE, INSTANCES, FILE_SIZE, RUN_COUNT, LATENCY, JITTER, PARALLEL, LEECH, BANDWIDTH)"
     TESTID=`run_bitswap $1 $2 $3 $4 $5 $6 $7 $8 $9 | tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'`

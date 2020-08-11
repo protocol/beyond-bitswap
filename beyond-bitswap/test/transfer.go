@@ -33,6 +33,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 	requestStagger := time.Duration(runenv.IntParam("request_stagger")) * time.Millisecond
 	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
 	runCount := runenv.IntParam("run_count")
+	maxConnectionRate := runenv.IntParam("max_connection_rate")
 	fileSizes, err := utils.ParseIntArray(runenv.StringParam("file_size"))
 	if err != nil {
 		return err
@@ -253,7 +254,8 @@ func Transfer(runenv *runtime.RunEnv) error {
 			}
 
 			// Dial all peers
-			dialed, err := utils.DialOtherPeers(ctx, h, addrInfos)
+			maxConnections := maxConnectionRate * runenv.TestInstanceCount
+			dialed, err := utils.DialOtherPeers(ctx, h, addrInfos, maxConnections)
 			if err != nil {
 				return err
 			}

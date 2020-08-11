@@ -90,7 +90,6 @@ func setupSeed(ctx context.Context, runenv *runtime.RunEnv, node *utils.Node, fi
 		return ipldNode.Cid(), nil
 	}
 	seedFrac := runenv.StringParam("seed_fraction")
-	runenv.RecordMessage(">>>>>>> THIS IS SEED_FRACTION: %d", seedFrac)
 	if seedFrac == "" {
 		return ipldNode.Cid(), nil
 	}
@@ -177,6 +176,8 @@ func emitMetrics(runenv *runtime.RunEnv, bsnode *utils.Node, runNum int, seq int
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_sent", id), float64(stats.BlocksSent))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_rcvd", id), float64(stats.BlocksReceived))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
+	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
+	runenv.R().RecordPoint(fmt.Sprintf("%s/name:num_dht", id), float64(stats.NumDHT))
 
 	return nil
 }
