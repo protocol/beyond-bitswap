@@ -116,35 +116,40 @@ func CreateIPFSNode(ctx context.Context) (*IPFSNode, error) {
 }
 
 // Get a randomSubset of peers to connect to.
-// TODO: Work in progress.
 func (n *IPFSNode) getRandomSubset(peerInfo []peer.AddrInfo, maxConnections int) []peer.AddrInfo {
 	outputList := []peer.AddrInfo{}
 	rand.Seed(time.Now().Unix())
+	var i, con int
 
-	// If maxConnections equals the number of peers return
-	// if maxConnections >= len(peerInfo) {
-	// 	return peerInfo
-	// }
-
-	for i := 0; i <= maxConnections-1; i++ {
-		if n.Node.PeerHost.ID() != peerInfo[i].ID {
-			x := rand.Intn(len(peerInfo) - 1)
+	for len(peerInfo) > 0 {
+		x := rand.Intn(len(peerInfo))
+		if n.Node.PeerHost.ID() != peerInfo[x].ID {
 			outputList = append(outputList, peerInfo[x])
 			// Delete from peerInfo so that it can't be selected again
 			peerInfo = append(peerInfo[:x], peerInfo[x+1:]...)
+			con++
 		}
+		if con >= maxConnections || len(peerInfo) == 1 {
+			return outputList
+		}
+		i++
 	}
+
 	return outputList
 }
 
 // flatSubset removes self from list of peers to dial.
-// TODO: Still need to support maxConnections limitation.
 func (n *IPFSNode) flatSubset(peerInfo []peer.AddrInfo, maxConnections int) []peer.AddrInfo {
 	outputList := []peer.AddrInfo{}
 
+	i := 0
 	for _, ai := range peerInfo {
 		if n.Node.PeerHost.ID() != ai.ID {
 			outputList = append(outputList, ai)
+			i++
+		}
+		if i >= maxConnections {
+			return outputList
 		}
 	}
 
@@ -158,8 +163,9 @@ func (n *IPFSNode) ConnectToPeers(ctx context.Context, runenv *runtime.RunEnv,
 	var wg sync.WaitGroup
 	// Do not include self.
 	// TODO: Right now we are connecting with everyone except self.
-	// peerInfos = n.getRandomSubset(peerInfos, maxConnections)
-	peerInfos = n.flatSubset(peerInfos, maxConnections)
+	peerInfos = n.getRandomSubset(peerInfos, maxConnections)
+	// In case we want a flat subset (in order from the start of the array) and not a random one.
+	// peerInfos = n.flatSubset(peerInfos, maxConnections)
 	runenv.RecordMessage("Subset of peers selected to connect: %v", peerInfos)
 	wg.Add(len(peerInfos))
 	for _, peerInfo := range peerInfos {
