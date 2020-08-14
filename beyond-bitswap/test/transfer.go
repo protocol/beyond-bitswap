@@ -16,12 +16,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/ipfs/test-plans/bitswap-tuning/utils"
+	"github.com/ipfs/test-plans/beyond-bitswap/utils"
 )
 
 // NOTE: To run use:
 // ./testground run data-exchange/transfer --builder=docker:go --runner="local:docker" --dep="github.com/ipfs/go-bitswap=master"
-// testground run single --plan=bitswap-tuning --testcase=baseline --builder=docker:go --runner=local:docker --instances=2
+// testground run single --plan=beyond-bitswap --testcase=baseline --builder=docker:go --runner=local:docker --instances=2
 
 // Transfer data from S seeds to L leeches
 func Transfer(runenv *runtime.RunEnv) error {

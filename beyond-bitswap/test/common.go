@@ -16,7 +16,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/ipfs/test-plans/bitswap-tuning/utils"
+	"github.com/ipfs/test-plans/beyond-bitswap/utils"
 )
 
 func parseType(ctx context.Context, runenv *runtime.RunEnv, client *sync.DefaultClient, h host.Host, seq int64) (int64, utils.NodeType, int, error) {

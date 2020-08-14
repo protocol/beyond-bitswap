@@ -14,7 +14,7 @@ import (
 
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/interface-go-ipfs-core/path"
-	"github.com/ipfs/test-plans/bitswap-tuning/utils"
+	"github.com/ipfs/test-plans/beyond-bitswap/utils"
 )
 
 // NOTE: To run use:

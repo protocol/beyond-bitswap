@@ -22,13 +22,13 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"github.com/ipfs/test-plans/bitswap-tuning/utils"
+	"github.com/ipfs/test-plans/beyond-bitswap/utils"
 )
 
 //
 // To run use:
 //
-// ./testground run s bitswap-tuning/fuzz \
+// ./testground run s beyond-bitswap/fuzz \
 //   --builder=exec:go \
 //   --runner="local:exec" \
 //   --dep="github.com/ipfs/go-bitswap=master" \
