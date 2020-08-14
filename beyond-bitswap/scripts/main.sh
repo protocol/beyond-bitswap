@@ -9,7 +9,7 @@ LATENCY=5
 JITTER=10
 BANDWIDTH=100
 PARALLEL_GEN=100
-TESTCASE=transfer
+TESTCASE=ipfs-transfer
 
 source ./exec.sh
 

@@ -11,7 +11,7 @@ echo "Starting test..."
 
 run_bitswap(){
     $TESTGROUND_BIN run single \
-        --plan=bitswap-tuning \
+        --plan=beyond-bitswap \
         --testcase=$1 \
         --builder=docker:go \
         --runner=local:docker --instances=$2 \

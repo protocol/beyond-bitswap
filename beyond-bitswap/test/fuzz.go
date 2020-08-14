@@ -200,7 +200,7 @@ func Fuzz(runenv *runtime.RunEnv) error {
 	}
 
 	// Dial all peers
-	dialed, err := utils.DialOtherPeers(ctx, h, addrInfos)
+	dialed, err := utils.DialOtherPeers(ctx, h, addrInfos, 0)
 	if err != nil {
 		return err
 	}
