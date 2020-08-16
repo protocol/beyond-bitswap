@@ -213,6 +213,7 @@ func main() {
 		if err != nil {
 			fmt.Println("Couldn't find content", err)
 		}
+		// err = ipfs1.API.Dag().Get(ctxTimeout, )
 		// TODO: Should clear blockstore every time to avoid getting caches.
 	}
 

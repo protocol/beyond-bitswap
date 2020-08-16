@@ -209,9 +209,10 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			}
 
 			// Start peer connection. Connections are performed randomly in ConnectToPeers
-			// TODO: Still not supported
 			maxConnections := maxConnectionRate * runenv.TestInstanceCount
-			dialed, err := ipfsNode.ConnectToPeers(ctx, runenv, addrInfos, maxConnections)
+			//TODO: No maxConnections supported.
+			// dialed, err := ipfsNode.ConnectToPeers(ctx, runenv, addrInfos, maxConnections)
+			dialed, err := utils.DialOtherPeers(ctx, h, addrInfos, maxConnections)
 			if err != nil {
 				return err
 			}
@@ -231,6 +232,12 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				// Note: seq starts from 1 (not 0)
 				startDelay := time.Duration(seq-1) * requestStagger
 
+				runenv.RecordMessage("Check if connected to peers: %v", addrInfos)
+				runenv.RecordMessage("This is me: %v", h.ID())
+				for _, v := range addrInfos {
+					runenv.RecordMessage("Connected to %v: %v", v.ID, h.Network().Connectedness(v.ID))
+				}
+
 				runenv.RecordMessage("Starting to leech %d / %d (%d bytes)", runNum, runCount, f.Size)
 				runenv.RecordMessage("Leech fetching data after %s delay", startDelay)
 				start := time.Now()
@@ -238,7 +245,8 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				// Right now using a path.
 				fPath := path.IpfsPath(rootCid)
 				runenv.RecordMessage("Got path for file: %v", fPath)
-				_, err := ipfsNode.API.Unixfs().Get(ctx, fPath)
+				// _, err := ipfsNode.API.Unixfs().Get(ctx, fPath)
+				_, err := ipfsNode.API.Dag().Get(ctx, rootCid)
 				timeToFetch = time.Since(start)
 				if err != nil {
 					runenv.RecordMessage("Error fetching data through IPFS: %w", err)
