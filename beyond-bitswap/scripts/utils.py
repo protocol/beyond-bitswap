@@ -44,10 +44,10 @@ def runner(cmd):
 
 def collect_data(testid):
     print("Collecting data for testid: ", testid)
-    cmd = TESTGROUND_BIN + "collect --runner="+RUNNER + " " + testid
-    print(os.popen(cmd))
-    cmd = "rm %d.tgz && mv %d results/" % testid
-    print(os.popen(cmd))
+    cmd = TESTGROUND_BIN + " collect --runner="+RUNNER + " " + testid
+    os.popen(cmd)
+    cmd = "tar xzvf %s.tgz && rm %s.tgz && mv %s results/" % (testid, testid, testid)
+    os.popen(cmd).read()
 
 testid = runner(process_config("./config.yaml"))
 collect_data(testid)

@@ -1,7 +1,7 @@
 # Set up you use case parameters
 use_case:
     testcase: "ipfs-transfer"
-    input_data: "random" # files, dir, random and custom supported.
+    input_data: "files" # files, dir, random and custom supported.
     file_size: "15728640,31457280,47185920,57671680" # If INPUT_DATA=random is selected choose the file sizes
     files_directory: "./inputData"  # Set directory from which to take files if INPUT_DATA=files
     run_count: 2

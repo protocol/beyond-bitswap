@@ -27,6 +27,8 @@ import (
 	"github.com/ipfs/go-ipfs/core/coreapi"
 	"github.com/ipfs/go-ipfs/plugin/loader" // This package is needed so that all the preloaded plugins are loaded automatically
 	"github.com/libp2p/go-libp2p-core/peer"
+	// bs "github.com/ipfs/go-bitswap"
+	// bsnet "github.com/ipfs/go-bitswap/network"
 )
 
 type IPFSNode struct {
@@ -183,7 +185,18 @@ func (n *IPFSNode) getContent(ctx context.Context, fPath path.Path) error {
 	return nil
 }
 
+func (n *IPFSNode) addRandomContent(ctx context.Context) {
+	tmpFile := files.NewReaderFile(RandReader(1111111))
+
+	cidRandom, err := n.API.Unixfs().Add(ctx, tmpFile)
+	if err != nil {
+		panic(fmt.Errorf("Could not add random: %s", err))
+	}
+	fmt.Println("Adding a test file to the network:", cidRandom)
+}
+
 func main() {
+	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Println("-- Getting an IPFS node running -- ")
 
@@ -201,20 +214,28 @@ func main() {
 		panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
 	}
 
+	// Adding random content for testing.
+	ipfs1.addRandomContent(ctx)
+
 	for {
-		reader := bufio.NewReader(os.Stdin)
 		fmt.Print("Enter path: ")
 		text, _ := reader.ReadString('\n')
 		text = strings.ReplaceAll(text, "\n", "")
 		text = strings.ReplaceAll(text, " ", "")
-		fPath := path.New(text)
-		ctxTimeout, _ := context.WithTimeout(ctx, 10*time.Second)
-		err = ipfs1.getContent(ctxTimeout, fPath)
-		if err != nil {
-			fmt.Println("Couldn't find content", err)
+		// If we use add we can add random content to the network.
+		if text == "add" {
+			ipfs1.addRandomContent(ctx)
+		} else {
+			fPath := path.New(text)
+			ctxTimeout, _ := context.WithTimeout(ctx, 10*time.Second)
+			err = ipfs1.getContent(ctxTimeout, fPath)
+			if err != nil {
+				fmt.Println("Couldn't find content", err)
+			}
+			// err = ipfs1.API.Dag().Get(ctxTimeout, )
+			// TODO: Should clear blockstore every time to avoid getting caches.
 		}
-		// err = ipfs1.API.Dag().Get(ctxTimeout, )
-		// TODO: Should clear blockstore every time to avoid getting caches.
+
 	}
 
 }
