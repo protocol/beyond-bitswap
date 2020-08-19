@@ -103,6 +103,7 @@ def autolabel(ax, rects):
                     ha='center', va='bottom')
 
 
+# TODO: This is wrong. Here we only accoun for the data exchanged using Bitswap.
 def plot_messages(byFileSize, byTopology):
 
     # plt.figure()
@@ -165,7 +166,7 @@ def plot_messages(byFileSize, byTopology):
         ax.legend()
         fig.tight_layout()
 
-
+# TODO: This is wrong. Here we only accoun for the data exchanged using Bitswap.
 def plot_bw_overhead(byFileSize, byTopology):
 
     # plt.figure()

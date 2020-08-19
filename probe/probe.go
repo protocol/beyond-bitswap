@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	config "github.com/ipfs/go-ipfs-config"
 	files "github.com/ipfs/go-ipfs-files"
 	ipfslibp2p "github.com/ipfs/go-ipfs/core/node/libp2p"
@@ -26,6 +27,7 @@ import (
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/coreapi"
 	"github.com/ipfs/go-ipfs/plugin/loader" // This package is needed so that all the preloaded plugins are loaded automatically
+	"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/libp2p/go-libp2p-core/peer"
 	// bs "github.com/ipfs/go-bitswap"
 	// bsnet "github.com/ipfs/go-bitswap/network"
@@ -110,6 +112,14 @@ func setupPlugins(externalPluginsPath string) error {
 	}
 
 	return nil
+}
+
+func printStats(bs *metrics.Stats) {
+	fmt.Printf("Bandwidth")
+	fmt.Printf("TotalIn: %s\n", humanize.Bytes(uint64(bs.TotalIn)))
+	fmt.Printf("TotalOut: %s\n", humanize.Bytes(uint64(bs.TotalOut)))
+	fmt.Printf("RateIn: %s/s\n", humanize.Bytes(uint64(bs.RateIn)))
+	fmt.Printf("RateOut: %s/s\n", humanize.Bytes(uint64(bs.RateOut)))
 }
 
 func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peerInfos []peer.AddrInfo) error {
@@ -235,7 +245,9 @@ func main() {
 			// err = ipfs1.API.Dag().Get(ctxTimeout, )
 			// TODO: Should clear blockstore every time to avoid getting caches.
 		}
-
+		fmt.Println("=== METRICS ===")
+		bw := ipfs1.Node.Reporter.GetBandwidthTotals()
+		printStats(&bw)	
 	}
 
 }
