@@ -249,6 +249,8 @@ func setConfig(ctx context.Context, exch ExchangeOpt) fx.Option {
 		fx.Invoke(libp2p.SetupDiscovery(cfg.Discovery.MDNS.Enabled, cfg.Discovery.MDNS.Interval)),
 		fx.Provide(libp2p.Routing),
 		fx.Provide(libp2p.BaseRouting),
+		// Enable IPFS bandwidth metrics.
+		fx.Provide(libp2p.BandwidthCounter),
 
 		// Here you can see some more of the libp2p dependencies you could set.
 		// fx.Provide(libp2p.Security(!bcfg.DisableEncryptedConnections, cfg.Swarm.Transports)),

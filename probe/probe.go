@@ -22,6 +22,7 @@ import (
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/ipfs/interface-go-ipfs-core/path"
+	"github.com/ipfs/test-plans/beyond-bitswap/utils"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 
 	"github.com/ipfs/go-ipfs/core"
@@ -184,7 +185,7 @@ func RandReader(len int) io.Reader {
 	return bytes.NewReader(data)
 }
 
-func (n *IPFSNode) getContent(ctx context.Context, fPath path.Path) error {
+func getContent(ctx context.Context, n *utils.IPFSNode, fPath path.Path) error {
 	fmt.Println("Searching for: ", fPath)
 	f, err := n.API.Unixfs().Get(ctx, fPath)
 	if err != nil {
@@ -195,7 +196,7 @@ func (n *IPFSNode) getContent(ctx context.Context, fPath path.Path) error {
 	return nil
 }
 
-func (n *IPFSNode) addRandomContent(ctx context.Context) {
+func addRandomContent(ctx context.Context, n *utils.IPFSNode) {
 	tmpFile := files.NewReaderFile(RandReader(1111111))
 
 	cidRandom, err := n.API.Unixfs().Add(ctx, tmpFile)
@@ -219,13 +220,23 @@ func main() {
 
 	// Spawn a node using a temporary path, creating a temporary repo for the run
 	fmt.Println("Spawning node on a temporary repo")
-	ipfs1, err := CreateIPFSNode(ctx)
+	// ipfs1, err := CreateIPFSNode(ctx)
+	// Set exchange Interface
+	exch, err := utils.SetExchange(ctx, "bitswap")
+	if err != nil {
+		panic(err)
+	}
+	// Create IPFS node
+	ipfs1, err := utils.NewNode(ctx, exch)
+	if err != nil {
+		panic(err)
+	}
 	if err != nil {
 		panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
 	}
 
 	// Adding random content for testing.
-	ipfs1.addRandomContent(ctx)
+	addRandomContent(ctx, ipfs1)
 
 	for {
 		fmt.Print("Enter path: ")
@@ -234,11 +245,11 @@ func main() {
 		text = strings.ReplaceAll(text, " ", "")
 		// If we use add we can add random content to the network.
 		if text == "add" {
-			ipfs1.addRandomContent(ctx)
+			addRandomContent(ctx, ipfs1)
 		} else {
 			fPath := path.New(text)
 			ctxTimeout, _ := context.WithTimeout(ctx, 10*time.Second)
-			err = ipfs1.getContent(ctxTimeout, fPath)
+			err = getContent(ctxTimeout, ipfs1, fPath)
 			if err != nil {
 				fmt.Println("Couldn't find content", err)
 			}
