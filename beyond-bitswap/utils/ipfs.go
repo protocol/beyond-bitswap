@@ -14,12 +14,14 @@ import (
 
 	bs "github.com/ipfs/go-bitswap"
 	"github.com/ipfs/go-datastore"
+	dsq "github.com/ipfs/go-datastore/query"
 
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	config "github.com/ipfs/go-ipfs-config"
 	"github.com/ipfs/go-metrics-interface"
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/jbenet/goprocess"
+	"github.com/libp2p/go-libp2p-kad-dht/providers"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	"github.com/testground/sdk-go/runtime"
 	"go.uber.org/fx"
@@ -36,7 +38,6 @@ import (
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
 	ci "github.com/libp2p/go-libp2p-core/crypto"
 )
@@ -105,7 +106,7 @@ func setConfig(ctx context.Context, exch ExchangeOpt) fx.Option {
 
 	// Create new Datastore
 	// TODO: This is in memory we should have some other external DataStore for big files.
-	d := ds.NewMapDatastore()
+	d := datastore.NewMapDatastore()
 	// Initialize config.
 	cfg := &config.Config{}
 	// Generate new KeyPair instead of using existing one.
@@ -451,6 +452,54 @@ func (n *IPFSNode) ConnectToPeers(ctx context.Context, runenv *runtime.RunEnv,
 	}
 	wg.Wait()
 	return peerInfos, nil
+}
+
+// ClearDatastore removes a block from the datastore.
+// func (n *IPFSNode) ClearDatastore(ctx context.Context, runenv *runtime.RunEnv) error {
+// 	ds := n.Node.Repo.Datastore()
+// 	// Empty prefix to receive all the keys
+// 	qr, err := ds.Query(dsq.Query{})
+// 	runenv.RecordMessage("Datastore query performed")
+// 	if err != nil {
+// 		return err
+// 	}
+// 	// TODO: Is not receiving any blockstore.
+// 	for r := range qr.Next() {
+// 		runenv.RecordMessage("Entered the for loop...")
+// 		if r.Error != nil {
+// 			// handle.
+// 			return r.Error
+// 		}
+// 		runenv.RecordMessage("Received key %s", r.Entry.Key)
+// 		ds.Delete(datastore.NewKey(r.Entry.Key))
+// 	}
+// 	return nil
+// }
+
+// ClearDatastore removes a block from the datastore.
+// TODO: This function may be inefficient with large blockstore. Used the option above.
+// This function may be cleaned in the future.
+func (n *IPFSNode) ClearDatastore(ctx context.Context, onlyProviders bool) error {
+	ds := n.Node.Repo.Datastore()
+	// Empty prefix to receive all the keys
+	var query dsq.Query
+
+	if onlyProviders {
+		query = dsq.Query{Prefix: providers.ProvidersKeyPrefix}
+	} else {
+		query = dsq.Query{}
+	}
+
+	qr, err := ds.Query(query)
+	entries, _ := qr.Rest()
+	if err != nil {
+		return err
+	}
+	// TODO: Is not receiving any blockstore.
+	for _, r := range entries {
+		ds.Delete(datastore.NewKey(r.Key))
+	}
+	return nil
 }
 
 // EmitMetrics emits node's metrics for the run

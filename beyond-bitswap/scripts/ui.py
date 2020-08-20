@@ -13,8 +13,12 @@ class Layout:
         self.n_passive = widgets.IntSlider(description="# passive ", min=0, max=10)
         self.max_connection_rate = widgets.IntSlider(description="Max connections (%)", value=100, min=0, max=100)
         self.churn_rate = widgets.IntSlider(description="Churn Rate (%)", min=0, max=100)
-
-        self.grid = widgets.GridspecLayout(5, 2, height='300px')
+        self.isDocker = widgets.Checkbox(value=False,description='Docker Env',disabled=False,indent=False)
+        self.bandwidth_mb = widgets.IntSlider(description="Nodes Bandwidth (MB)", value=100, min=0, max=500)
+        self.latency_ms = widgets.IntSlider(description="Nodes Latency (ms)", value=10, min=10, max=500)
+        self.jitter_pct = widgets.IntSlider(description="Pct Jitter (%)", value=5, min=0, max=100)
+        
+        self.grid = widgets.GridspecLayout(7, 2, height='300px')
 
 
     def show(self):
@@ -27,6 +31,10 @@ class Layout:
         self.grid[1, 1] = self.n_leechers
         self.grid[2, 1] = self.n_passive
         self.grid[3, 1] = self.churn_rate
+        self.grid[4, 1] = self.isDocker
+        self.grid[5, 0] = self.bandwidth_mb
+        self.grid[5, 1] = self.latency_ms
+        self.grid[6, 1] = self.jitter_pct
         return self.grid
 
 

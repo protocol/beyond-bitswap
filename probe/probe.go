@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/ipfs/go-datastore"
+	dsq "github.com/ipfs/go-datastore/query"
 	config "github.com/ipfs/go-ipfs-config"
 	files "github.com/ipfs/go-ipfs-files"
 	ipfslibp2p "github.com/ipfs/go-ipfs/core/node/libp2p"
@@ -24,7 +26,6 @@ import (
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 
-	bs "github.com/ipfs/go-bitswap"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/coreapi"
 	"github.com/ipfs/go-ipfs/plugin/loader" // This package is needed so that all the preloaded plugins are loaded automatically
@@ -207,6 +208,24 @@ func addRandomContent(ctx context.Context, n *IPFSNode) {
 	fmt.Println("Adding a test file to the network:", cidRandom)
 }
 
+// ClearDatastore removes a block from the datastore.
+func (n *IPFSNode) ClearDatastore(ctx context.Context) error {
+	ds := n.Node.Repo.Datastore()
+	// Empty prefix to receive all the keys
+	qr, err := ds.Query(dsq.Query{})
+	if err != nil {
+		return err
+	}
+	for r := range qr.Next() {
+		if r.Error != nil {
+			// handle.
+			return r.Error
+		}
+		ds.Delete(datastore.NewKey(r.Entry.Key))
+	}
+	return nil
+}
+
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 
@@ -260,8 +279,8 @@ func main() {
 		fmt.Println("=== METRICS ===")
 		bw := ipfs1.Node.Reporter.GetBandwidthTotals()
 		printStats(&bw)
-		fmt.Println("Resetting bs metrics")
-		ipfs1.Node.Exchange.(*bs.Bitswap).ResetStatCounters()
+		fmt.Println("Cleaning datastore")
+		ipfs1.ClearDatastore(ctx)
 	}
 
 }

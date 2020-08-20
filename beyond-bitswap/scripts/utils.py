@@ -42,7 +42,14 @@ def process_yaml_config(path):
 
 # Parses config from Jupyter layout
 def process_layout_config(layout):
-    cmd = BASE_CMD + " --testcase=" + layout.testcase.value + \
+    base = BASE_CMD
+    if layout.isDocker.value:
+        BUILDER = "docker:go"
+        RUNNER = "local:docker"
+        base = TESTGROUND_BIN + " run single --plan=beyond-bitswap --builder=" + \
+            BUILDER + " --runner=" + RUNNER + BUILDCFG
+
+    cmd = base + " --testcase=" + layout.testcase.value + \
         " --instances=" + str(layout.n_nodes.value)
     
     if layout.input_data.value != "":
@@ -53,8 +60,11 @@ def process_layout_config(layout):
     cmd = cmd + " -tp leech_count=" + str(layout.n_leechers.value) + \
         " -tp passive_count=" + str(layout.n_passive.value) + \
         " -tp max_connection_rate=" + str(layout.max_connection_rate.value) + \
-        " -tp run_count=" + str(layout.run_count.value)
-    
+        " -tp run_count=" + str(layout.run_count.value) + \
+        " -tp bandwidth_mb=" + str(layout.bandwidth_mb.value) + \
+        " -tp latency_ms=" + str(layout.latency_ms.value) + \
+        " -tp jitter_pct=" + str(layout.jitter_pct.value)
+
     return cmd
 
 # Testground runner
@@ -88,4 +98,4 @@ def collect_data(testid, save=False):
 
 
 # testid = runner(process_config("./config.yaml"))
-collect_data("96c6ff2b6ebf")
+# collect_data("96c6ff2b6ebf")

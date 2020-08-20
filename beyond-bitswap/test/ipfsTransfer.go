@@ -137,6 +137,8 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 	runenv.RecordMessage("Got file list: %v", files)
 
 	var runNum int
+	var fPath path.Resolved
+
 	// For each file found in the test
 	for fIndex, f := range files {
 		var rootCid cid.Cid
@@ -237,7 +239,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				start := time.Now()
 				// TODO: Here we may be able to define requesting pattern. ipfs.DAG()
 				// Right now using a path.
-				fPath := path.IpfsPath(rootCid)
+				fPath = path.IpfsPath(rootCid)
 				runenv.RecordMessage("Got path for file: %v", fPath)
 				_, err := ipfsNode.API.Unixfs().Get(ctx, fPath)
 				// _, err := ipfsNode.API.Dag().Get(ctx, rootCid)
@@ -270,15 +272,28 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				}
 			}
 			runenv.RecordMessage("Closed Connections")
+			err = signalAndWaitForAll("metrics-complete-" + runID)
 
 			if nodetp == utils.Leech {
 				// Free up memory by clearing the leech blockstore at the end of each run.
 				// Note that although we create a new blockstore for the leech at the
 				// start of the run, explicitly cleaning up the blockstore from the
 				// previous run allows it to be GCed.
-				runenv.RecordMessage("Cleaning Leech Blockstore")
+				runenv.RecordMessage("Cleaning Leech Blockstore and Datastore")
 				if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
 					return fmt.Errorf("Error clearing blockstore: %w", err)
+				}
+
+				if err := ipfsNode.ClearDatastore(ctx, false); err != nil {
+					return fmt.Errorf("Error clearing datastore: %w", err)
+				}
+			}
+			if nodetp == utils.Seed {
+				// Free up memory by clearing the seed blockstore at the end of each
+				// set of tests over the current file size.
+				runenv.RecordMessage("Cleaning Seed Datastore")
+				if err := ipfsNode.ClearDatastore(ctx, true); err != nil {
+					return fmt.Errorf("Error clearing datastore: %w", err)
 				}
 			}
 		}
@@ -288,6 +303,9 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			runenv.RecordMessage("Cleaning Seed Blockstore")
 			if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
 				return fmt.Errorf("Error clearing blockstore: %w", err)
+			}
+			if err := ipfsNode.ClearDatastore(ctx, false); err != nil {
+				return fmt.Errorf("Error clearing datstore: %w", err)
 			}
 		}
 	}
