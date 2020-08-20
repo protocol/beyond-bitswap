@@ -6,11 +6,11 @@ class Layout:
         self.input_data = widgets.Text(description="Input Data Type")
         self.file_size = widgets.Text(description="File Size")
         self.files_directory = widgets.Text(description="Files Directory")
-        self.run_count = widgets.IntSlider(description="Run Count", min=1, max=300)
+        self.run_count = widgets.IntSlider(description="Run Count", min=1, max=10)
 
-        self.n_nodes = widgets.IntSlider(description="# nodes", min=2, max=300)
-        self.n_leechers = widgets.IntSlider(description="# leechers", min=1, max=300)
-        self.n_passive = widgets.IntSlider(description="# passive ", min=0, max=300)
+        self.n_nodes = widgets.IntSlider(description="# nodes", min=2, max=50)
+        self.n_leechers = widgets.IntSlider(description="# leechers", min=1, max=50)
+        self.n_passive = widgets.IntSlider(description="# passive ", min=0, max=10)
         self.max_connection_rate = widgets.IntSlider(description="Max connections (%)", value=100, min=0, max=100)
         self.churn_rate = widgets.IntSlider(description="Churn Rate (%)", min=0, max=100)
 

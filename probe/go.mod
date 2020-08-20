@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
+	github.com/dustin/go-humanize v1.0.0
 	github.com/google/gopacket v1.1.18 // indirect
 	github.com/ipfs/go-bitswap v0.2.19
 	github.com/ipfs/go-blockservice v0.1.3
@@ -43,4 +44,7 @@ require (
 	golang.org/x/text v0.3.3 // indirect
 )
 
-replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200811113214-8663be04154d
+// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200811113214-8663be04154d
+replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
+
+replace github.com/ipfs/test-plans => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/test-plans

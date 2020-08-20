@@ -47,8 +47,8 @@ def process_layout_config(layout):
     
     if layout.input_data.value != "":
         cmd = cmd + " -tp input_data=" + layout.input_data.value
-    if layout.input_data.value != "":
-        cmd = cmd + " -tp file_size=" + layout.file_size.value
+    if layout.file_size.value != "":
+        cmd = cmd + " -tp file_size=" + layout.file_size.value.replace(" ", "")
 
     cmd = cmd + " -tp leech_count=" + str(layout.n_leechers.value) + \
         " -tp passive_count=" + str(layout.n_passive.value) + \
@@ -62,7 +62,7 @@ def runner(cmd):
     print("Running as: ", cmd)
     cmd = cmd + "| tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'"
     stream = os.popen(cmd)
-    testID = stream.read()
+    testID = stream.read().replace("\n", "").replace(" ", "")
     if len(testID) < 13 and len(testID) > 1:
         print("Run completed successfully with testID: %s" % testID)
     else:
@@ -88,4 +88,4 @@ def collect_data(testid, save=False):
 
 
 # testid = runner(process_config("./config.yaml"))
-# collect_data("f54d0827d35f")
+collect_data("96c6ff2b6ebf")

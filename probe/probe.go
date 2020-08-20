@@ -22,15 +22,14 @@ import (
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/ipfs/interface-go-ipfs-core/path"
-	"github.com/ipfs/test-plans/beyond-bitswap/utils"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 
+	bs "github.com/ipfs/go-bitswap"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/coreapi"
 	"github.com/ipfs/go-ipfs/plugin/loader" // This package is needed so that all the preloaded plugins are loaded automatically
 	"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/libp2p/go-libp2p-core/peer"
-	// bs "github.com/ipfs/go-bitswap"
 	// bsnet "github.com/ipfs/go-bitswap/network"
 )
 
@@ -38,6 +37,8 @@ type IPFSNode struct {
 	Node *core.IpfsNode
 	API  icore.CoreAPI
 }
+
+// type IPFSNode utils.IPFSNode
 
 func createTempRepo(ctx context.Context) (string, error) {
 	repoPath, err := ioutil.TempDir("", "ipfs-shell")
@@ -185,7 +186,7 @@ func RandReader(len int) io.Reader {
 	return bytes.NewReader(data)
 }
 
-func getContent(ctx context.Context, n *utils.IPFSNode, fPath path.Path) error {
+func getContent(ctx context.Context, n *IPFSNode, fPath path.Path) error {
 	fmt.Println("Searching for: ", fPath)
 	f, err := n.API.Unixfs().Get(ctx, fPath)
 	if err != nil {
@@ -196,7 +197,7 @@ func getContent(ctx context.Context, n *utils.IPFSNode, fPath path.Path) error {
 	return nil
 }
 
-func addRandomContent(ctx context.Context, n *utils.IPFSNode) {
+func addRandomContent(ctx context.Context, n *IPFSNode) {
 	tmpFile := files.NewReaderFile(RandReader(1111111))
 
 	cidRandom, err := n.API.Unixfs().Add(ctx, tmpFile)
@@ -220,17 +221,17 @@ func main() {
 
 	// Spawn a node using a temporary path, creating a temporary repo for the run
 	fmt.Println("Spawning node on a temporary repo")
-	// ipfs1, err := CreateIPFSNode(ctx)
+	ipfs1, err := CreateIPFSNode(ctx)
 	// Set exchange Interface
-	exch, err := utils.SetExchange(ctx, "bitswap")
-	if err != nil {
-		panic(err)
-	}
-	// Create IPFS node
-	ipfs1, err := utils.NewNode(ctx, exch)
-	if err != nil {
-		panic(err)
-	}
+	// exch, err := utils.SetExchange(ctx, "bitswap")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// // Create IPFS node
+	// ipfs1, err := utils.NewNode(ctx, exch)
+	// if err != nil {
+	// 	panic(err)
+	// }
 	if err != nil {
 		panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
 	}
@@ -259,6 +260,8 @@ func main() {
 		fmt.Println("=== METRICS ===")
 		bw := ipfs1.Node.Reporter.GetBandwidthTotals()
 		printStats(&bw)
+		fmt.Println("Resetting bs metrics")
+		ipfs1.Node.Exchange.(*bs.Bitswap).ResetStatCounters()
 	}
 
 }
