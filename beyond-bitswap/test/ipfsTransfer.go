@@ -136,11 +136,12 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 	}
 	runenv.RecordMessage("Got file list: %v", files)
 
+	var runNum int
 	// For each file found in the test
 	for fIndex, f := range files {
 		var rootCid cid.Cid
 		// Run the test runcount times
-		for runNum := 1; runNum < runCount+1; runNum++ {
+		for runNum = 1; runNum < runCount+1; runNum++ {
 			// Reset the timeout for each run
 			ctx, cancel := context.WithTimeout(ctx, runTimeout)
 			defer cancel()
@@ -261,12 +262,6 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			}
 			runenv.RecordMessage("Finishing emitting metrics. Starting to clean...")
 
-			// Shut down bitswap
-			// err = bsnode.Close()
-			// if err != nil {
-			// 	return fmt.Errorf("Error closing Bitswap: %w", err)
-			// }
-
 			// Disconnect peers
 			for _, c := range h.Network().Conns() {
 				err := c.Close()
@@ -274,11 +269,14 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 					return fmt.Errorf("Error disconnecting: %w", err)
 				}
 			}
+			runenv.RecordMessage("Closed Connections")
+
 			if nodetp == utils.Leech {
 				// Free up memory by clearing the leech blockstore at the end of each run.
 				// Note that although we create a new blockstore for the leech at the
 				// start of the run, explicitly cleaning up the blockstore from the
 				// previous run allows it to be GCed.
+				runenv.RecordMessage("Cleaning Leech Blockstore")
 				if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
 					return fmt.Errorf("Error clearing blockstore: %w", err)
 				}
@@ -287,11 +285,13 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 		if nodetp == utils.Seed {
 			// Free up memory by clearing the seed blockstore at the end of each
 			// set of tests over the current file size.
+			runenv.RecordMessage("Cleaning Seed Blockstore")
 			if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
 				return fmt.Errorf("Error clearing blockstore: %w", err)
 			}
 		}
 	}
 
+	runenv.RecordMessage("Ending testcase")
 	return nil
 }

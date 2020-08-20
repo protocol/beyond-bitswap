@@ -247,7 +247,7 @@ func main() {
 		}
 		fmt.Println("=== METRICS ===")
 		bw := ipfs1.Node.Reporter.GetBandwidthTotals()
-		printStats(&bw)	
+		printStats(&bw)
 	}
 
 }

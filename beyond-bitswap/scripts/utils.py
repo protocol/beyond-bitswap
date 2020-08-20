@@ -4,50 +4,88 @@ import os
 TESTGROUND_BIN="testground"
 BUILDER = "exec:go"
 RUNNER = "local:exec"
-BASE_EXEC = TESTGROUND_BIN + " run single --plan=beyond-bitswap --builder=" + BUILDER + " --runner=" + RUNNER
+BUILDCFG = " --build-cfg skip_runtime_image=true"
+BASE_CMD = TESTGROUND_BIN + " run single --plan=beyond-bitswap --builder=" + \
+    BUILDER + " --runner=" + RUNNER + BUILDCFG
 
-def process_config(path):
-    exec = BASE_EXEC
+# Parses yaml configs
+def process_yaml_config(path):
+    cmd = BASE_CMD
     with open(path) as file:
         docs = yaml.full_load(file)
 
     # Parsing use case parameters
     if docs["use_case"]:
         if docs["use_case"]["testcase"]:
-            exec = exec + " --testcase=" + docs["use_case"]["testcase"]
+            cmd = cmd + " --testcase=" + docs["use_case"]["testcase"]
         if docs["use_case"]["input_data"]:
-            exec = exec + " -tp input_data=" + docs["use_case"]["input_data"]
+            cmd = cmd + " -tp input_data=" + docs["use_case"]["input_data"]
         if docs["use_case"]["file_size"]:
-            exec = exec + " --tp file_size=" + docs["use_case"]["file_size"]
+            cmd = cmd + " --tp file_size=" + docs["use_case"]["file_size"]
+        if docs["use_case"]["run_count"]:
+            cmd = cmd + " --tp run_count=" +str(docs["use_case"]["run_count"])
     
     # Parsing network parameters
     if docs["network"]:
         if docs["network"]["n_nodes"]:
-            exec = exec + " --instances=" + str(docs["network"]["n_nodes"])
+            cmd = cmd + " --instances=" + str(docs["network"]["n_nodes"])
         if docs["network"]["n_leechers"]:
-            exec = exec + " -tp leech_count=" + str(docs["network"]["n_leechers"])  
+            cmd = cmd + " -tp leech_count=" + str(docs["network"]["n_leechers"])  
         if docs["network"]["n_passive"]:
-            exec = exec + "-tp passive_count=" + str(docs["network"]["n_passive"])  
+            cmd = cmd + "-tp passive_count=" + str(docs["network"]["n_passive"])  
         if docs["network"]["max_peer_connections"]:
-            exec = exec + " -tp max_connection_rate=" + str(docs["network"]["max_peer_connections"])  
+            cmd = cmd + " -tp max_connection_rate=" + str(docs["network"]["max_peer_connections"])  
         # if docs["network"]["churn_rate"]:
-        #     exec = exec + " -tp churn_rate=" + str(docs["network"]["churn_rate"])
+        #     cmd = cmd + " -tp churn_rate=" + str(docs["network"]["churn_rate"])
 
-    return exec
+    return cmd
 
+# Parses config from Jupyter layout
+def process_layout_config(layout):
+    cmd = BASE_CMD + " --testcase=" + layout.testcase.value + \
+        " --instances=" + str(layout.n_nodes.value)
+    
+    if layout.input_data.value != "":
+        cmd = cmd + " -tp input_data=" + layout.input_data.value
+    if layout.input_data.value != "":
+        cmd = cmd + " -tp file_size=" + layout.file_size.value
+
+    cmd = cmd + " -tp leech_count=" + str(layout.n_leechers.value) + \
+        " -tp passive_count=" + str(layout.n_passive.value) + \
+        " -tp max_connection_rate=" + str(layout.max_connection_rate.value) + \
+        " -tp run_count=" + str(layout.run_count.value)
+    
+    return cmd
+
+# Testground runner
 def runner(cmd):
     print("Running as: ", cmd)
     cmd = cmd + "| tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'"
     stream = os.popen(cmd)
     testID = stream.read()
+    if len(testID) < 13 and len(testID) > 1:
+        print("Run completed successfully with testID: %s" % testID)
+    else:
+        print("There was an error running the testcase. Check daemon.")
     return testID
 
-def collect_data(testid):
+# Collect data from a testcase
+def collect_data(testid, save=False):
+    print("Cleaning previous runs..")
+    cmd = "rm -rf results/*"
+    print(os.popen(cmd).read())
+
     print("Collecting data for testid: ", testid)
     cmd = TESTGROUND_BIN + " collect --runner="+RUNNER + " " + testid
     print(os.popen(cmd).read())
     cmd = "tar xzvf %s.tgz && rm %s.tgz && mv %s results/" % (testid, testid, testid)
     print(os.popen(cmd).read())
 
+    if save:
+        print("Saving data for testid: %s" % testid)
+        cmd = "cp -r results/%s saved/"
+        print(os.popen(cmd).read())
+
+
 # testid = runner(process_config("./config.yaml"))
-# collect_data(testid)
+# collect_data("f54d0827d35f")

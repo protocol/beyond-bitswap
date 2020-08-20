@@ -18,7 +18,7 @@ network:
     n_nodes: 4 # TOTAL NUMBER OF NODES
     n_leechers: 1 # NUMBER OF LEECHERS
     n_passive: 0    # NUMBER OF PASSIVE NODES.
-    max_peer_connections: 100 # % OF CONNECTION FROM THE TOTAL NUMBER OF NODES ALLOWED
+    max_connection_rate: 100 # % OF CONNECTION FROM THE TOTAL NUMBER OF NODES ALLOWED
     churn_rate: 10 # % CHURN RATE OF THE NETWORK.
 
     # Set your nodes parameters

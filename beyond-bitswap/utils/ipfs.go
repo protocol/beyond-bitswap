@@ -471,6 +471,7 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 		instance-leechCount-passiveCount, leechCount, passiveCount,
 		latencyMS, bandwidthMB, runNum, seq, runenv.TestGroupID, grpseq, fileSize, nodetp, tpindex)
 
+	// Bitswap stats
 	if nodetp == Leech {
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", id), float64(timeToFetch))
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:num_dht", id), float64(stats.NumDHT))
@@ -484,6 +485,26 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_rcvd", id), float64(stats.BlocksReceived))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
+	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
+
+	// IPFS Node Stats
+	// runenv.RecordMessage("Getting new metrics")
+	// bwTotal := n.Node.Reporter.GetBandwidthTotals()
+	// runenv.R().RecordPoint(fmt.Sprintf("%s/name:total_in", id), float64(bwTotal.TotalIn))
+	// runenv.R().RecordPoint(fmt.Sprintf("%s/name:total_out", id), float64(bwTotal.TotalOut))
+	// runenv.R().RecordPoint(fmt.Sprintf("%s/name:rate_in", id), float64(bwTotal.RateIn))
+	// runenv.R().RecordPoint(fmt.Sprintf("%s/name:rate_out[", id), float64(bwTotal.RateOut))
+	// runenv.RecordMessage("Finished with new metric and resetting.")
+
+	// Restart bwCounter for the next test.
+	// n.Node.Reporter = mtcs.NewBandwidthCounter()
+
+	// A few other metrics that could be collected.
+	// GetBandwidthForPeer(peer.ID) Stats
+	// GetBandwidthForProtocol(protocol.ID) Stats
+	// GetBandwidthTotals() Stats
+	// GetBandwidthByPeer() map[peer.ID]Stats
+	// GetBandwidthByProtocol() map[protocol.ID]Stats
 
 	return nil
 }
