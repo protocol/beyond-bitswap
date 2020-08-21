@@ -53,7 +53,7 @@ instances = { min = 2, max = 64, default = 2 }
 
   [testcases.params]
   input_data = { type="string", desc="input data to be used in the test (files, random, custom)", default="random"}
-  data_dir = { type="string", desc="directory with data is located", default="./scripts/inputData"}
+  data_dir = { type="string", desc="directory with data is located", default="/plan/scripts/inputData"}
   exchange_interface = { type="string", desc="exchange interface to use in IPFS node", default="bitswap"}
   run_count = { type = "int", desc = "number of iterations of the test", unit = "iteration", default = 1 }
   run_timeout_secs = { type = "int", desc = "timeout for an individual run", unit = "seconds", default = 90 }

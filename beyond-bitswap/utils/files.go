@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"time"
 
 	files "github.com/ipfs/go-ipfs-files"
 	"github.com/ipfs/interface-go-ipfs-core/path"
@@ -24,7 +25,7 @@ type InputFile struct {
 
 func RandReader(len int) io.Reader {
 	if randReader == nil {
-		randReader = rand.New(rand.NewSource(2))
+		randReader = rand.New(rand.NewSource(time.Now().UnixNano()))
 	}
 	data := make([]byte, len)
 	randReader.Read(data)
