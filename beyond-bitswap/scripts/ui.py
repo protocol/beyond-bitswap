@@ -5,7 +5,7 @@ class Layout:
         self.testcase = widgets.Text(description="Testcase")
         self.input_data = widgets.Text(description="Input Data Type")
         self.file_size = widgets.Text(description="File Size")
-        self.files_directory = widgets.Text(description="Files Directory")
+        self.data_dir = widgets.Text(description="Files Directory")
         self.run_count = widgets.IntSlider(description="Run Count", min=1, max=10)
 
         self.n_nodes = widgets.IntSlider(description="# nodes", min=2, max=50)
@@ -25,7 +25,7 @@ class Layout:
         self.grid[0, 0] = self.testcase
         self.grid[1, 0] = self.input_data
         self.grid[2, 0] = self.file_size
-        self.grid[3, 0] = self.files_directory
+        self.grid[3, 0] = self.data_dir
         self.grid[4, 0] = self.run_count
         self.grid[0, 1] = self.n_nodes
         self.grid[1, 1] = self.n_leechers

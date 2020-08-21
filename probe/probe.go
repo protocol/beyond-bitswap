@@ -208,6 +208,19 @@ func addRandomContent(ctx context.Context, n *IPFSNode) {
 	fmt.Println("Adding a test file to the network:", cidRandom)
 }
 
+func addFile(ctx context.Context, n *IPFSNode, inputPathFile string) {
+	someFile, err := getUnixfsNode(inputPathFile)
+	if err != nil {
+		panic(fmt.Errorf("Could not get File: %s", err))
+	}
+
+	cidFile, err := n.API.Unixfs().Add(ctx, someFile)
+	if err != nil {
+		panic(fmt.Errorf("Could not add random: %s", err))
+	}
+	fmt.Println("Adding a test file to the network:", cidFile)
+}
+
 // ClearDatastore removes a block from the datastore.
 func (n *IPFSNode) ClearDatastore(ctx context.Context) error {
 	ds := n.Node.Repo.Datastore()
@@ -257,6 +270,9 @@ func main() {
 
 	// Adding random content for testing.
 	addRandomContent(ctx, ipfs1)
+	// Adding directory,
+	fmt.Println("Adding inputData directory")
+	addFile(ctx, ipfs1, "../beyond-bitswap/scripts/inputData")
 
 	for {
 		fmt.Print("Enter path: ")

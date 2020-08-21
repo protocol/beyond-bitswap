@@ -71,37 +71,34 @@ func GetFileList(runenv *runtime.RunEnv) ([]InputFile, error) {
 
 func (n *IPFSNode) Add(ctx context.Context, runenv *runtime.RunEnv, f InputFile) (path.Resolved, error) {
 	inputData := runenv.StringParam("input_data")
-	var tmpFile files.File
+	var cid path.Resolved
+	var tmpFile files.Node
+	var err error
+
 	// We need to specify how we generate the data for every case.
 	runenv.RecordMessage("Starting to add file for inputData: %s and file %v", inputData, f)
 	if inputData == "random" {
 		tmpFile = files.NewReaderFile(RandReader(int(f.Size)))
+		cid, err = n.API.Unixfs().Add(ctx, tmpFile)
 	} else {
-		var err error
-		tmpFile, err = getUnixfsFile(f.Path)
+		tmpFile, err = getUnixfsNode(f.Path)
 		if err != nil {
 			return nil, err
 		}
+		cid, err = n.API.Unixfs().Add(ctx, tmpFile)
 	}
-	cid, err := n.API.Unixfs().Add(ctx, tmpFile)
-	runenv.RecordMessage("Added to network %v", cid)
 
+	runenv.RecordMessage("Added to network %v", cid)
 	return cid, err
 }
 
-func getUnixfsFile(path string) (files.File, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	st, err := file.Stat()
+func getUnixfsNode(path string) (files.Node, error) {
+	st, err := os.Stat(path)
 	if err != nil {
 		return nil, err
 	}
 
-	f, err := files.NewReaderPathFile(path, file, st)
+	f, err := files.NewSerialFile(path, false, st)
 	if err != nil {
 		return nil, err
 	}

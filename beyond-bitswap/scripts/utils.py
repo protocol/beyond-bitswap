@@ -56,6 +56,8 @@ def process_layout_config(layout):
         cmd = cmd + " -tp input_data=" + layout.input_data.value
     if layout.file_size.value != "":
         cmd = cmd + " -tp file_size=" + layout.file_size.value.replace(" ", "")
+    if layout.data_dir.value != "":
+        cmd = cmd + " -tp data_dir=" + layout.data_dir.value.replace(" ", "")
 
     cmd = cmd + " -tp leech_count=" + str(layout.n_leechers.value) + \
         " -tp passive_count=" + str(layout.n_passive.value) + \

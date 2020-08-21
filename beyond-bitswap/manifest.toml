@@ -6,6 +6,11 @@ go_version = "1.13"
 module_path = "github.com/ipfs/test-plans/beyond-bitswap"
 exec_pkg = "."
 
+# [extra_sources]
+#   "exec:go" = ["./scripts/inputData"]
+
+extra_sources = { "exec:go" = ["./scripts/inputData"] }
+
 # TODO: exec:go does not support traffic shaping, hence you should not use it
 #  with this test plan.
 [builders."exec:go"]
@@ -48,7 +53,7 @@ instances = { min = 2, max = 64, default = 2 }
 
   [testcases.params]
   input_data = { type="string", desc="input data to be used in the test (files, random, custom)", default="random"}
-  data_dir = { type="string", desc="directory with data is located", default="./inputData"}
+  data_dir = { type="string", desc="directory with data is located", default="./scripts/inputData"}
   exchange_interface = { type="string", desc="exchange interface to use in IPFS node", default="bitswap"}
   run_count = { type = "int", desc = "number of iterations of the test", unit = "iteration", default = 1 }
   run_timeout_secs = { type = "int", desc = "timeout for an individual run", unit = "seconds", default = 90 }
