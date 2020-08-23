@@ -10,10 +10,12 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -279,34 +281,61 @@ func main() {
 	fmt.Println("Adding inputData directory")
 	addFile(ctx, ipfs1, "../beyond-bitswap/scripts/inputData")
 
-	for {
-		fmt.Print("Enter path: ")
-		text, _ := reader.ReadString('\n')
-		text = strings.ReplaceAll(text, "\n", "")
-		text = strings.ReplaceAll(text, " ", "")
-		words := strings.Split(text, ".")
-		// If we use add we can add random content to the network.
-		if words[0] == "add" {
-			size, err := strconv.Atoi(words[1])
-			if err != nil {
-				fmt.Println("Not a valid size for random add")
-			}
-			addRandomContent(ctx, ipfs1, size)
-		} else {
-			fPath := path.New(text)
-			ctxTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
-			defer cancel()
-			err = getContent(ctxTimeout, ipfs1, fPath)
-			if err != nil {
-				fmt.Println("Couldn't find content", err)
-			}
-			// err = ipfs1.API.Dag().Get(ctxTimeout, )
-			// TODO: Should clear blockstore every time to avoid getting caches.
+	ch := make(chan string)
+	chSignal := make(chan os.Signal)
+	done := make(chan bool)
+	signal.Notify(chSignal, os.Interrupt, syscall.SIGTERM)
+
+	go func(ch chan string, done chan bool) {
+		for {
+			fmt.Print(">> Enter command: ")
+			text, _ := reader.ReadString('\n')
+			ch <- text
+			<-done
 		}
-		// fmt.Println("=== METRICS ===")
-		// bw := ipfs1.Node.Reporter.GetBandwidthTotals()
-		// printStats(&bw)
+	}(ch, done)
 
+	for {
+		select {
+		case text := <-ch:
+			processInput(ctx, ipfs1, text, done)
+
+		case <-chSignal:
+			fmt.Printf("\nUse exit to close the tool\n")
+			fmt.Printf(">> Enter command: ")
+
+		}
 	}
+}
 
+func processInput(ctx context.Context, ipfs1 *IPFSNode, text string, done chan bool) {
+	text = strings.ReplaceAll(text, "\n", "")
+	text = strings.ReplaceAll(text, " ", "")
+	words := strings.Split(text, ".")
+	// If we use add we can add random content to the network.
+	if words[0] == "add" {
+		size, err := strconv.Atoi(words[1])
+		if err != nil {
+			fmt.Println("Not a valid size for random add")
+		}
+		addRandomContent(ctx, ipfs1, size)
+	} else if words[0] == "exit" {
+		os.Exit(0)
+	} else if words[0] == "get" {
+		fPath := path.New(words[1])
+		ctxTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		err := getContent(ctxTimeout, ipfs1, fPath)
+		if err != nil {
+			fmt.Println("Couldn't find content", err)
+		}
+		// err = ipfs1.API.Dag().Get(ctxTimeout, )
+		// TODO: Should clear blockstore every time to avoid getting caches.
+	} else {
+		fmt.Println("[!] Wrong command! Only add, get, exit")
+	}
+	done <- true
+	// fmt.Println("=== METRICS ===")
+	// bw := ipfs1.Node.Reporter.GetBandwidthTotals()
+	// printStats(&bw)
 }
