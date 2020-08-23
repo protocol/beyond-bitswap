@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -180,7 +181,7 @@ var randReader *rand.Rand
 
 func RandReader(len int) io.Reader {
 	if randReader == nil {
-		randReader = rand.New(rand.NewSource(2))
+		randReader = rand.New(rand.NewSource(time.Now().UnixNano()))
 	}
 	data := make([]byte, len)
 	randReader.Read(data)
@@ -189,17 +190,21 @@ func RandReader(len int) io.Reader {
 
 func getContent(ctx context.Context, n *IPFSNode, fPath path.Path) error {
 	fmt.Println("Searching for: ", fPath)
+	start := time.Now()
 	f, err := n.API.Unixfs().Get(ctx, fPath)
 	if err != nil {
 		return err
 	}
+	timeToFetch := time.Since(start)
 	s, _ := f.Size()
-	fmt.Println("Size of the file obtained: ", s)
+	fmt.Printf("[*] Size of the file obtained %d in %s\n", s, timeToFetch)
+	fmt.Println("Cleaning datastore")
+	n.ClearDatastore(ctx)
 	return nil
 }
 
-func addRandomContent(ctx context.Context, n *IPFSNode) {
-	tmpFile := files.NewReaderFile(RandReader(1111111))
+func addRandomContent(ctx context.Context, n *IPFSNode, size int) {
+	tmpFile := files.NewReaderFile(RandReader(size))
 
 	cidRandom, err := n.API.Unixfs().Add(ctx, tmpFile)
 	if err != nil {
@@ -269,7 +274,7 @@ func main() {
 	}
 
 	// Adding random content for testing.
-	addRandomContent(ctx, ipfs1)
+	addRandomContent(ctx, ipfs1, 11111)
 	// Adding directory,
 	fmt.Println("Adding inputData directory")
 	addFile(ctx, ipfs1, "../beyond-bitswap/scripts/inputData")
@@ -279,12 +284,18 @@ func main() {
 		text, _ := reader.ReadString('\n')
 		text = strings.ReplaceAll(text, "\n", "")
 		text = strings.ReplaceAll(text, " ", "")
+		words := strings.Split(text, ".")
 		// If we use add we can add random content to the network.
-		if text == "add" {
-			addRandomContent(ctx, ipfs1)
+		if words[0] == "add" {
+			size, err := strconv.Atoi(words[1])
+			if err != nil {
+				fmt.Println("Not a valid size for random add")
+			}
+			addRandomContent(ctx, ipfs1, size)
 		} else {
 			fPath := path.New(text)
-			ctxTimeout, _ := context.WithTimeout(ctx, 10*time.Second)
+			ctxTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+			defer cancel()
 			err = getContent(ctxTimeout, ipfs1, fPath)
 			if err != nil {
 				fmt.Println("Couldn't find content", err)
@@ -292,11 +303,10 @@ func main() {
 			// err = ipfs1.API.Dag().Get(ctxTimeout, )
 			// TODO: Should clear blockstore every time to avoid getting caches.
 		}
-		fmt.Println("=== METRICS ===")
-		bw := ipfs1.Node.Reporter.GetBandwidthTotals()
-		printStats(&bw)
-		fmt.Println("Cleaning datastore")
-		ipfs1.ClearDatastore(ctx)
+		// fmt.Println("=== METRICS ===")
+		// bw := ipfs1.Node.Reporter.GetBandwidthTotals()
+		// printStats(&bw)
+
 	}
 
 }
