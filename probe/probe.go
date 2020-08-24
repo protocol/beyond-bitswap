@@ -242,7 +242,7 @@ func addRandomContent(ctx context.Context, n *IPFSNode, size int) {
 	if err != nil {
 		panic(fmt.Errorf("Could not add random: %s", err))
 	}
-	fmt.Println("Adding a test file to the network:", cidRandom)
+	fmt.Println("Adding a random file to the network:", cidRandom)
 }
 
 func addFile(ctx context.Context, n *IPFSNode, inputPathFile string) {
@@ -255,7 +255,7 @@ func addFile(ctx context.Context, n *IPFSNode, inputPathFile string) {
 	if err != nil {
 		panic(fmt.Errorf("Could not add random: %s", err))
 	}
-	fmt.Println("Adding a test file to the network:", cidFile)
+	fmt.Println("Adding file to the network:", cidFile)
 }
 
 // ClearDatastore removes a block from the datastore.
@@ -354,7 +354,7 @@ func main() {
 	}
 }
 
-func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bool) {
+func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bool) error {
 	text = strings.ReplaceAll(text, "\n", "")
 	text = strings.ReplaceAll(text, " ", "")
 	words := strings.Split(text, "_")
@@ -363,6 +363,7 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 		size, err := strconv.Atoi(words[1])
 		if err != nil {
 			fmt.Println("Not a valid size for random add")
+			return err
 		}
 		addRandomContent(ctx, ipfs, size)
 	} else if words[0] == "exit" {
@@ -376,6 +377,7 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 		err := getContent(ctxTimeout, ipfs, fPath)
 		if err != nil {
 			fmt.Println("Couldn't find content", err)
+			return err
 		}
 		// err = ipfs1.API.Dag().Get(ctxTimeout, )
 		// TODO: Should clear blockstore every time to avoid getting caches.
@@ -386,4 +388,5 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 	// fmt.Println("=== METRICS ===")
 	// bw := ipfs1.Node.Reporter.GetBandwidthTotals()
 	// printStats(&bw)
+	return nil
 }
