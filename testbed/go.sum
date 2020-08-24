@@ -36,6 +36,7 @@ github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAE
 github.com/Stebalien/go-bitfield v0.0.0-20180330043415-076a62f9ce6e/go.mod h1:3oM7gXIttpYDAJXpVNnSCiUMYBLIZ6cb1t+Ip982MRo=
 github.com/Stebalien/go-bitfield v0.0.1 h1:X3kbSSPUaJK60wV2hjOPZwmpljr6VGCqdq4cBLhbQBo=
 github.com/Stebalien/go-bitfield v0.0.1/go.mod h1:GNjFpasyUVkHMsfEOk8EFLJ9syQ6SI+XWrX9Wf2XH0s=
+github.com/adlrocha/beyond-bitswap v0.0.0-20200820074433-a09463cff1eb h1:zznbHf5QNjk+jpaff9P9ZyxChqxM1I60tkXSiBXS3N4=
 github.com/adlrocha/go-bitswap v0.2.19 h1:pT+HZwyX83HAMo3+dSU+Lvh5EAOGn+u2BpJz9YP40iM=
 github.com/adlrocha/go-bitswap v0.2.19/go.mod h1:C7TwBgHnu89Q8sHsTJP7IhUqF9XYLe71P4tT5adgmYo=
 github.com/adlrocha/go-bitswap v0.2.20-0.20200806120326-85180af7f751 h1:nSdKkywMLi6oMD4zMDlygEOXCWXoCdqB5MPFLKHfieI=

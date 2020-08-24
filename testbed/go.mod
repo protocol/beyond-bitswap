@@ -1,4 +1,4 @@
-module github.com/ipfs/test-plans/beyond-bitswap
+module github.com/adlrocha/beyond-bitswap/testbed
 
 go 1.14
 

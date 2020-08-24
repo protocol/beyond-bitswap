@@ -12,9 +12,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
+	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/interface-go-ipfs-core/path"
-	"github.com/ipfs/test-plans/beyond-bitswap/utils"
 )
 
 // NOTE: To run use:

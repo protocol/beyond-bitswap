@@ -16,7 +16,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/ipfs/test-plans/beyond-bitswap/utils"
+	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 )
 
 // NOTE: To run use:
