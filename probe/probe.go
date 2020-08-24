@@ -28,13 +28,18 @@ import (
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/coreapi"
 	"github.com/ipfs/go-ipfs/plugin/loader" // This package is needed so that all the preloaded plugins are loaded automatically
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/libp2p/go-libp2p-core/peer"
+
 	// bsnet "github.com/ipfs/go-bitswap/network"
+
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 type IPFSNode struct {
@@ -92,6 +97,7 @@ func CreateIPFSNode(ctx context.Context) (*IPFSNode, error) {
 
 	node, err := core.NewNode(ctx, nodeOptions)
 	fmt.Println("Listening at: ", node.PeerHost.Addrs())
+	fmt.Println("PeerInfo: ", host.InfoFromHost(node.PeerHost))
 	if err != nil {
 		return nil, fmt.Errorf("Failed starting the node: %s", err)
 	}
@@ -142,6 +148,26 @@ func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peerInfos []peer.Ad
 		}(&peerInfo)
 	}
 	wg.Wait()
+	return nil
+}
+
+func connectPeer(ctx context.Context, ipfs *IPFSNode, id string) error {
+	maddr, err := ma.NewMultiaddr(id)
+	if err != nil {
+		fmt.Println("Invalid peer ID")
+		return err
+	}
+	addrInfo, err := peer.AddrInfoFromP2pAddr(maddr)
+	if err != nil {
+		fmt.Println("Invalid peer info")
+		return err
+	}
+	err = ipfs.API.Swarm().Connect(ctx, *addrInfo)
+	if err != nil {
+		fmt.Println("Couldn't connect to peer")
+		return err
+	}
+	fmt.Println("Connected successfully to peer")
 	return nil
 }
 
@@ -202,6 +228,10 @@ func getContent(ctx context.Context, n *IPFSNode, fPath path.Path) error {
 	fmt.Printf("[*] Size of the file obtained %d in %s\n", s, timeToFetch)
 	fmt.Println("Cleaning datastore")
 	n.ClearDatastore(ctx)
+	err = n.ClearBlockstore(ctx)
+	if err != nil {
+		fmt.Println("Error cleaning blockstore", err)
+	}
 	return nil
 }
 
@@ -244,6 +274,22 @@ func (n *IPFSNode) ClearDatastore(ctx context.Context) error {
 		ds.Delete(datastore.NewKey(r.Entry.Key))
 	}
 	return nil
+}
+
+func (n *IPFSNode) ClearBlockstore(ctx context.Context) error {
+	bstore := n.Node.Blockstore
+	ks, err := bstore.AllKeysChan(ctx)
+	if err != nil {
+		return err
+	}
+	g := errgroup.Group{}
+	for k := range ks {
+		c := k
+		g.Go(func() error {
+			return bstore.DeleteBlock(c)
+		})
+	}
+	return g.Wait()
 }
 
 func main() {
@@ -308,31 +354,33 @@ func main() {
 	}
 }
 
-func processInput(ctx context.Context, ipfs1 *IPFSNode, text string, done chan bool) {
+func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bool) {
 	text = strings.ReplaceAll(text, "\n", "")
 	text = strings.ReplaceAll(text, " ", "")
-	words := strings.Split(text, ".")
+	words := strings.Split(text, "_")
 	// If we use add we can add random content to the network.
 	if words[0] == "add" {
 		size, err := strconv.Atoi(words[1])
 		if err != nil {
 			fmt.Println("Not a valid size for random add")
 		}
-		addRandomContent(ctx, ipfs1, size)
+		addRandomContent(ctx, ipfs, size)
 	} else if words[0] == "exit" {
 		os.Exit(0)
+	} else if words[0] == "connect" {
+		connectPeer(ctx, ipfs, words[1])
 	} else if words[0] == "get" {
 		fPath := path.New(words[1])
 		ctxTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
-		err := getContent(ctxTimeout, ipfs1, fPath)
+		err := getContent(ctxTimeout, ipfs, fPath)
 		if err != nil {
 			fmt.Println("Couldn't find content", err)
 		}
 		// err = ipfs1.API.Dag().Get(ctxTimeout, )
 		// TODO: Should clear blockstore every time to avoid getting caches.
 	} else {
-		fmt.Println("[!] Wrong command! Only add, get, exit")
+		fmt.Println("[!] Wrong command! Only add, get, connect, exit")
 	}
 	done <- true
 	// fmt.Println("=== METRICS ===")
