@@ -23,5 +23,5 @@ Adding file to the network: /ipfs/QmNdGY4t8ZPU1StBRs7fNpyr6TarwVaYNFtWFwT2tZunw5
 There are currently four available commands:
 * `get_<path>`: Gets `path` from the IPFS network.
 * `add_<size>`: Adds a random file of size `<size>`
+* `add_<path>`: Adds file from path to the network.
 * `connect_<p2pAddr>`: Connects to an IPFS node.
-* `exit`: Exits the command prompt.

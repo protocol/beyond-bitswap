@@ -236,7 +236,7 @@ func addRandomContent(ctx context.Context, n *IPFSNode, size int) {
 func addFile(ctx context.Context, n *IPFSNode, inputPathFile string) {
 	someFile, err := getUnixfsNode(inputPathFile)
 	if err != nil {
-		panic(fmt.Errorf("Could not get File: %s", err))
+		fmt.Println("Could not get File:", err)
 	}
 
 	cidFile, err := n.API.Unixfs().Add(ctx, someFile)
@@ -351,6 +351,8 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 		os.Exit(0)
 	} else if words[0] == "connect" {
 		connectPeer(ctx, ipfs, words[1])
+	} else if words[0] == "addFile" {
+		addFile(ctx, ipfs, words[1])
 	} else if words[0] == "get" {
 		fPath := path.New(words[1])
 		ctxTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -361,7 +363,7 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 			return err
 		}
 	} else {
-		fmt.Println("[!] Wrong command! Only add, get, connect, exit")
+		fmt.Println("[!] Wrong command! Only available add, addFile, get, connect, exit")
 	}
 	done <- true
 	// We could show metrics after each command in certain cases.

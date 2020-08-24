@@ -89,6 +89,8 @@ func (n *IPFSNode) Add(ctx context.Context, runenv *runtime.RunEnv, f InputFile)
 		cid, err = n.API.Unixfs().Add(ctx, tmpFile)
 	}
 
+	// TODO: Doing the TCP exchange.
+
 	runenv.RecordMessage("Added to network %v", cid)
 	return cid, err
 }

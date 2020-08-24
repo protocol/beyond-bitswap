@@ -32,6 +32,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 	// bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
 	runCount := runenv.IntParam("run_count")
 	maxConnectionRate := runenv.IntParam("max_connection_rate")
+	// coreNode := runenv.StringParam("core_node")
 
 	/// --- Set up
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -285,14 +286,6 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				}
 
 				if err := ipfsNode.ClearDatastore(ctx, false); err != nil {
-					return fmt.Errorf("Error clearing datastore: %w", err)
-				}
-			}
-			if nodetp == utils.Seed {
-				// Free up memory by clearing the seed blockstore at the end of each
-				// set of tests over the current file size.
-				runenv.RecordMessage("Cleaning Seed Datastore")
-				if err := ipfsNode.ClearDatastore(ctx, true); err != nil {
 					return fmt.Errorf("Error clearing datastore: %w", err)
 				}
 			}
