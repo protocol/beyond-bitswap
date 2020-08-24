@@ -7,14 +7,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -27,7 +25,6 @@ import (
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/ipfs/interface-go-ipfs-core/path"
-	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/ipfs/go-ipfs/core"
@@ -42,13 +39,13 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 )
 
+// IPFSNode structure.
 type IPFSNode struct {
 	Node *core.IpfsNode
 	API  icore.CoreAPI
 }
 
-// type IPFSNode utils.IPFSNode
-
+// CreateTempRepo creates a new repo in /tmp/
 func createTempRepo(ctx context.Context) (string, error) {
 	repoPath, err := ioutil.TempDir("", "ipfs-shell")
 	if err != nil {
@@ -107,6 +104,7 @@ func CreateIPFSNode(ctx context.Context) (*IPFSNode, error) {
 	return &IPFSNode{node, api}, nil
 }
 
+// setupPlugins automatically loads plugins.
 func setupPlugins(externalPluginsPath string) error {
 	// Load any external plugins if available on externalPluginsPath
 	plugins, err := loader.NewPluginLoader(filepath.Join(externalPluginsPath, "plugins"))
@@ -126,6 +124,7 @@ func setupPlugins(externalPluginsPath string) error {
 	return nil
 }
 
+// PrintStats for the node.
 func printStats(bs *metrics.Stats) {
 	fmt.Printf("Bandwidth")
 	fmt.Printf("TotalIn: %s\n", humanize.Bytes(uint64(bs.TotalIn)))
@@ -134,23 +133,7 @@ func printStats(bs *metrics.Stats) {
 	fmt.Printf("RateOut: %s/s\n", humanize.Bytes(uint64(bs.RateOut)))
 }
 
-func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peerInfos []peer.AddrInfo) error {
-	var wg sync.WaitGroup
-
-	wg.Add(len(peerInfos))
-	for _, peerInfo := range peerInfos {
-		go func(peerInfo *peerstore.PeerInfo) {
-			defer wg.Done()
-			err := ipfs.Swarm().Connect(ctx, *peerInfo)
-			if err != nil {
-				log.Printf("failed to connect to %s: %s", peerInfo.ID, err)
-			}
-		}(&peerInfo)
-	}
-	wg.Wait()
-	return nil
-}
-
+// conectPeer connects to a peer in the network.
 func connectPeer(ctx context.Context, ipfs *IPFSNode, id string) error {
 	maddr, err := ma.NewMultiaddr(id)
 	if err != nil {
@@ -171,6 +154,7 @@ func connectPeer(ctx context.Context, ipfs *IPFSNode, id string) error {
 	return nil
 }
 
+// get file from fs.
 func getUnixfsFile(path string) (files.File, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -207,6 +191,7 @@ func getUnixfsNode(path string) (files.Node, error) {
 
 var randReader *rand.Rand
 
+// RandReader helper to generate random files.
 func RandReader(len int) io.Reader {
 	if randReader == nil {
 		randReader = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -216,6 +201,7 @@ func RandReader(len int) io.Reader {
 	return bytes.NewReader(data)
 }
 
+// getContent gets a file from the network and computes time_to_fetch
 func getContent(ctx context.Context, n *IPFSNode, fPath path.Path) error {
 	fmt.Println("Searching for: ", fPath)
 	start := time.Now()
@@ -235,6 +221,7 @@ func getContent(ctx context.Context, n *IPFSNode, fPath path.Path) error {
 	return nil
 }
 
+// adds random content to the network.
 func addRandomContent(ctx context.Context, n *IPFSNode, size int) {
 	tmpFile := files.NewReaderFile(RandReader(size))
 
@@ -245,6 +232,7 @@ func addRandomContent(ctx context.Context, n *IPFSNode, size int) {
 	fmt.Println("Adding a random file to the network:", cidRandom)
 }
 
+// adds a file from filesystem to the network.
 func addFile(ctx context.Context, n *IPFSNode, inputPathFile string) {
 	someFile, err := getUnixfsNode(inputPathFile)
 	if err != nil {
@@ -268,7 +256,6 @@ func (n *IPFSNode) ClearDatastore(ctx context.Context) error {
 	}
 	for r := range qr.Next() {
 		if r.Error != nil {
-			// handle.
 			return r.Error
 		}
 		ds.Delete(datastore.NewKey(r.Entry.Key))
@@ -276,6 +263,7 @@ func (n *IPFSNode) ClearDatastore(ctx context.Context) error {
 	return nil
 }
 
+// ClearBlockstore clears Bitswap blockstore.
 func (n *IPFSNode) ClearBlockstore(ctx context.Context) error {
 	bstore := n.Node.Blockstore
 	ks, err := bstore.AllKeysChan(ctx)
@@ -306,32 +294,23 @@ func main() {
 
 	// Spawn a node using a temporary path, creating a temporary repo for the run
 	fmt.Println("Spawning node on a temporary repo")
-	ipfs1, err := CreateIPFSNode(ctx)
-	// Set exchange Interface
-	// exch, err := utils.SetExchange(ctx, "bitswap")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// // Create IPFS node
-	// ipfs1, err := utils.NewNode(ctx, exch)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	ipfs, err := CreateIPFSNode(ctx)
 	if err != nil {
 		panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
 	}
 
 	// Adding random content for testing.
-	addRandomContent(ctx, ipfs1, 11111)
+	addRandomContent(ctx, ipfs, 11111)
 	// Adding directory,
 	fmt.Println("Adding inputData directory")
-	addFile(ctx, ipfs1, "../beyond-bitswap/scripts/inputData")
+	addFile(ctx, ipfs, "../testbed/scripts/inputData")
 
 	ch := make(chan string)
 	chSignal := make(chan os.Signal)
 	done := make(chan bool)
 	signal.Notify(chSignal, os.Interrupt, syscall.SIGTERM)
 
+	// Prompt routine
 	go func(ch chan string, done chan bool) {
 		for {
 			fmt.Print(">> Enter command: ")
@@ -341,10 +320,11 @@ func main() {
 		}
 	}(ch, done)
 
+	// Processing loop.
 	for {
 		select {
 		case text := <-ch:
-			processInput(ctx, ipfs1, text, done)
+			processInput(ctx, ipfs, text, done)
 
 		case <-chSignal:
 			fmt.Printf("\nUse exit to close the tool\n")
@@ -354,6 +334,7 @@ func main() {
 	}
 }
 
+// Process commands received from prompt
 func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bool) error {
 	text = strings.ReplaceAll(text, "\n", "")
 	text = strings.ReplaceAll(text, " ", "")
@@ -379,12 +360,11 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 			fmt.Println("Couldn't find content", err)
 			return err
 		}
-		// err = ipfs1.API.Dag().Get(ctxTimeout, )
-		// TODO: Should clear blockstore every time to avoid getting caches.
 	} else {
 		fmt.Println("[!] Wrong command! Only add, get, connect, exit")
 	}
 	done <- true
+	// We could show metrics after each command in certain cases.
 	// fmt.Println("=== METRICS ===")
 	// bw := ipfs1.Node.Reporter.GetBandwidthTotals()
 	// printStats(&bw)
