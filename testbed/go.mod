@@ -43,7 +43,7 @@ require (
 	github.com/whyrusleeping/cbor-gen v0.0.0-20200723185710-6a3894a6352b // indirect
 	go.uber.org/fx v1.12.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
+	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	golang.org/x/sys v0.0.0-20200803210538-64077c9b5642 // indirect
 	golang.org/x/text v0.3.3 // indirect

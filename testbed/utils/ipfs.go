@@ -270,8 +270,8 @@ func setConfig(ctx context.Context, exch ExchangeOpt) fx.Option {
 	)
 }
 
-// NewNode constructs and returns an IpfsNode using the given cfg.
-func NewNode(ctx context.Context, exch ExchangeOpt) (*IPFSNode, error) {
+// CreateIPFSNodeWithExchange constructs and returns an IpfsNode using the given cfg.
+func CreateIPFSNodeWithExchange(ctx context.Context, exch ExchangeOpt) (*IPFSNode, error) {
 	// save this context as the "lifetime" ctx.
 	lctx := ctx
 
@@ -504,7 +504,7 @@ func (n *IPFSNode) ClearDatastore(ctx context.Context, onlyProviders bool) error
 
 // EmitMetrics emits node's metrics for the run
 func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, grpseq int64,
-	latency time.Duration, bandwidthMB int, fileSize int, nodetp NodeType, tpindex int, timeToFetch time.Duration) error {
+	latency time.Duration, bandwidthMB int, fileSize int, nodetp NodeType, tpindex int, timeToFetch time.Duration, tcpFetch int64) error {
 	// TODO: We ned a way of generalizing this for any exchange type
 	bsnode := n.Node.Exchange.(*bs.Bitswap)
 	stats, err := bsnode.Stat()
@@ -525,6 +525,7 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 	// Bitswap stats
 	if nodetp == Leech {
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", id), float64(timeToFetch))
+		runenv.R().RecordPoint(fmt.Sprintf("%s/name:tcp_fetch", id), float64(tcpFetch))
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:num_dht", id), float64(stats.NumDHT))
 	}
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:msgs_rcvd", id), float64(stats.MessagesReceived))
@@ -535,7 +536,7 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_sent", id), float64(stats.BlocksSent))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_rcvd", id), float64(stats.BlocksReceived))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
-	runenv.RecordMessage("NUMBER OF BLOCKS RECEIVED: %d, MSGS RECEIVED: %d", stats.BlockDataReceived, stats.MessagesReceived)
+
 	// IPFS Node Stats
 	runenv.RecordMessage("Getting new metrics")
 	bwTotal := n.Node.Reporter.GetBandwidthTotals()
@@ -547,7 +548,7 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 
 	// Restart all counters for the next test.
 	n.Node.Reporter.Reset()
-	n.Node.Exchange.(*bs.Bitswap).ResetStatCounters()
+	// n.Node.Exchange.(*bs.Bitswap).ResetStatCounters()
 
 	// A few other metrics that could be collected.
 	// GetBandwidthForPeer(peer.ID) Stats

@@ -65,7 +65,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 		runenv.RecordFailure(err)
 		return err
 	}
-	defer ipfsNode.Node.PeerHost.Close()
+	defer ipfsNode.Node.Close()
 	h := ipfsNode.Node.PeerHost
 	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
 	peers := sync.NewTopic("peers", &peer.AddrInfo{})
@@ -140,6 +140,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 
 	var runNum int
 	var fPath path.Resolved
+	var tcpFetch int64
 
 	// For each file found in the test
 	for fIndex, f := range files {
@@ -163,23 +164,45 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 
 			// Create identifier for specific file size.
 			rootCidTopic := getRootCidTopic(fIndex)
-
+			tcpAddrTopic := getTCPAddrTopic(fIndex)
 			switch nodetp {
 			case utils.Seed:
 				// If this is the first run for this file size
-				// TODO: For now only the first node generates file and adds to the network.
-				if isFirstRun && tpindex == 0 {
-					// Add file to the network
-					cid, err := ipfsNode.Add(ctx, runenv, f)
+				// TODO: For now all seeds in the network have the files.
+				if isFirstRun {
+					// Generate the file
+					tmpFile, err := ipfsNode.GenerateFile(ctx, runenv, f)
 					if err != nil {
 						return err
 					}
-					// TODO: Here we may be able to influence requesting pattern and storage. ipfs.DAG()
-					rootCid := cid.Root()
+					// Add file to the IPFS network
+					path, err := ipfsNode.Add(ctx, runenv, tmpFile)
+					cid := path.Cid()
+					if err != nil {
+						return err
+					}
 					// Inform other nodes of the root CID
-					if _, err = client.Publish(ctx, rootCidTopic, &rootCid); err != nil {
+					if _, err = client.Publish(ctx, rootCidTopic, &cid); err != nil {
 						return fmt.Errorf("Failed to get Redis Sync rootCidTopic %w", err)
 					}
+
+					runenv.RecordMessage("Starting TCP server in seed")
+					// Start TCP server for file
+					tcpServer, err := utils.SpawnTCPServer(ctx, tmpFile)
+					if err != nil {
+						return fmt.Errorf("Failed to start tcpServer in seed %w", err)
+					}
+					// Inform other nodes of the TCPServerAddr
+					if _, err = client.Publish(ctx, tcpAddrTopic, tcpServer.Addr); err != nil {
+						return fmt.Errorf("Failed to get Redis Sync tcpAddr %w", err)
+					}
+					runenv.RecordMessage("Waiting to end finish TCP")
+					// Wait for everyone to fetch TCP and close server.
+					err = signalAndWaitForAll("finished-tcp" + runID)
+					if err != nil {
+						return err
+					}
+					tcpServer.Close()
 				}
 			case utils.Leech:
 
@@ -192,17 +215,41 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 						cancelRootCidSub()
 						return fmt.Errorf("Failed to subscribe to rootCidTopic %w", err)
 					}
-
 					// Note: only need to get the root CID from one seed - it should be the
 					// same on all seeds (seed data is generated from repeatable random
 					// sequence or existing file)
 					rootCidPtr, ok := <-rootCidCh
-					cancelRootCidSub()
 					if !ok {
+						cancelRootCidSub()
 						return fmt.Errorf("no root cid in %d seconds", timeout/time.Second)
 					}
+
+					// Get TCP address from a seed
+					tcpAddrCh := make(chan string, 1)
+					if _, err := client.Subscribe(sctx, tcpAddrTopic, tcpAddrCh); err != nil {
+						cancelRootCidSub()
+						return fmt.Errorf("Failed to subscribe to tcpServerTopic %w", err)
+					}
+					tcpAddrPtr, ok := <-tcpAddrCh
+					if !ok {
+						cancelRootCidSub()
+						return fmt.Errorf("no tcp server addr received in %d seconds", timeout/time.Second)
+					}
+					cancelRootCidSub()
+					runenv.RecordMessage("Received tcp server and rootCID")
 					rootCid = *rootCidPtr
 					runenv.RecordMessage("Received rootCid: %v", rootCid)
+					runenv.RecordMessage("Start fetching a TCP file from seed")
+					start := time.Now()
+					utils.FetchFileTCP(tcpAddrPtr)
+					tcpFetch = time.Since(start).Nanoseconds()
+					runenv.RecordMessage("Fetched TCP file after %d (ns)", tcpFetch)
+
+					// Signalled that finished fetching TCP.
+					err = signalAndWaitForAll("finished-tcp" + runID)
+					if err != nil {
+						return err
+					}
 				}
 			}
 
@@ -261,7 +308,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			}
 
 			/// --- Report stats
-			err = ipfsNode.EmitMetrics(runenv, runNum, seq, grpseq, latency, bandwidthMB, int(f.Size), nodetp, tpindex, timeToFetch)
+			err = ipfsNode.EmitMetrics(runenv, runNum, seq, grpseq, latency, bandwidthMB, int(f.Size), nodetp, tpindex, timeToFetch, tcpFetch)
 			if err != nil {
 				return err
 			}

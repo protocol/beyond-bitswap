@@ -61,6 +61,7 @@ def plot_latency(byLatency, byBandwidth, byFileSize):
     pindex = 1
     x = []
     y = {}
+    tc = []
     for l in byLatency:
     
         for b in byBandwidth:
@@ -79,6 +80,8 @@ def plot_latency(byLatency, byBandwidth, byFileSize):
                         i["latencyMS"] == l and i["bandwidthMB"] == b and\
                             i["nodeType"]=="Leech":
                             y[f].append(i["value"])
+                    if i["name"] == "tcp_fetch":
+                        tc.append(i["value"])
 
                 avg = []
                 for i in y:
@@ -87,6 +90,8 @@ def plot_latency(byLatency, byBandwidth, byFileSize):
                     avg.append(sum(scaled_y)/len(scaled_y))
 
                 ax.plot(x, avg)
+                ax.plot(x, tc)
+
             pindex+=1
             x = []
             y = {}

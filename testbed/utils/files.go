@@ -70,27 +70,26 @@ func GetFileList(runenv *runtime.RunEnv) ([]InputFile, error) {
 	}
 }
 
-func (n *IPFSNode) Add(ctx context.Context, runenv *runtime.RunEnv, f InputFile) (path.Resolved, error) {
+func (n *IPFSNode) GenerateFile(ctx context.Context, runenv *runtime.RunEnv, f InputFile) (files.Node, error) {
 	inputData := runenv.StringParam("input_data")
-	var cid path.Resolved
 	var tmpFile files.Node
 	var err error
 
 	// We need to specify how we generate the data for every case.
-	runenv.RecordMessage("Starting to add file for inputData: %s and file %v", inputData, f)
+	runenv.RecordMessage("Starting to generate file for inputData: %s and file %v", inputData, f)
 	if inputData == "random" {
 		tmpFile = files.NewReaderFile(RandReader(int(f.Size)))
-		cid, err = n.API.Unixfs().Add(ctx, tmpFile)
 	} else {
 		tmpFile, err = getUnixfsNode(f.Path)
 		if err != nil {
 			return nil, err
 		}
-		cid, err = n.API.Unixfs().Add(ctx, tmpFile)
 	}
+	return tmpFile, nil
+}
 
-	// TODO: Doing the TCP exchange.
-
+func (n *IPFSNode) Add(ctx context.Context, runenv *runtime.RunEnv, tmpFile files.Node) (path.Resolved, error) {
+	cid, err := n.API.Unixfs().Add(ctx, tmpFile)
 	runenv.RecordMessage("Added to network %v", cid)
 	return cid, err
 }

@@ -148,6 +148,10 @@ func getRootCidTopic(id int) *sync.Topic {
 	return sync.NewTopic(fmt.Sprintf("root-cid-%d", id), &cid.Cid{})
 }
 
+func getTCPAddrTopic(id int) *sync.Topic {
+	return sync.NewTopic(fmt.Sprintf("tcp-addr-%d", id), "")
+}
+
 func emitMetrics(runenv *runtime.RunEnv, bsnode *utils.Node, runNum int, seq int64, grpseq int64,
 	latency time.Duration, bandwidthMB int, fileSize int, nodetp utils.NodeType, tpindex int, timeToFetch time.Duration) error {
 
