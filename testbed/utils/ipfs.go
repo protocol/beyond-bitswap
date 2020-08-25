@@ -297,7 +297,7 @@ func NewNode(ctx context.Context, exch ExchangeOpt) (*IPFSNode, error) {
 		once.Do(func() {
 			stopErr = app.Stop(context.Background())
 			if stopErr != nil {
-				fmt.Errorf("failure on stop: %v", stopErr)
+				fmt.Errorf("failure on stop: %w", stopErr)
 			}
 			// Cancel the context _after_ the app has stopped.
 			cancel()
@@ -463,7 +463,6 @@ func (n *IPFSNode) ConnectToPeers(ctx context.Context, runenv *runtime.RunEnv,
 // 	if err != nil {
 // 		return err
 // 	}
-// 	// TODO: Is not receiving any blockstore.
 // 	for r := range qr.Next() {
 // 		runenv.RecordMessage("Entered the for loop...")
 // 		if r.Error != nil {
@@ -472,6 +471,7 @@ func (n *IPFSNode) ConnectToPeers(ctx context.Context, runenv *runtime.RunEnv,
 // 		}
 // 		runenv.RecordMessage("Received key %s", r.Entry.Key)
 // 		ds.Delete(datastore.NewKey(r.Entry.Key))
+// 		ds.Sync(datastore.NewKey(r.Entry.Key))
 // 	}
 // 	return nil
 // }
@@ -495,9 +495,9 @@ func (n *IPFSNode) ClearDatastore(ctx context.Context, onlyProviders bool) error
 	if err != nil {
 		return err
 	}
-	// TODO: Is not receiving any blockstore.
 	for _, r := range entries {
 		ds.Delete(datastore.NewKey(r.Key))
+		ds.Sync(datastore.NewKey(r.Key))
 	}
 	return nil
 }
@@ -535,9 +535,7 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_sent", id), float64(stats.BlocksSent))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_rcvd", id), float64(stats.BlocksReceived))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
-
+	runenv.RecordMessage("NUMBER OF BLOCKS RECEIVED: %d, MSGS RECEIVED: %d", stats.BlockDataReceived, stats.MessagesReceived)
 	// IPFS Node Stats
 	runenv.RecordMessage("Getting new metrics")
 	bwTotal := n.Node.Reporter.GetBandwidthTotals()

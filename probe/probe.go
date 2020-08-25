@@ -233,17 +233,20 @@ func addRandomContent(ctx context.Context, n *IPFSNode, size int) {
 }
 
 // adds a file from filesystem to the network.
-func addFile(ctx context.Context, n *IPFSNode, inputPathFile string) {
+func addFile(ctx context.Context, n *IPFSNode, inputPathFile string) error {
 	someFile, err := getUnixfsNode(inputPathFile)
 	if err != nil {
 		fmt.Println("Could not get File:", err)
+		return err
 	}
 
 	cidFile, err := n.API.Unixfs().Add(ctx, someFile)
 	if err != nil {
-		panic(fmt.Errorf("Could not add random: %s", err))
+		fmt.Println("Could not add random: ", err)
+		return err
 	}
 	fmt.Println("Adding file to the network:", cidFile)
+	return nil
 }
 
 // ClearDatastore removes a block from the datastore.
@@ -259,6 +262,7 @@ func (n *IPFSNode) ClearDatastore(ctx context.Context) error {
 			return r.Error
 		}
 		ds.Delete(datastore.NewKey(r.Entry.Key))
+		ds.Sync(datastore.NewKey(r.Entry.Key))
 	}
 	return nil
 }

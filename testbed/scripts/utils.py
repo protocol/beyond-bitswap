@@ -82,7 +82,11 @@ def runner(cmd):
     return testID
 
 # Collect data from a testcase
-def collect_data(testid, save=False):
+def collect_data(layout, testid, save=False):
+    RUNNER = "local:exec"
+    if layout.isDocker.value:
+        RUNNER = "local:docker"
+        
     print("Cleaning previous runs..")
     cmd = "rm -rf results/*"
     print(os.popen(cmd).read())

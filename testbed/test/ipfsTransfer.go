@@ -53,13 +53,14 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 	}()
 
 	runenv.RecordMessage("Preparing exchange for node: %v", exchangeInterface)
-	// Set exchange Interface
-	exch, err := utils.SetExchange(ctx, exchangeInterface)
-	if err != nil {
-		return err
-	}
-	// Create IPFS node
-	ipfsNode, err := utils.NewNode(ctx, exch)
+	// // Set exchange Interface
+	// exch, err := utils.SetExchange(ctx, exchangeInterface)
+	// if err != nil {
+	// 	return err
+	// }
+	// // Create IPFS node
+	// ipfsNode, err := utils.NewNode(ctx, exch)
+	ipfsNode, err := utils.CreateIPFSNode(ctx)
 	if err != nil {
 		runenv.RecordFailure(err)
 		return err
@@ -242,14 +243,15 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				// Right now using a path.
 				fPath = path.IpfsPath(rootCid)
 				runenv.RecordMessage("Got path for file: %v", fPath)
-				_, err := ipfsNode.API.Unixfs().Get(ctx, fPath)
+				rcvFile, err := ipfsNode.API.Unixfs().Get(ctx, fPath)
 				// _, err := ipfsNode.API.Dag().Get(ctx, rootCid)
 				timeToFetch = time.Since(start)
 				if err != nil {
 					runenv.RecordMessage("Error fetching data through IPFS: %w", err)
 					return fmt.Errorf("Error fetching data through IPFS: %w", err)
 				}
-				runenv.RecordMessage("Leech fetch complete (%s)", timeToFetch)
+				s, _ := rcvFile.Size()
+				runenv.RecordMessage("Leech fetch of %d complete (%s)", s, timeToFetch)
 			}
 
 			// Wait for all leeches to have downloaded the data from seeds
@@ -281,9 +283,9 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				// start of the run, explicitly cleaning up the blockstore from the
 				// previous run allows it to be GCed.
 				runenv.RecordMessage("Cleaning Leech Blockstore and Datastore")
-				if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
-					return fmt.Errorf("Error clearing blockstore: %w", err)
-				}
+				// if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
+				// 	return fmt.Errorf("Error clearing blockstore: %w", err)
+				// }
 
 				if err := ipfsNode.ClearDatastore(ctx, false); err != nil {
 					return fmt.Errorf("Error clearing datastore: %w", err)
@@ -294,9 +296,9 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			// Free up memory by clearing the seed blockstore at the end of each
 			// set of tests over the current file size.
 			runenv.RecordMessage("Cleaning Seed Blockstore")
-			if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
-				return fmt.Errorf("Error clearing blockstore: %w", err)
-			}
+			// if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
+			// 	return fmt.Errorf("Error clearing blockstore: %w", err)
+			// }
 			if err := ipfsNode.ClearDatastore(ctx, false); err != nil {
 				return fmt.Errorf("Error clearing datstore: %w", err)
 			}
