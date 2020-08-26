@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	mathRand "math/rand"
+	"net"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -23,6 +25,7 @@ import (
 	"github.com/jbenet/goprocess"
 	"github.com/libp2p/go-libp2p-kad-dht/providers"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/testground/sdk-go/runtime"
 	"go.uber.org/fx"
 
@@ -46,6 +49,65 @@ import (
 type IPFSNode struct {
 	Node *core.IpfsNode
 	API  icore.CoreAPI
+}
+
+type NodeConfig struct {
+	Addrs    []string
+	AddrInfo *peer.AddrInfo
+	PrivKey  []byte
+}
+
+func getFreePort() string {
+	mathRand.Seed(time.Now().UnixNano())
+	notAvailable := true
+	port := 0
+	for notAvailable {
+		port = 3000 + mathRand.Intn(5000)
+		ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+		if err == nil {
+			notAvailable = false
+			_ = ln.Close()
+		}
+	}
+	return strconv.Itoa(port)
+}
+
+func GenerateAddrInfo(ip string) (*NodeConfig, error) {
+	// Use a free port
+	port := getFreePort()
+	// Generate new KeyPair instead of using existing one.
+	priv, pub, err := ci.GenerateKeyPairWithReader(ci.RSA, 2048, rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+	// Generate PeerID
+	pid, err := peer.IDFromPublicKey(pub)
+	if err != nil {
+		panic(err)
+	}
+	// Get PrivKey
+	privkeyb, err := priv.Bytes()
+	if err != nil {
+		panic(err)
+	}
+
+	addrs := []string{
+		fmt.Sprintf("/ip4/%s/tcp/%s", ip, port),
+		"/ip6/::/tcp/" + port,
+		fmt.Sprintf("/ip4/%s/udp/%s/quic", ip, port),
+		fmt.Sprintf("/ip6/::/udp/%s/quic", port),
+	}
+	multiAddrs := make([]ma.Multiaddr, 0)
+
+	for _, a := range addrs {
+		maddr, err := ma.NewMultiaddr(a)
+		if err != nil {
+			return nil, err
+		}
+		multiAddrs = append(multiAddrs, maddr)
+	}
+
+	return &NodeConfig{addrs, &peer.AddrInfo{ID: pid, Addrs: multiAddrs}, privkeyb}, nil
 }
 
 // setupPlugins to spawn nodes.
@@ -102,40 +164,22 @@ func baseProcess(lc fx.Lifecycle) goprocess.Process {
 }
 
 // setConfig manually injects dependencies for the IPFS nodes.
-func setConfig(ctx context.Context, exch ExchangeOpt) fx.Option {
+func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt) fx.Option {
 
 	// Create new Datastore
 	// TODO: This is in memory we should have some other external DataStore for big files.
 	d := datastore.NewMapDatastore()
 	// Initialize config.
 	cfg := &config.Config{}
-	// Generate new KeyPair instead of using existing one.
-	priv, pub, err := ci.GenerateKeyPairWithReader(ci.RSA, 2048, rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-	// Generate PeerID
-	pid, err := peer.IDFromPublicKey(pub)
-	if err != nil {
-		panic(err)
-	}
-	// Get PrivKey
-	privkeyb, err := priv.Bytes()
-	if err != nil {
-		panic(err)
-	}
+
 	// Use defaultBootstrap
 	cfg.Bootstrap = config.DefaultBootstrapAddresses
 
 	//Allow the node to start in any available port. We do not use default ones.
-	cfg.Addresses.Swarm = []string{
-		"/ip4/0.0.0.0/tcp/0",
-		"/ip6/::/tcp/0",
-		"/ip4/0.0.0.0/udp/0/quic",
-		"/ip6/::/udp/0/quic",
-	}
-	cfg.Identity.PeerID = pid.Pretty()
-	cfg.Identity.PrivKey = base64.StdEncoding.EncodeToString(privkeyb)
+	cfg.Addresses.Swarm = nConfig.Addrs
+
+	cfg.Identity.PeerID = nConfig.AddrInfo.ID.Pretty()
+	cfg.Identity.PrivKey = base64.StdEncoding.EncodeToString(nConfig.PrivKey)
 
 	// Repo structure that encapsulate the config and datastore for dependency injection.
 	buildRepo := &repo.Mock{
@@ -270,8 +314,8 @@ func setConfig(ctx context.Context, exch ExchangeOpt) fx.Option {
 	)
 }
 
-// CreateIPFSNodeWithExchange constructs and returns an IpfsNode using the given cfg.
-func CreateIPFSNodeWithExchange(ctx context.Context, exch ExchangeOpt) (*IPFSNode, error) {
+// CreateIPFSNodeWithConfig constructs and returns an IpfsNode using the given cfg.
+func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt) (*IPFSNode, error) {
 	// save this context as the "lifetime" ctx.
 	lctx := ctx
 
@@ -285,7 +329,7 @@ func CreateIPFSNodeWithExchange(ctx context.Context, exch ExchangeOpt) (*IPFSNod
 
 	app := fx.New(
 		// Inject dependencies in the node.
-		setConfig(ctx, exch),
+		setConfig(ctx, nConfig, exch),
 
 		fx.NopLogger,
 		fx.Extract(n),
@@ -343,7 +387,7 @@ func CreateIPFSNodeWithExchange(ctx context.Context, exch ExchangeOpt) (*IPFSNod
 }
 
 // CreateIPFSNode an IPFS specifying exchange node and returns its coreAPI
-func CreateIPFSNode(ctx context.Context) (*IPFSNode, error) {
+func CreateIPFSNode(ctx context.Context, ip string) (*IPFSNode, error) {
 
 	// Set up plugins
 	if err := setupPlugins(""); err != nil {
@@ -359,10 +403,10 @@ func CreateIPFSNode(ctx context.Context) (*IPFSNode, error) {
 	// Listen in a free port, not the default one.
 	repo, err := fsrepo.Open(repoPath)
 	swarmAddrs := []string{
-		"/ip4/0.0.0.0/tcp/0",
-		"/ip6/::/tcp/0",
-		"/ip4/0.0.0.0/udp/0/quic",
-		"/ip6/::/udp/0/quic",
+		fmt.Sprintf("/ip4/%s/tcp/%s", ip, "0"),
+		"/ip6/::/tcp/" + "0",
+		fmt.Sprintf("/ip4/%s/udp/%s/quic", ip, "0"),
+		fmt.Sprintf("/ip6/::/udp/%s/quic", "0"),
 	}
 	if err := repo.SetConfigKey("Addresses.Swarm", swarmAddrs); err != nil {
 		return nil, err
@@ -504,7 +548,7 @@ func (n *IPFSNode) ClearDatastore(ctx context.Context, onlyProviders bool) error
 
 // EmitMetrics emits node's metrics for the run
 func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, grpseq int64,
-	latency time.Duration, bandwidthMB int, fileSize int, nodetp NodeType, tpindex int, timeToFetch time.Duration, tcpFetch int64) error {
+	latency time.Duration, bandwidthMB int, fileSize int, nodetp NodeType, tpindex int, timeToFetch int64, tcpFetch int64, leechFails int64) error {
 	// TODO: We ned a way of generalizing this for any exchange type
 	bsnode := n.Node.Exchange.(*bs.Bitswap)
 	stats, err := bsnode.Stat()
@@ -525,6 +569,7 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 	// Bitswap stats
 	if nodetp == Leech {
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", id), float64(timeToFetch))
+		runenv.R().RecordPoint(fmt.Sprintf("%s/name:leech_fails", id), float64(leechFails))
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:tcp_fetch", id), float64(tcpFetch))
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:num_dht", id), float64(stats.NumDHT))
 	}

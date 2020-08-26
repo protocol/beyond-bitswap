@@ -61,7 +61,7 @@ def plot_latency(byLatency, byBandwidth, byFileSize):
     pindex = 1
     x = []
     y = {}
-    tc = []
+    tc = {}
     for l in byLatency:
     
         for b in byBandwidth:
@@ -75,32 +75,36 @@ def plot_latency(byLatency, byBandwidth, byFileSize):
                 x.append(int(f)/1e6)
                 
                 y[f] = []
+                tc[f] = []
                 for i in byFileSize[f]:
-                    if i["name"] == "time_to_fetch" and\
-                        i["latencyMS"] == l and i["bandwidthMB"] == b and\
+                    if i["latencyMS"] == l and i["bandwidthMB"] == b and\
                             i["nodeType"]=="Leech":
-                            y[f].append(i["value"])
-
-                    if i["name"] == "tcp_fetch":
-                        tc.append(i["value"])
+                            if i["name"] == "time_to_fetch":
+                                y[f].append(i["value"])
+                            if i["name"] == "tcp_fetch":
+                                tc[f].append(i["value"])
 
                 avg = []
                 for i in y:
                     scaled_y = [i/1e6 for i in y[i]]
                     ax.scatter([int(i)/1e6]*len(y[i]), scaled_y, marker="+")
                     avg.append(sum(scaled_y)/len(scaled_y))
+                avg_tc = []
+                for i in tc:
+                    scaled_tc = [i/1e6 for i in tc[i]]
+                    ax.scatter([int(i)/1e6]*len(tc[i]), scaled_tc, marker="*")
+                    avg_tc.append(sum(scaled_tc)/len(scaled_tc))
 
-            scaled_tc = [i/1e6 for i in tc]
-            ax.scatter(x, scaled_tc, marker="*")
-            ax.plot(x, scaled_tc, label="TCP fetch")
+            print(x, tc)
+            ax.plot(x, avg_tc, label="TCP fetch")
 
             ax.plot(x, avg, label="Bitswap fetch")
-            # ax.plot(x, tc)
             ax.legend()
 
             pindex+=1
             x = []
             y = {}
+            tc = {}
 
 
 def autolabel(ax, rects):

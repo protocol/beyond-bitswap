@@ -26,9 +26,9 @@ type TCPServer struct {
 }
 
 // SpawnTCPServer Spawns a TCP server that serves a specific file.
-func SpawnTCPServer(ctx context.Context, tmpFile files.Node) (*TCPServer, error) {
+func SpawnTCPServer(ctx context.Context, ip string, tmpFile files.Node) (*TCPServer, error) {
 	//Create a TCP istener on localhost with porth 27001
-	listener, err := net.Listen("tcp", "0.0.0.0:0")
+	listener, err := net.Listen("tcp", ip+":0")
 	fmt.Println("listening at: ", listener.Addr().String())
 	if err != nil {
 		fmt.Println("Error listetning: ", err)
