@@ -7,8 +7,7 @@ import (
 
 func main() {
 	run.InvokeMap(map[string]interface{}{
-		"transfer":         test.Transfer,
-		"ipfs-transfer":    test.IPFSTransfer,
-		"bitswap-transfer": test.IPFSTransfer,
+		"transfer":      test.Transfer,
+		"ipfs-transfer": test.IPFSTransfer,
 	})
 }

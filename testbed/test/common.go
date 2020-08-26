@@ -13,13 +13,12 @@ import (
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
-	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 )
 
-func parseType(ctx context.Context, runenv *runtime.RunEnv, client *sync.DefaultClient, h host.Host, seq int64) (int64, utils.NodeType, int, error) {
+func parseType(ctx context.Context, runenv *runtime.RunEnv, client *sync.DefaultClient, addrInfo *peer.AddrInfo, seq int64) (int64, utils.NodeType, int, error) {
 	leechCount := runenv.IntParam("leech_count")
 	passiveCount := runenv.IntParam("passive_count")
 
@@ -46,7 +45,7 @@ func parseType(ctx context.Context, runenv *runtime.RunEnv, client *sync.Default
 		grpPrefix = runenv.TestGroupID + " "
 
 		var err error
-		grpseq, err = getNodeSetSeq(ctx, client, h, runenv.TestGroupID)
+		grpseq, err = getNodeSetSeq(ctx, client, addrInfo, runenv.TestGroupID)
 		if err != nil {
 			return grpseq, nodetp, tpindex, err
 		}
@@ -72,10 +71,10 @@ func parseType(ctx context.Context, runenv *runtime.RunEnv, client *sync.Default
 	return grpseq, nodetp, tpindex, nil
 }
 
-func getNodeSetSeq(ctx context.Context, client *sync.DefaultClient, h host.Host, setID string) (int64, error) {
+func getNodeSetSeq(ctx context.Context, client *sync.DefaultClient, addrInfo *peer.AddrInfo, setID string) (int64, error) {
 	topic := sync.NewTopic("nodes"+setID, &peer.AddrInfo{})
 
-	return client.Publish(ctx, topic, host.InfoFromHost(h))
+	return client.Publish(ctx, topic, addrInfo)
 }
 
 func setupSeed(ctx context.Context, runenv *runtime.RunEnv, node *utils.Node, fileSize int, seedIndex int) (cid.Cid, error) {

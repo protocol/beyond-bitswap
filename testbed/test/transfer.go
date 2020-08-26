@@ -73,7 +73,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 		return err
 	}
 	// Type of node and identifiers assigned.
-	grpseq, nodetp, tpindex, err := parseType(ctx, runenv, client, h, seq)
+	grpseq, nodetp, tpindex, err := parseType(ctx, runenv, client, host.InfoFromHost(h), seq)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 		} else {
 			// If we are in group mode, signal other seed nodes to work out the
 			// seed index
-			seedSeq, err := getNodeSetSeq(ctx, client, h, "seeds")
+			seedSeq, err := getNodeSetSeq(ctx, client, host.InfoFromHost(h), "seeds")
 			if err != nil {
 				return err
 			}

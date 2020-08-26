@@ -47,8 +47,9 @@ import (
 
 // IPFSNode represents the node
 type IPFSNode struct {
-	Node *core.IpfsNode
-	API  icore.CoreAPI
+	Node  *core.IpfsNode
+	API   icore.CoreAPI
+	Close func() error
 }
 
 type NodeConfig struct {
@@ -383,7 +384,7 @@ func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch Exc
 	}
 
 	// Attach the Core API to the constructed node
-	return &IPFSNode{n, api}, nil
+	return &IPFSNode{n, api, stopNode}, nil
 }
 
 // CreateIPFSNode an IPFS specifying exchange node and returns its coreAPI
@@ -426,7 +427,7 @@ func CreateIPFSNode(ctx context.Context, ip string) (*IPFSNode, error) {
 	}
 	api, err := coreapi.NewCoreAPI(node)
 	// Attach the Core API to the constructed node
-	return &IPFSNode{node, api}, nil
+	return &IPFSNode{node, api, node.Close}, nil
 }
 
 // Get a randomSubset of peers to connect to.
@@ -592,7 +593,7 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 	runenv.RecordMessage("Finished with new metric and resetting.")
 
 	// Restart all counters for the next test.
-	n.Node.Reporter.Reset()
+	// n.Node.Reporter.Reset()
 	// n.Node.Exchange.(*bs.Bitswap).ResetStatCounters()
 
 	// A few other metrics that could be collected.

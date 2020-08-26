@@ -9,7 +9,6 @@ import (
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
-	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/adlrocha/beyond-bitswap/testbed/utils"
@@ -64,25 +63,16 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 		runenv.RecordMessage("Error generating node config")
 		return err
 	}
-	// Create IPFS node
-	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch)
-	// ipfsNode, err := utils.CreateIPFSNode(ctx)
-	if err != nil {
-		runenv.RecordFailure(err)
-		return err
-	}
-	// defer ipfsNode.Node.Close()
-	h := ipfsNode.Node.PeerHost
-	// runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
+
 	peers := sync.NewTopic("peers", &peer.AddrInfo{})
 
 	// Get sequence number of this host
-	seq, err := client.Publish(ctx, peers, host.InfoFromHost(h))
+	seq, err := client.Publish(ctx, peers, *nConfig.AddrInfo)
 	if err != nil {
 		return err
 	}
 	// Type of node and identifiers assigned.
-	grpseq, nodetp, tpindex, err := parseType(ctx, runenv, client, h, seq)
+	grpseq, nodetp, tpindex, err := parseType(ctx, runenv, client, nConfig.AddrInfo, seq)
 	if err != nil {
 		return err
 	}
@@ -97,7 +87,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 		} else {
 			// If we are in group mode, signal other seed nodes to work out the
 			// seed index
-			seedSeq, err := getNodeSetSeq(ctx, client, h, "seeds")
+			seedSeq, err := getNodeSetSeq(ctx, client, nConfig.AddrInfo, "seeds")
 			if err != nil {
 				return err
 			}
@@ -105,7 +95,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			seedIndex = seedSeq - 1
 		}
 	}
-	runenv.RecordMessage("Seed index %v for: %v", h.ID(), seedIndex)
+	runenv.RecordMessage("Seed index %v for: %v", &nConfig.AddrInfo.ID, seedIndex)
 
 	// Get addresses of all peers
 	peerCh := make(chan *peer.AddrInfo)
@@ -150,6 +140,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 
 	// For each file found in the test
 	for fIndex, f := range files {
+		var ipfsNode *utils.IPFSNode
 		// Accounts for every file that couldn't be found.
 		var leechFails int64
 		var rootCid cid.Cid
@@ -178,8 +169,15 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			switch nodetp {
 			case utils.Seed:
 				// If this is the first run for this file size
-				// TODO: Only the first seed will generate file and host TCP Server.
 				if isFirstRun {
+					// Start seed in the first run and close after every file
+					// Create IPFS node
+					ipfsNode, err = utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch)
+					// ipfsNode, err := utils.CreateIPFSNode(ctx)
+					if err != nil {
+						runenv.RecordFailure(err)
+						return err
+					}
 					// Generate the file
 					tmpFile, err := ipfsNode.GenerateFile(ctx, runenv, f)
 					if err != nil {
@@ -209,6 +207,13 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 					runenv.RecordMessage("Waiting to end finish TCP")
 				}
 			case utils.Leech:
+				// For leechers start a new node for every new leech.
+				ipfsNode, err = utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch)
+				// ipfsNode, err := utils.CreateIPFSNode(ctx)
+				if err != nil {
+					runenv.RecordFailure(err)
+					return err
+				}
 
 				// If this is the first run for this file size
 				if isFirstRun {
@@ -267,7 +272,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			maxConnections := maxConnectionRate * runenv.TestInstanceCount
 			// dialed, err := ipfsNode.ConnectToPeers(ctx, runenv, addrInfos, maxConnections)
 			// TODO: MaxConnections not being applied yet.
-			dialed, err := utils.DialOtherPeers(ctx, h, addrInfos, maxConnections)
+			dialed, err := utils.DialOtherPeers(ctx, ipfsNode.Node.PeerHost, addrInfos, maxConnections)
 			if err != nil {
 				return err
 			}
@@ -324,7 +329,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			runenv.RecordMessage("Finishing emitting metrics. Starting to clean...")
 
 			// Disconnect peers
-			for _, c := range h.Network().Conns() {
+			for _, c := range ipfsNode.Node.PeerHost.Network().Conns() {
 				err := c.Close()
 				if err != nil {
 					return fmt.Errorf("Error disconnecting: %w", err)
@@ -334,30 +339,16 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			err = signalAndWaitForAll("metrics-complete-" + runID)
 
 			if nodetp == utils.Leech {
-				// Free up memory by clearing the leech blockstore at the end of each run.
-				// Note that although we create a new blockstore for the leech at the
-				// start of the run, explicitly cleaning up the blockstore from the
-				// previous run allows it to be GCed.
-				runenv.RecordMessage("Cleaning Leech Blockstore and Datastore")
-				// if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
-				// 	return fmt.Errorf("Error clearing blockstore: %w", err)
-				// }
-
-				if err := ipfsNode.ClearDatastore(ctx, false); err != nil {
-					return fmt.Errorf("Error clearing datastore: %w", err)
-				}
+				// Close the leech node for every run
+				ipfsNode.Close()
+				runenv.RecordMessage("Closed Leech Node")
 			}
 		}
 		if nodetp == utils.Seed {
-			// Free up memory by clearing the seed blockstore at the end of each
-			// set of tests over the current file size.
-			runenv.RecordMessage("Cleaning Seed Blockstore")
-			// if err := utils.ClearBlockstore(ctx, ipfsNode.Node.Blockstore); err != nil {
-			// 	return fmt.Errorf("Error clearing blockstore: %w", err)
-			// }
-			if err := ipfsNode.ClearDatastore(ctx, false); err != nil {
-				return fmt.Errorf("Error clearing datstore: %w", err)
-			}
+			// Between every file close the seed Node.
+			ipfsNode.Close()
+			runenv.RecordMessage("Closed Seed Node")
+
 		}
 	}
 
