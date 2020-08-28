@@ -197,16 +197,41 @@ func RandReader(len int) io.Reader {
 }
 
 // getContent gets a file from the network and computes time_to_fetch
-func getContent(ctx context.Context, n *IPFSNode, fPath path.Path) error {
+func getContent(ctx context.Context, n *IPFSNode, fPath path.Path, pin bool) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	var (
+		timeToFetch time.Duration
+		f           files.Node
+		err         error
+	)
+
 	fmt.Println("Searching for: ", fPath)
-	start := time.Now()
-	f, err := n.API.Unixfs().Get(ctx, fPath)
-	if err != nil {
-		return err
+	if pin {
+		start := time.Now()
+		// Pinning also traverses the full graph
+		err = n.API.Pin().Add(ctx, fPath)
+		if err != nil {
+			return err
+		}
+		timeToFetch = time.Since(start)
+		fmt.Printf("[*] Pinned file in %s\n", timeToFetch)
+	} else {
+		start := time.Now()
+		f, err = n.API.Unixfs().Get(ctx, fPath)
+		if err != nil {
+			return err
+		}
+		// We need to write the file in order to traverse de DagReader.
+		err = files.WriteTo(f, "/tmp/"+time.Now().String())
+		if err != nil {
+			return err
+		}
+		timeToFetch = time.Since(start)
+		s, _ := f.Size()
+		fmt.Printf("[*] Size of the file obtained %d in %s\n", s, timeToFetch)
 	}
-	timeToFetch := time.Since(start)
-	s, _ := f.Size()
-	fmt.Printf("[*] Size of the file obtained %d in %s\n", s, timeToFetch)
+
 	fmt.Println("Cleaning datastore")
 	n.ClearDatastore(ctx)
 	err = n.ClearBlockstore(ctx)

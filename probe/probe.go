@@ -3,20 +3,77 @@ package main
 import (
 	"bufio"
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	// This package is needed so that all the preloaded plugins are loaded automatically
 	// bsnet "github.com/ipfs/go-bitswap/network"
 )
 
+// Process commands received from prompt
+func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bool) error {
+	text = strings.ReplaceAll(text, "\n", "")
+	text = strings.ReplaceAll(text, " ", "")
+	words := strings.Split(text, "_")
+
+	// Defer notifying the that processing is finished.
+	defer func() {
+		done <- true
+	}()
+
+	if words[0] == "exit" {
+		os.Exit(0)
+	}
+	if len(words) < 2 {
+		fmt.Println("Wrong number of arguments")
+		return fmt.Errorf("Wrong number of arguments")
+	}
+	// If we use add we can add random content to the network.
+	if words[0] == "add" {
+		size, err := strconv.Atoi(words[1])
+		if err != nil {
+			fmt.Println("Not a valid size for random add")
+			return err
+		}
+		addRandomContent(ctx, ipfs, size)
+	} else if words[0] == "connect" {
+		connectPeer(ctx, ipfs, words[1])
+	} else if words[0] == "addFile" {
+		addFile(ctx, ipfs, words[1])
+	} else if words[0] == "get" {
+		fPath := path.New(words[1])
+		err := getContent(ctx, ipfs, fPath, false)
+		if err != nil {
+			fmt.Println("Couldn't find content", err)
+			return err
+		}
+	} else if words[0] == "pin" {
+		fPath := path.New(words[1])
+		err := getContent(ctx, ipfs, fPath, true)
+		if err != nil {
+			fmt.Println("Couldn't find content", err)
+			return err
+		}
+	} else {
+		fmt.Println("[!] Wrong command! Only available add, addFile, pin, get, connect, help, exit")
+	}
+	// We could show metrics after each command in certain cases.
+	// fmt.Println("=== METRICS ===")
+	// bw := ipfs1.Node.Reporter.GetBandwidthTotals()
+	// printStats(&bw)
+	return nil
+}
+
 func main() {
+	addDirectory := flag.String("addDirectory", "", "Add a directory to the probe")
+	flag.Parse()
+
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Println("-- Getting an IPFS node running -- ")
@@ -37,9 +94,14 @@ func main() {
 
 	// Adding random content for testing.
 	addRandomContent(ctx, ipfs, 11111)
-	// Adding directory,
-	fmt.Println("Adding inputData directory")
-	addFile(ctx, ipfs, "../testbed/scripts/inputData")
+	if *addDirectory != "" {
+		// Adding directory,
+		fmt.Println("Adding inputData directory")
+		err := addFile(ctx, ipfs, *addDirectory)
+		if err != nil {
+			panic("Wrong directory")
+		}
+	}
 
 	ch := make(chan string)
 	chSignal := make(chan os.Signal)
@@ -68,43 +130,4 @@ func main() {
 
 		}
 	}
-}
-
-// Process commands received from prompt
-func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bool) error {
-	text = strings.ReplaceAll(text, "\n", "")
-	text = strings.ReplaceAll(text, " ", "")
-	words := strings.Split(text, "_")
-	// If we use add we can add random content to the network.
-	if words[0] == "add" {
-		size, err := strconv.Atoi(words[1])
-		if err != nil {
-			fmt.Println("Not a valid size for random add")
-			return err
-		}
-		addRandomContent(ctx, ipfs, size)
-	} else if words[0] == "exit" {
-		os.Exit(0)
-	} else if words[0] == "connect" {
-		connectPeer(ctx, ipfs, words[1])
-	} else if words[0] == "addFile" {
-		addFile(ctx, ipfs, words[1])
-	} else if words[0] == "get" {
-		fPath := path.New(words[1])
-		ctxTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-		err := getContent(ctxTimeout, ipfs, fPath)
-		if err != nil {
-			fmt.Println("Couldn't find content", err)
-			return err
-		}
-	} else {
-		fmt.Println("[!] Wrong command! Only available add, addFile, get, connect, exit")
-	}
-	done <- true
-	// We could show metrics after each command in certain cases.
-	// fmt.Println("=== METRICS ===")
-	// bw := ipfs1.Node.Reporter.GetBandwidthTotals()
-	// printStats(&bw)
-	return nil
 }
