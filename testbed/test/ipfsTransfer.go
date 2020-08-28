@@ -13,6 +13,7 @@ import (
 
 	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 	"github.com/ipfs/go-cid"
+	files "github.com/ipfs/go-ipfs-files"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 )
 
@@ -128,18 +129,18 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 	runenv.RecordMessage("Got all addresses from other peers and network setup")
 
 	// According to the input data get the file size or the files to add.
-	files, err := utils.GetFileList(runenv)
+	testFiles, err := utils.GetFileList(runenv)
 	if err != nil {
 		return err
 	}
-	runenv.RecordMessage("Got file list: %v", files)
+	runenv.RecordMessage("Got file list: %v", testFiles)
 
 	var runNum int
 	var fPath path.Resolved
 	var tcpFetch int64
 
 	// For each file found in the test
-	for fIndex, f := range files {
+	for fIndex, f := range testFiles {
 		var ipfsNode *utils.IPFSNode
 		// Accounts for every file that couldn't be found.
 		var leechFails int64
@@ -299,17 +300,33 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				// Right now using a path.
 				fPath = path.IpfsPath(rootCid)
 				runenv.RecordMessage("Got path for file: %v", fPath)
-				// TODO: Add all of this in a function.
+				// TODO: Add all of this in a function?
 				ctxFetch, cancel := context.WithTimeout(ctx, 30*time.Second)
+				// Pin Add also traverse the whole DAG
+				// err := ipfsNode.API.Pin().Add(ctxFetch, fPath)
 				rcvFile, err := ipfsNode.API.Unixfs().Get(ctxFetch, fPath)
+				if err != nil {
+					runenv.RecordMessage("Error fetching data from IPFS: %w", err)
+					leechFails++
+				} else {
+					err = files.WriteTo(rcvFile, "/tmp/"+time.Now().String())
+					if err != nil {
+						cancel()
+						return err
+					}
+					timeToFetch = time.Since(start).Nanoseconds()
+					s, _ := rcvFile.Size()
+					runenv.RecordMessage("Leech fetch of %d complete (%d ns)", s, timeToFetch)
+
+				}
 				// _, err := ipfsNode.API.Dag().Get(ctx, rootCid)
-				timeToFetch = time.Since(start).Nanoseconds()
 				cancel()
 				if err != nil {
-					runenv.RecordMessage("Error fetching data through IPFS: %w", err)
+					runenv.RecordMessage("Error fetching data from IPFS: %w", err)
 					leechFails++
 					// return fmt.Errorf("Error fetching data through IPFS: %w", err)
 				} else {
+
 					s, _ := rcvFile.Size()
 					runenv.RecordMessage("Leech fetch of %d complete (%d ns)", s, timeToFetch)
 				}

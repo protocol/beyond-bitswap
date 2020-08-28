@@ -61,7 +61,7 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 			return err
 		}
 	} else {
-		fmt.Println("[!] Wrong command! Only available add, addFile, pin, get, connect, help, exit")
+		fmt.Println("[!] Wrong command! Only available add, addFile, pin, get, connect, exit")
 	}
 	// We could show metrics after each command in certain cases.
 	// fmt.Println("=== METRICS ===")

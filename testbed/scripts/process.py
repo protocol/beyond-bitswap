@@ -107,6 +107,48 @@ def plot_latency(byLatency, byBandwidth, byFileSize):
             tc = {}
 
 
+def plot_tcp_latency(byLatency, byBandwidth, byFileSize):
+
+    plt.figure()
+
+    p1, p2 = len(byLatency), len(byBandwidth)
+    pindex = 1
+    x = []
+    tc = {}
+    for l in byLatency:
+    
+        for b in byBandwidth:
+            ax =plt.subplot(p1, p2, pindex)
+            ax.set_title("latency: "+l + " bandwidth: " + b)
+            ax.set_xlabel('File Size (MB)')
+            ax.set_ylabel('time_to_fetch (ms)')
+
+            for f in byFileSize:
+                
+                x.append(int(f)/1e6)
+
+                tc[f] = []
+                for i in byFileSize[f]:
+                    if i["latencyMS"] == l and i["bandwidthMB"] == b and\
+                            i["nodeType"]=="Leech":
+                            if i["name"] == "tcp_fetch":
+                                tc[f].append(i["value"])
+
+
+                avg_tc = []
+                for i in tc:
+                    scaled_tc = [i/1e6 for i in tc[i]]
+                    ax.scatter([int(i)/1e6]*len(tc[i]), scaled_tc, marker="*")
+                    avg_tc.append(sum(scaled_tc)/len(scaled_tc))
+
+            # print(x, tc)
+            ax.plot(x, avg_tc, label="TCP fetch")
+            ax.legend()
+
+            pindex+=1
+            x = []
+            tc = {}
+
 def autolabel(ax, rects):
     """Attach a text label above each bar in *rects*, displaying its height."""
     for rect in rects:
@@ -331,5 +373,7 @@ if __name__ == "__main__":
         plot_bw_overhead(byFileSize, byTopology)
     if "throughput" in args.plots:
         plot_througput(byLatency, byBandwidth, byFileSize, byTopology, testcases)
+    if "tcp" in args.plots:
+        plot_tcp_latency(byLatency, byBandwidth, byFileSize)
 
     plt.show()
