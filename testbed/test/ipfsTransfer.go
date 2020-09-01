@@ -64,7 +64,13 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 		runenv.RecordMessage("Error generating node config")
 		return err
 	}
-
+	// Create IPFS node
+	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch)
+	// ipfsNode, err := utils.CreateIPFSNode(ctx)
+	if err != nil {
+		runenv.RecordFailure(err)
+		return err
+	}
 	peers := sync.NewTopic("peers", &peer.AddrInfo{})
 
 	// Get sequence number of this host
@@ -141,7 +147,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 
 	// For each file found in the test
 	for fIndex, f := range testFiles {
-		var ipfsNode *utils.IPFSNode
+		// var ipfsNode *utils.IPFSNode
 		// Accounts for every file that couldn't be found.
 		var leechFails int64
 		var rootCid cid.Cid
@@ -164,21 +170,21 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 
 			// Create identifier for specific file size.
 			rootCidTopic := getRootCidTopic(fIndex)
-			tcpAddrTopic := getTCPAddrTopic(fIndex)
-			var tcpServer *utils.TCPServer
+			// tcpAddrTopic := getTCPAddrTopic(fIndex)
+			// var tcpServer *utils.TCPServer
 
 			switch nodetp {
 			case utils.Seed:
 				// If this is the first run for this file size
 				if isFirstRun {
 					// Start seed in the first run and close after every file
-					// Create IPFS node
-					ipfsNode, err = utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch)
-					// ipfsNode, err := utils.CreateIPFSNode(ctx)
-					if err != nil {
-						runenv.RecordFailure(err)
-						return err
-					}
+					// ipfsNode, err = utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch)
+					// // ipfsNode, err := utils.CreateIPFSNode(ctx)
+					// if err != nil {
+					// 	runenv.RecordFailure(err)
+					// 	return err
+					// }
+
 					// Generate the file
 					tmpFile, err := ipfsNode.GenerateFile(ctx, runenv, f)
 					if err != nil {
@@ -197,24 +203,24 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 
 					runenv.RecordMessage("Starting TCP server in seed")
 					// Start TCP server for file
-					tcpServer, err = utils.SpawnTCPServer(ctx, nwClient.MustGetDataNetworkIP().String(), tmpFile)
-					if err != nil {
-						return fmt.Errorf("Failed to start tcpServer in seed %w", err)
-					}
+					// tcpServer, err = utils.SpawnTCPServer(ctx, nwClient.MustGetDataNetworkIP().String(), tmpFile)
+					// if err != nil {
+					// 	return fmt.Errorf("Failed to start tcpServer in seed %w", err)
+					// }
 					// Inform other nodes of the TCPServerAddr
-					if _, err = client.Publish(ctx, tcpAddrTopic, tcpServer.Addr); err != nil {
-						return fmt.Errorf("Failed to get Redis Sync tcpAddr %w", err)
-					}
+					// if _, err = client.Publish(ctx, tcpAddrTopic, tcpServer.Addr); err != nil {
+					// 	return fmt.Errorf("Failed to get Redis Sync tcpAddr %w", err)
+					// }
 					runenv.RecordMessage("Waiting to end finish TCP")
 				}
 			case utils.Leech:
 				// For leechers start a new node for every new leech.
-				ipfsNode, err = utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch)
-				// ipfsNode, err := utils.CreateIPFSNode(ctx)
-				if err != nil {
-					runenv.RecordFailure(err)
-					return err
-				}
+				// ipfsNode, err = utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch)
+				// // ipfsNode, err := utils.CreateIPFSNode(ctx)
+				// if err != nil {
+				// 	runenv.RecordFailure(err)
+				// 	return err
+				// }
 
 				// If this is the first run for this file size
 				if isFirstRun {
@@ -235,25 +241,26 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 					}
 
 					// Get TCP address from a seed
-					tcpAddrCh := make(chan string, 1)
-					if _, err := client.Subscribe(sctx, tcpAddrTopic, tcpAddrCh); err != nil {
-						cancelRootCidSub()
-						return fmt.Errorf("Failed to subscribe to tcpServerTopic %w", err)
-					}
-					tcpAddrPtr, ok := <-tcpAddrCh
-					if !ok {
-						cancelRootCidSub()
-						return fmt.Errorf("no tcp server addr received in %d seconds", timeout/time.Second)
-					}
-					cancelRootCidSub()
-					runenv.RecordMessage("Received tcp server %s", tcpAddrPtr)
+					// tcpAddrCh := make(chan string, 1)
+					// if _, err := client.Subscribe(sctx, tcpAddrTopic, tcpAddrCh); err != nil {
+					// 	cancelRootCidSub()
+					// 	return fmt.Errorf("Failed to subscribe to tcpServerTopic %w", err)
+					// }
+					// tcpAddrPtr, ok := <-tcpAddrCh
+					// if !ok {
+					// 	cancelRootCidSub()
+					// 	return fmt.Errorf("no tcp server addr received in %d seconds", timeout/time.Second)
+					// }
+					// cancelRootCidSub()
+					// runenv.RecordMessage("Received tcp server %s", tcpAddrPtr)
 					rootCid = *rootCidPtr
 					runenv.RecordMessage("Received rootCid: %v", rootCid)
 					runenv.RecordMessage("Start fetching a TCP file from seed")
 					start := time.Now()
-					utils.FetchFileTCP(tcpAddrPtr)
+					// utils.FetchFileTCP(tcpAddrPtr)
 					tcpFetch = time.Since(start).Nanoseconds()
 					runenv.RecordMessage("Fetched TCP file after %d (ns)", tcpFetch)
+					cancelRootCidSub()
 				}
 			}
 			runenv.RecordMessage("Ready to start connecting...")
@@ -264,10 +271,10 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			}
 
 			// At this point TCP interactions are finished.
-			if isFirstRun && nodetp == utils.Seed {
-				runenv.RecordMessage("Closing TCP server")
-				tcpServer.Close()
-			}
+			// if isFirstRun && nodetp == utils.Seed {
+			// 	runenv.RecordMessage("Closing TCP server")
+			// 	tcpServer.Close()
+			// }
 
 			// Start peer connection. Connections are performed randomly in ConnectToPeers
 			maxConnections := maxConnectionRate * runenv.TestInstanceCount
@@ -357,14 +364,21 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 
 			if nodetp == utils.Leech {
 				// Close the leech node for every run
-				ipfsNode.Close()
-				runenv.RecordMessage("Closed Leech Node")
+				// ipfsNode.Close()
+				// runenv.RecordMessage("Closed Leech Node")
+				// Clearing datastore
+				if err := ipfsNode.ClearDatastore(ctx, false); err != nil {
+					return fmt.Errorf("Error clearing datastore: %w", err)
+				}
 			}
 		}
 		if nodetp == utils.Seed {
 			// Between every file close the seed Node.
-			ipfsNode.Close()
-			runenv.RecordMessage("Closed Seed Node")
+			// ipfsNode.Close()
+			// runenv.RecordMessage("Closed Seed Node")
+			if err := ipfsNode.ClearDatastore(ctx, false); err != nil {
+				return fmt.Errorf("Error clearing datastore: %w", err)
+			}
 
 		}
 	}

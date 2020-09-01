@@ -7,6 +7,7 @@ import numpy as np
 import math
 import argparse
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -35,7 +36,7 @@ def process_result_line(l):
 
 def aggregate_results():
     res = []
-    for subdir, _, files in os.walk('./results'):
+    for subdir, _, files in os.walk(dir_path + '/results'):
         for filename in files:
             filepath = subdir + os.sep + filename
             if filepath.split("/")[-1] == "results.out":
@@ -43,7 +44,7 @@ def aggregate_results():
                 resultFile = open(filepath, 'r')
                 for l in resultFile.readlines():
                     res.append(process_result_line(l))
-    return res, len(os.listdir("./results"))
+    return res, len(os.listdir(dir_path + "/results"))
 
 def groupBy(agg, metric):
     res = {}
@@ -160,7 +161,6 @@ def autolabel(ax, rects):
                     ha='center', va='bottom')
 
 
-# TODO: This is wrong. Here we only accoun for the data exchanged using Bitswap.
 def plot_messages(byFileSize, byTopology):
 
     # plt.figure()
@@ -217,7 +217,67 @@ def plot_messages(byFileSize, byTopology):
 
         ax.set_ylabel('Number of messages')
         ax.set_ylabel('File Size (MB)') 
-        ax.set_title('Average number of blocks exchanged ' + t)
+        ax.set_title('Average number of messages exchanged ' + t)
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.legend()
+        fig.tight_layout()
+
+
+def plot_want_messages(byFileSize, byTopology):
+
+    # plt.figure()
+    
+
+    for t in byTopology:
+        # t_aux = t.replace("(","").replace(")","").split(",")
+        # instances = int(t_aux[0]) + int(t_aux[1])
+
+        labels = []
+        # arr_wants_avg = []
+        arr_wants_max = []
+        arr_wants_total = []
+        arr_wants_avg_single = []
+
+        for f in byFileSize:
+            labels.append(int(f)/1e6)
+            x = np.arange(len(labels))  # the label locations
+            wants = 0
+            wants_n = want_max = 0
+            width = 1/4
+
+            for i in byFileSize[f]:
+                if i["topology"]==t:
+                    if i["name"] == "wants_rcvd":
+                        wants += i["value"]
+                        wants_n += 1
+                        if want_max < i["value"]:
+                            want_max = i["value"]
+
+            # Computing averages
+            # Remove the division if you want to see total values 
+            # arr_wants_avg.append(round(wants/instances/1000,1))
+            arr_wants_avg_single.append(round(wants/wants_n,1))
+            arr_wants_max.append(want_max)
+            arr_wants_total.append(wants/1000)
+
+            wants  = 0
+            wants_n = want_max = 0
+
+        fig, ax = plt.subplots()
+        # bar1 = ax.bar(x-(3/2)*width, arr_wants_avg, width, label="Average wants exchanged in test per node (kMessages)")
+        bar2 = ax.bar(x-width/2, arr_wants_avg_single, width, label="Average wants per node in single file")
+        bar3 = ax.bar(x+width/2, arr_wants_max, width, label="Max wants received by node in single file")
+        bar4 = ax.bar(x+(3/2)*width, arr_wants_total, width, label="Total want messages exchanged in test (KMessages)")
+
+        # autolabel(ax, bar1)
+        autolabel(ax, bar2)
+        autolabel(ax, bar3)
+        autolabel(ax, bar4)
+
+
+        ax.set_ylabel('Number of messages')
+        ax.set_title('Average number of messages exchanged ' + t)
         ax.set_xticks(x)
         ax.set_xticklabels(labels)
         ax.legend()
@@ -375,5 +435,7 @@ if __name__ == "__main__":
         plot_througput(byLatency, byBandwidth, byFileSize, byTopology, testcases)
     if "tcp" in args.plots:
         plot_tcp_latency(byLatency, byBandwidth, byFileSize)
+    if "wants" in args.plots:
+        plot_want_messages(byFileSize, byTopology)
 
     plt.show()

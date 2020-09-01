@@ -45,6 +45,25 @@ class Layout:
         self.grid[6, 0] = self.runButton
         self.grid[6, 1] = self.jitter_pct
         return self.grid
+
+
+class ConfigLayout:
+    def __init__(self):
+        self.config_dir = widgets.Text(description="Config dir")
+        
+        self.runButton = widgets.Button(
+                description='Run Test',
+                disabled=False,
+                button_style='success',
+                tooltip='Run test',
+                icon='check' # (FontAwesome names without the `fa-` prefix)
+            )
+        self.grid = widgets.GridspecLayout(1, 1)
+        self.testid = ""
+
+    def show(self):
+        self.grid[0, 0] = self.config_dir
+        return self.grid
     
     # def run_test(self):
     #     self.testid = utils.runner(utils.process_layout_config(self))
