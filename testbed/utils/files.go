@@ -8,21 +8,59 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"time"
 
 	files "github.com/ipfs/go-ipfs-files"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	"github.com/testground/sdk-go/runtime"
 )
 
-var randReader *rand.Rand
+// var randReader *rand.Rand
 
-type InputFile struct {
+// TestFile interface for input files used.
+type TestFile interface {
+	GenerateFile() (files.Node, error)
+	Size() int64
+}
+
+// RandFile represents a randomly generated file
+type RandFile struct {
+	size int64
+}
+
+// PathFile is a generated from file.
+type PathFile struct {
 	Path  string
-	Size  int64
+	size  int64
 	isDir bool
 }
 
-func RandReader(len int) io.Reader {
+// GenerateFile generates new randomly generated file
+func (f RandFile) GenerateFile() (files.Node, error) {
+	return files.NewReaderFile(RandReader(int(f.size))), nil
+}
+
+// Size returns size
+func (f RandFile) Size() int64 {
+	return f.size
+}
+
+// Size returns size
+func (f PathFile) Size() int64 {
+	return f.size
+}
+
+// GenerateFile gets the file from path
+func (f PathFile) GenerateFile() (files.Node, error) {
+	tmpFile, err := getUnixfsNode(f.Path)
+	if err != nil {
+		return nil, err
+	}
+	return tmpFile, nil
+}
+
+// RandFromReader Generates random file from existing reader
+func RandFromReader(randReader *rand.Rand, len int) io.Reader {
 	if randReader == nil {
 		randReader = rand.New(rand.NewSource(2))
 	}
@@ -31,8 +69,16 @@ func RandReader(len int) io.Reader {
 	return bytes.NewReader(data)
 }
 
-func GetFileList(runenv *runtime.RunEnv) ([]InputFile, error) {
-	listFiles := []InputFile{}
+// RandReader generates random data from seed.
+func RandReader(len int) io.Reader {
+	randReader := rand.New(rand.NewSource(time.Now().Unix()))
+	data := make([]byte, len)
+	randReader.Read(data)
+	return bytes.NewReader(data)
+}
+
+func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
+	listFiles := []TestFile{}
 	inputData := runenv.StringParam("input_data")
 
 	switch inputData {
@@ -46,9 +92,9 @@ func GetFileList(runenv *runtime.RunEnv) ([]InputFile, error) {
 
 		for _, file := range files {
 			listFiles = append(listFiles,
-				InputFile{
+				PathFile{
 					Path:  path + "/" + file.Name(),
-					Size:  file.Size(),
+					size:  file.Size(),
 					isDir: file.IsDir()})
 		}
 		return listFiles, nil
@@ -59,7 +105,7 @@ func GetFileList(runenv *runtime.RunEnv) ([]InputFile, error) {
 			return nil, err
 		}
 		for _, v := range fileSizes {
-			listFiles = append(listFiles, InputFile{Size: int64(v)})
+			listFiles = append(listFiles, RandFile{size: int64(v)})
 		}
 		return listFiles, nil
 	case "custom":
@@ -69,20 +115,12 @@ func GetFileList(runenv *runtime.RunEnv) ([]InputFile, error) {
 	}
 }
 
-func (n *IPFSNode) GenerateFile(ctx context.Context, runenv *runtime.RunEnv, f InputFile) (files.Node, error) {
+func (n *IPFSNode) GenerateFile(ctx context.Context, runenv *runtime.RunEnv, f TestFile) (files.Node, error) {
 	inputData := runenv.StringParam("input_data")
-	var tmpFile files.Node
-	var err error
-
-	// We need to specify how we generate the data for every case.
 	runenv.RecordMessage("Starting to generate file for inputData: %s and file %v", inputData, f)
-	if inputData == "random" {
-		tmpFile = files.NewReaderFile(RandReader(int(f.Size)))
-	} else {
-		tmpFile, err = getUnixfsNode(f.Path)
-		if err != nil {
-			return nil, err
-		}
+	tmpFile, err := f.GenerateFile()
+	if err != nil {
+		return nil, err
 	}
 	return tmpFile, nil
 }

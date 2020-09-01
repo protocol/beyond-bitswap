@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,13 +21,13 @@ const BUFFERSIZE = 1024
 type TCPServer struct {
 	quit     chan interface{}
 	listener net.Listener
-	file     files.Node
+	file     TestFile
 	Addr     string
 	wg       sync.WaitGroup
 }
 
 // SpawnTCPServer Spawns a TCP server that serves a specific file.
-func SpawnTCPServer(ctx context.Context, ip string, tmpFile files.Node) (*TCPServer, error) {
+func SpawnTCPServer(ctx context.Context, ip string, tmpFile TestFile) (*TCPServer, error) {
 	//Create a TCP istener on localhost with porth 27001
 	listener, err := net.Listen("tcp", ip+":0")
 	fmt.Println("listening at: ", listener.Addr().String())
@@ -76,33 +77,42 @@ func (s *TCPServer) Close() {
 }
 
 // Format for fileSize
-func fillString(retunString string, toLength int) string {
+func fillString(returnString string, toLength int) string {
 	for {
-		lengtString := len(retunString)
+		lengtString := len(returnString)
 		if lengtString < toLength {
-			retunString = retunString + ":"
+			returnString = returnString + ":"
 			continue
 		}
 		break
 	}
-	return retunString
+	return returnString
 }
 
 // Sends file to client.
 func (s *TCPServer) sendFileToClient(connection net.Conn) {
 	defer connection.Close()
-	sendBuffer := make([]byte, BUFFERSIZE)
-	size, _ := s.file.Size()
-	// The first buffer is to notify the size.
-	fileSize := fillString(strconv.FormatInt(size, 10), 10)
-	connection.Write([]byte(fileSize))
-	for {
-		_, err := files.ToFile(s.file).Read(sendBuffer)
-		if err == io.EOF {
-			break
-		}
-		connection.Write(sendBuffer)
+	// Passing files.Node directly produced that routines
+	// concurrently accessed their reader. Instead of sending the
+	// file n times, each client received a part.
+	tmpFile, err := s.file.GenerateFile()
+	if err != nil {
+		fmt.Println("Failed generating file:", err)
+		return
 	}
+
+	f := files.ToFile(tmpFile)
+	size := s.file.Size()
+	// The first write is to notify the size.
+	fileSize := fillString(strconv.FormatInt(size, 10), 10)
+	fmt.Println("Sending file of: ", size)
+	connection.Write([]byte(fileSize))
+	// Sending the file.
+	written, err := io.Copy(connection, f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Bytes sent from server", written)
 	return
 }
 
@@ -118,23 +128,19 @@ func FetchFileTCP(addr string) {
 	connection.Read(bufferFileSize)
 	fileSize, _ := strconv.ParseInt(strings.Trim(string(bufferFileSize), ":"), 10, 64)
 
-	newFile, err := os.OpenFile("/dev/null", os.O_WRONLY, 0)
-
-	if err != nil {
-		panic(err)
-	}
-	defer newFile.Close()
 	var receivedBytes int64
 
-	for {
-		if (fileSize - receivedBytes) < BUFFERSIZE {
-			io.CopyN(newFile, connection, (fileSize - receivedBytes))
-			connection.Read(make([]byte, (receivedBytes+BUFFERSIZE)-fileSize))
-			receivedBytes = fileSize - receivedBytes
-			break
+	for receivedBytes <= fileSize {
+		written, err := io.CopyN(ioutil.Discard, io.LimitReader(connection, BUFFERSIZE), BUFFERSIZE)
+		if err != nil {
+			if err == io.EOF {
+				receivedBytes += written
+				fmt.Println("Finished fetch..", receivedBytes, fileSize)
+			} else {
+				fmt.Println("Failed sending file:", err)
+			}
+			return
 		}
-		io.CopyN(newFile, connection, BUFFERSIZE)
-		receivedBytes += BUFFERSIZE
+		receivedBytes += written
 	}
-	fmt.Println("Finished fetch..")
 }
