@@ -12,6 +12,7 @@ echo "Starting test..."
 
 run_bitswap(){
     $TESTGROUND_BIN run single \
+        --build-cfg skip_runtime_image=true \
         --plan=beyond-bitswap \
         --testcase=$1 \
         --builder=$BUILDER \

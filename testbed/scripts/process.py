@@ -297,7 +297,7 @@ def plot_bw_overhead(byFileSize, byTopology):
         arr_overhead = []
         for f in byFileSize:
             #TODO: Considering a 5.5% overhead of TPC
-            leechCount = t.replace("(", "").replace(")", "").split(",")[1]
+            leechCount = t.replace("(", "").replace(")", "").split("-")[1]
             TCP_BASELINE = int(leechCount)*1.055*int(f)
             labels.append(int(f)/1e6)
             x = np.arange(len(labels))  # the label locations
