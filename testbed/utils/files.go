@@ -36,22 +36,22 @@ type PathFile struct {
 }
 
 // GenerateFile generates new randomly generated file
-func (f RandFile) GenerateFile() (files.Node, error) {
+func (f *RandFile) GenerateFile() (files.Node, error) {
 	return files.NewReaderFile(RandReader(int(f.size))), nil
 }
 
 // Size returns size
-func (f RandFile) Size() int64 {
+func (f *RandFile) Size() int64 {
 	return f.size
 }
 
 // Size returns size
-func (f PathFile) Size() int64 {
+func (f *PathFile) Size() int64 {
 	return f.size
 }
 
 // GenerateFile gets the file from path
-func (f PathFile) GenerateFile() (files.Node, error) {
+func (f *PathFile) GenerateFile() (files.Node, error) {
 	tmpFile, err := getUnixfsNode(f.Path)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
 
 		for _, file := range files {
 			listFiles = append(listFiles,
-				PathFile{
+				&PathFile{
 					Path:  path + "/" + file.Name(),
 					size:  file.Size(),
 					isDir: file.IsDir()})
@@ -105,7 +105,7 @@ func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
 			return nil, err
 		}
 		for _, v := range fileSizes {
-			listFiles = append(listFiles, RandFile{size: int64(v)})
+			listFiles = append(listFiles, &RandFile{size: int64(v)})
 		}
 		return listFiles, nil
 	case "custom":

@@ -3,7 +3,6 @@
 TESTGROUND_BIN="testground"
 RUNNER="local:exec"
 BUILDER="exec:go"
-#TODO: Add an option to save the results for future analysis.
 
 echo "Cleaning previous results..."
 
