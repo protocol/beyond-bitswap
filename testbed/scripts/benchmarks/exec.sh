@@ -1,8 +1,8 @@
 #!/bin/bash
 
 TESTGROUND_BIN="testground"
-RUNNER="local:exec"
-BUILDER="exec:go"
+# RUNNER="local:exec"
+# BUILDER="exec:go"
 
 echo "Cleaning previous results..."
 
@@ -23,14 +23,16 @@ run_bitswap(){
         -tp jitter_pct=$6 \
         -tp parallel_gen_mb=$7 \
         -tp leech_count=$8 \
-        -tp bandwidth_mb=$9
+        -tp bandwidth_mb=$9 \
+        -tp input_data=${10} \
+        -tp data_dir=${11} \
+        -tp enable_tcp=${12}
         # | tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'
-    
 }
 
 run() {
-    echo "Running test with ($1, $2, $3, $4, $5, $6, $7, $8, $9) (TESTCASE, INSTANCES, FILE_SIZE, RUN_COUNT, LATENCY, JITTER, PARALLEL, LEECH, BANDWIDTH)"
-    TESTID=`run_bitswap $1 $2 $3 $4 $5 $6 $7 $8 $9 | tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'`
+    echo "Running test with ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${10}, ${11}, ${12}) (TESTCASE, INSTANCES, FILE_SIZE, RUN_COUNT, LATENCY, JITTER, PARALLEL, LEECH, BANDWIDTH, INPUT_DATA, DATA_DIR, TCP_ENABLED)"
+    TESTID=`run_bitswap $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} | tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'`
     echo $TESTID
     echo "Finished test $TESTID"
     $TESTGROUND_BIN collect --runner=$RUNNER $TESTID
