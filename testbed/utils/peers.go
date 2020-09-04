@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math"
 
 	core "github.com/libp2p/go-libp2p-core"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -23,7 +24,7 @@ func AddrInfosFromChan(peerCh chan *peer.AddrInfo, count int) ([]peer.AddrInfo, 
 }
 
 // DialOtherPeers connects to a set of peers in the experiment.
-func DialOtherPeers(ctx context.Context, self core.Host, ais []peer.AddrInfo, maxConnections int) ([]peer.AddrInfo, error) {
+func DialOtherPeers(ctx context.Context, self core.Host, ais []peer.AddrInfo, maxConnectionRate int) ([]peer.AddrInfo, error) {
 	// Grab list of other peers that are available for this Run
 	var toDial []peer.AddrInfo
 	for _, ai := range ais {
@@ -37,6 +38,10 @@ func DialOtherPeers(ctx context.Context, self core.Host, ais []peer.AddrInfo, ma
 			toDial = append(toDial, ai)
 		}
 	}
+
+	// Limit max number of connections for the peer according to rate.
+	rate := float64(maxConnectionRate) / 100
+	toDial = toDial[:int(math.Ceil(float64(len(toDial))*rate))]
 
 	// Dial to all the other peers
 	g, ctx := errgroup.WithContext(ctx)

@@ -207,6 +207,7 @@ func getContent(ctx context.Context, n *IPFSNode, fPath path.Path, pin bool) err
 	)
 
 	fmt.Println("Searching for: ", fPath)
+	fileName := "/tmp/" + time.Now().String()
 	if pin {
 		start := time.Now()
 		// Pinning also traverses the full graph
@@ -223,13 +224,14 @@ func getContent(ctx context.Context, n *IPFSNode, fPath path.Path, pin bool) err
 			return err
 		}
 		// We need to write the file in order to traverse de DagReader.
-		err = files.WriteTo(f, "/tmp/"+time.Now().String())
+		err = files.WriteTo(f, fileName)
 		if err != nil {
 			return err
 		}
 		timeToFetch = time.Since(start)
 		s, _ := f.Size()
 		fmt.Printf("[*] Size of the file obtained %d in %s\n", s, timeToFetch)
+		fmt.Println("Wrote in ")
 	}
 
 	fmt.Println("Cleaning datastore")

@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"time"
 
 	files "github.com/ipfs/go-ipfs-files"
@@ -69,6 +70,21 @@ func RandFromReader(randReader *rand.Rand, len int) io.Reader {
 	return bytes.NewReader(data)
 }
 
+// DirSize computes total size of the of the direcotry.
+func dirSize(path string) (int64, error) {
+	var size int64
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
+}
+
 // RandReader generates random data from seed.
 func RandReader(len int) io.Reader {
 	randReader := rand.New(rand.NewSource(time.Now().Unix()))
@@ -91,10 +107,23 @@ func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
 		}
 
 		for _, file := range files {
+			var size int64
+
+			// Assign the right size.
+			if file.IsDir() {
+				size, err = dirSize(path + "/" + file.Name())
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				size = file.Size()
+			}
+
+			// Append the file.
 			listFiles = append(listFiles,
 				&PathFile{
 					Path:  path + "/" + file.Name(),
-					size:  file.Size(),
+					size:  size,
 					isDir: file.IsDir()})
 		}
 		return listFiles, nil

@@ -3,10 +3,11 @@
 RUNNER="local:docker"
 BUILDER="docker:go"
 
-echo "Starting random files test"
-FILE_SIZE=15728640,31457280,47185920,57671680,104857600
+source ./exec.sh
+
+FILE_SIZE=15728640,31457280,47185920,57671680 #,104857600
 RUN_COUNT=1
-INSTANCES=50
+INSTANCES=3
 LEECH_COUNT=1
 PASSIVE_COUNT=0
 LATENCY=5
@@ -17,18 +18,19 @@ TESTCASE=ipfs-transfer
 INPUT_DATA=random
 DATA_DIR=../extra/inputData
 TCP_ENABLED=true
+MAX_CONNECTION_RATE=100
 
-source ./exec.sh
 
-run $TESTCASE $INSTANCES $FILE_SIZE $RUN_COUNT $LATENCY $JITTER $PARALLEL_GEN $LEECH_COUNT $BANDWIDTH $INPUT_DATA $DATA_DIR $TCP_ENABLED
+echo "Starting random files test"
+# source ./exec.sh
+# eval $CMD
 
 echo "Starting real files test"
-INPUT_DATA=FILE_SIZE
+INPUT_DATA=files
 DATA_DIR=../extra/inputData
 TCP_ENABLED=false
 
 source ./exec.sh
-
-run $TESTCASE $INSTANCES $FILE_SIZE $RUN_COUNT $LATENCY $JITTER $PARALLEL_GEN $LEECH_COUNT $BANDWIDTH $INPUT_DATA $DATA_DIR $TCP_ENABLED
-
-#TODO: Add tests modifying bandwidth and latency.
+eval $CMD
+#TODO: Add tests modifying bandwidth and latency
+# python ../process.py --plots latency bandwidth messages overhead tcp

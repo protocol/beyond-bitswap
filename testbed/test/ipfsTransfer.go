@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/testground/sdk-go/network"
@@ -142,6 +143,11 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 	}
 	runenv.RecordMessage("Got file list: %v", testFiles)
 
+	err = signalAndWaitForAll("file-list-ready")
+	if err != nil {
+		return err
+	}
+
 	var runNum int
 	var fPath path.Resolved
 	var tcpFetch int64
@@ -248,7 +254,8 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 					}
 
 					// Get TCP address from a seed
-					if tcpEnabled {
+					// Only one leecher does it in order not to load the TCP server.
+					if tcpEnabled && tpindex == 0 {
 						tcpAddrCh := make(chan *string, 1)
 						if _, err := client.Subscribe(sctx, tcpAddrTopic, tcpAddrCh); err != nil {
 							cancelRootCidSub()
@@ -272,6 +279,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 					cancelRootCidSub()
 				}
 			}
+
 			runenv.RecordMessage("Ready to start connecting...")
 			// Wait for all nodes to be ready to dial
 			err = signalAndWaitForAll("ready-to-connect-" + runID)
@@ -285,11 +293,8 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				tcpServer.Close()
 			}
 
-			// Start peer connection. Connections are performed randomly in ConnectToPeers
-			maxConnections := maxConnectionRate * runenv.TestInstanceCount
 			// dialed, err := ipfsNode.ConnectToPeers(ctx, runenv, addrInfos, maxConnections)
-			// TODO: MaxConnections not being applied yet.
-			dialed, err := utils.DialOtherPeers(ctx, ipfsNode.Node.PeerHost, addrInfos, maxConnections)
+			dialed, err := utils.DialOtherPeers(ctx, ipfsNode.Node.PeerHost, addrInfos, maxConnectionRate)
 			if err != nil {
 				return err
 			}
@@ -317,7 +322,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				fPath = path.IpfsPath(rootCid)
 				runenv.RecordMessage("Got path for file: %v", fPath)
 				// TODO: Add all of this in a function?
-				ctxFetch, cancel := context.WithTimeout(ctx, 30*time.Second)
+				ctxFetch, cancel := context.WithTimeout(ctx, 100*time.Second)
 				// Pin Add also traverse the whole DAG
 				// err := ipfsNode.API.Pin().Add(ctxFetch, fPath)
 				rcvFile, err := ipfsNode.API.Unixfs().Get(ctxFetch, fPath)
@@ -325,7 +330,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 					runenv.RecordMessage("Error fetching data from IPFS: %w", err)
 					leechFails++
 				} else {
-					err = files.WriteTo(rcvFile, "/tmp/"+time.Now().String())
+					err = files.WriteTo(rcvFile, "/tmp/"+strconv.Itoa(tpindex)+time.Now().String())
 					if err != nil {
 						cancel()
 						return err
@@ -337,15 +342,6 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				}
 				// _, err := ipfsNode.API.Dag().Get(ctx, rootCid)
 				cancel()
-				if err != nil {
-					runenv.RecordMessage("Error fetching data from IPFS: %w", err)
-					leechFails++
-					// return fmt.Errorf("Error fetching data through IPFS: %w", err)
-				} else {
-
-					s, _ := rcvFile.Size()
-					runenv.RecordMessage("Leech fetch of %d complete (%d ns)", s, timeToFetch)
-				}
 			}
 
 			// Wait for all leeches to have downloaded the data from seeds
@@ -369,7 +365,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 				}
 			}
 			runenv.RecordMessage("Closed Connections")
-			err = signalAndWaitForAll("metrics-complete-" + runID)
+			// err = signalAndWaitForAll("metrics-complete-" + runID)
 
 			if nodetp == utils.Leech {
 				// Close the leech node for every run
