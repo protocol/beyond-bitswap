@@ -49,6 +49,11 @@ def process_layout_config(layout):
         base = TESTGROUND_BIN + " run single --plan=beyond-bitswap --builder=" + \
             BUILDER + " --runner=" + RUNNER + BUILDCFG
 
+    if layout.tcpEnabled:
+        tcpFlag = "true"
+    else:
+        tcpFlag = "false"
+
     cmd = base + " --testcase=" + layout.testcase.value + \
         " --instances=" + str(layout.n_nodes.value)
     
@@ -65,7 +70,8 @@ def process_layout_config(layout):
         " -tp run_count=" + str(layout.run_count.value) + \
         " -tp bandwidth_mb=" + str(layout.bandwidth_mb.value) + \
         " -tp latency_ms=" + str(layout.latency_ms.value) + \
-        " -tp jitter_pct=" + str(layout.jitter_pct.value)
+        " -tp jitter_pct=" + str(layout.jitter_pct.value) + \
+        " -tp enable_tcp=" + tcpFlag
 
     return cmd
 

@@ -1,4 +1,23 @@
-# `Plan:` Bitswap tuning - Combinations of Seeds and Leeches
+# Testbed
+This test bed offers a set of Testground test cases to test the performance of exchange interfaces over IPFS. It is composed
+by the following parts:
+* [Test Cases](./test): It includes the code for the test cases.
+* [Scripts](./scripts): Set of scripts to easily configure, run, and process your own test.
+* [Benchmarks](./banchmarks): Set of benchmarking scripts that enables the replication of certain tests without the need of additional configuration.
+
+### Usage
+* Use the dashboard notebook to send a single test and process the results:
+* Run a benchmark:
+* Process the results from a benchmark:
+* Configure your own dataset and feed it to the testbed
+
+### Benchmarks
+* [`Template`](./benchmarks/template.sh): Use this template if you want to configure your own benchmark.
+* [`Number of Wants`](./benchmarks/wantcount.sh): Tests the number of want messages seen by a node when exchanging a large number of small files.
+
+
+
+# `Plan:` transfer - Combinations of Seeds and Leeches
 
 ![](https://img.shields.io/badge/status-wip-orange.svg?style=flat-square)
 

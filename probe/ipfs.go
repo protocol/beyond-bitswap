@@ -198,7 +198,7 @@ func RandReader(len int) io.Reader {
 
 // getContent gets a file from the network and computes time_to_fetch
 func getContent(ctx context.Context, n *IPFSNode, fPath path.Path, pin bool) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 200*time.Second)
 	defer cancel()
 	var (
 		timeToFetch time.Duration
@@ -261,13 +261,16 @@ func addFile(ctx context.Context, n *IPFSNode, inputPathFile string) error {
 		fmt.Println("Could not get File:", err)
 		return err
 	}
-
+	fmt.Println(someFile)
+	start := time.Now()
 	cidFile, err := n.API.Unixfs().Add(ctx, someFile)
+	end := time.Since(start).Milliseconds()
 	if err != nil {
-		fmt.Println("Could not add random: ", err)
+		fmt.Println("Could not add file: ", err)
 		return err
 	}
 	fmt.Println("Adding file to the network:", cidFile)
+	fmt.Printf("Added in %d (ms)\n", end)
 	return nil
 }
 

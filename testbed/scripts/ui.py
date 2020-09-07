@@ -18,6 +18,8 @@ class Layout:
         self.bandwidth_mb = widgets.IntSlider(description="Nodes Bandwidth (MB)", value=100, min=0, max=500)
         self.latency_ms = widgets.IntSlider(description="Nodes Latency (ms)", value=10, min=10, max=500)
         self.jitter_pct = widgets.IntSlider(description="Pct Jitter (%)", value=5, min=0, max=100)
+        self.tcpEnabled = widgets.Checkbox(value=False,description='TCP enabled',disabled=False,indent=False)
+
         
         self.runButton = widgets.Button(
                 description='Run Test',
@@ -26,7 +28,7 @@ class Layout:
                 tooltip='Run test',
                 icon='check' # (FontAwesome names without the `fa-` prefix)
             )
-        self.grid = widgets.GridspecLayout(7, 2, height='300px')
+        self.grid = widgets.GridspecLayout(8, 2, height='300px')
         self.testid = ""
 
     def show(self):
@@ -44,6 +46,8 @@ class Layout:
         self.grid[5, 1] = self.latency_ms
         self.grid[6, 0] = self.runButton
         self.grid[6, 1] = self.jitter_pct
+        self.grid[7, 1] = self.tcpEnabled
+
         return self.grid
 
 

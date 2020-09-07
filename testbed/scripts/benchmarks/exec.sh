@@ -5,10 +5,6 @@ CMD="run $TESTCASE $INSTANCES $FILE_SIZE $RUN_COUNT $LATENCY $JITTER $PARALLEL_G
 # RUNNER="local:exec"
 # BUILDER="exec:go"
 
-echo "Cleaning previous results..."
-
-rm -rf ../results
-mkdir ../results
 echo "Starting test..."
 
 run_bitswap(){
