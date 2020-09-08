@@ -323,7 +323,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 			}
 
 			/// --- Report stats
-			err = ipfsNode.EmitMetrics(runenv, runNum, seq, grpseq, latency, bandwidthMB, int(f.Size()), nodetp, tpindex, timeToFetch, tcpFetch, leechFails)
+			err = ipfsNode.EmitMetrics(runenv, runNum, seq, grpseq, latency, bandwidthMB, int(f.Size()), nodetp, tpindex, timeToFetch, tcpFetch, leechFails, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
 			}

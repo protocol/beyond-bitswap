@@ -51,3 +51,4 @@ require (
 
 replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200901063521-a5520bd05e60
 // replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
+// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap feature/rfcBBL104

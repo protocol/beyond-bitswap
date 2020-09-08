@@ -93,7 +93,7 @@ instances = { min = 2, max = 64, default = 2 }
   parallel_gen_mb = { type = "int", desc = "maximum allowed size of seed data to generate in parallel", unit = "Mib", default = 100 }
   max_connection_rate = { type = "int", desc = "max connection allowed per peer according to total nodes", unit = "%", default = 100 }
   seeder_rate = { type = "int", desc = "percentage of nodes seeding the file", unit = "%", default = 100 }
-  number_waves = { type = "int", desc = "Number of waves of leechers", unit = "%", default = 2 }
+  number_waves = { type = "int", desc = "Number of waves of leechers", unit = "%", default = 4 }
   enable_tcp = { type="bool", desc="Enable TCP comparison", default=true }
 
 

@@ -13,7 +13,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--plots', nargs='+', help='''
                         One or more plots to be shown.
-                        Available: latency, throughput, overhead, messages.
+                        Available: latency, throughput, overhead, messages, wants, tcp.
+                        ''')
+    parser.add_argument('-dir', '--dir', type=str, help='''
+                        Result directory to process
                         ''')
 
     return parser.parse_args()
@@ -34,9 +37,9 @@ def process_result_line(l):
     item["value"] = value
     return item
 
-def aggregate_results():
+def aggregate_results(results_dir):
     res = []
-    for subdir, _, files in os.walk(dir_path + '/results'):
+    for subdir, _, files in os.walk(results_dir):
         for filename in files:
             filepath = subdir + os.sep + filename
             if filepath.split("/")[-1] == "results.out":
@@ -44,7 +47,7 @@ def aggregate_results():
                 resultFile = open(filepath, 'r')
                 for l in resultFile.readlines():
                     res.append(process_result_line(l))
-    return res, len(os.listdir(dir_path + "/results"))
+    return res, len(os.listdir(results_dir))
 
 def groupBy(agg, metric):
     res = {}
@@ -414,8 +417,13 @@ def plot_througput(byLatency, byBandwidth, byFileSize, byTopology, testcases):
 
 if __name__ == "__main__":
     args = parse_args()
+
+    results_dir = dir_path + '/results'
+    if args.dir:
+        results_dir = args.dir
+
     print("Starting to run...")
-    agg, testcases = aggregate_results()
+    agg, testcases = aggregate_results(results_dir)
     byLatency = groupBy(agg, "latencyMS")
     byNodeType = groupBy(agg, "nodeType")
     byFileSize = groupBy(agg, "fileSize")
