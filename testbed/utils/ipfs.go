@@ -165,7 +165,7 @@ func baseProcess(lc fx.Lifecycle) goprocess.Process {
 }
 
 // setConfig manually injects dependencies for the IPFS nodes.
-func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt) fx.Option {
+func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTenabled bool) fx.Option {
 
 	// Create new Datastore
 	// TODO: This is in memory we should have some other external DataStore for big files.
@@ -206,10 +206,17 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt) fx.Op
 		return libp2p.DefaultHostOption
 	})
 
+	dhtOption := libp2p.NilRouterOption
+	if DHTenabled {
+		dhtOption = libp2p.DHTOption // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
+		//dhtOption = libp2p.DHTClientOption, // This option sets the node to be a client DHT node (only fetching records)
+	}
+
 	// Use libp2p.DHTOption. Could also use DHTClientOption.
 	routingOption := fx.Provide(func() libp2p.RoutingOption {
 		// return libp2p.DHTClientOption
-		return libp2p.DHTOption
+		//TODO: Reminder. DHTRouter disabled.
+		return dhtOption
 	})
 
 	// Uncomment if you want to set Graphsync as exchange interface.
@@ -292,7 +299,8 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt) fx.Op
 		fx.Provide(libp2p.Relay(enableRelay, cfg.Swarm.EnableRelayHop)),
 		fx.Provide(libp2p.Transports(cfg.Swarm.Transports)),
 		fx.Invoke(libp2p.StartListening(cfg.Addresses.Swarm)),
-		fx.Invoke(libp2p.SetupDiscovery(cfg.Discovery.MDNS.Enabled, cfg.Discovery.MDNS.Interval)),
+		// TODO: Reminder. MDN discovery disabled.
+		fx.Invoke(libp2p.SetupDiscovery(false, cfg.Discovery.MDNS.Interval)),
 		fx.Provide(libp2p.Routing),
 		fx.Provide(libp2p.BaseRouting),
 		// Enable IPFS bandwidth metrics.
@@ -316,7 +324,7 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt) fx.Op
 }
 
 // CreateIPFSNodeWithConfig constructs and returns an IpfsNode using the given cfg.
-func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt) (*IPFSNode, error) {
+func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTEnabled bool) (*IPFSNode, error) {
 	// save this context as the "lifetime" ctx.
 	lctx := ctx
 
@@ -330,7 +338,7 @@ func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch Exc
 
 	app := fx.New(
 		// Inject dependencies in the node.
-		setConfig(ctx, nConfig, exch),
+		setConfig(ctx, nConfig, exch, DHTEnabled),
 
 		fx.NopLogger,
 		fx.Extract(n),
@@ -388,7 +396,7 @@ func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch Exc
 }
 
 // CreateIPFSNode an IPFS specifying exchange node and returns its coreAPI
-func CreateIPFSNode(ctx context.Context, ip string) (*IPFSNode, error) {
+func CreateIPFSNode(ctx context.Context, ip string, DHTenabled bool) (*IPFSNode, error) {
 
 	// Set up plugins
 	if err := setupPlugins(""); err != nil {
@@ -412,11 +420,16 @@ func CreateIPFSNode(ctx context.Context, ip string) (*IPFSNode, error) {
 	if err := repo.SetConfigKey("Addresses.Swarm", swarmAddrs); err != nil {
 		return nil, err
 	}
-
+	dhtOption := libp2p.NilRouterOption
+	if DHTenabled {
+		dhtOption = libp2p.DHTOption // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
+		//dhtOption = libp2p.DHTClientOption, // This option sets the node to be a client DHT node (only fetching records)
+	}
 	// Construct the node
 	nodeOptions := &core.BuildCfg{
 		Online:  true,
-		Routing: libp2p.DHTOption, // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
+		Routing: dhtOption, //TODO: Reminder DHT disabled.
+		// Routing: libp2p.DHTOption, // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
 		// Routing: libp2p.DHTClientOption, // This option sets the node to be a client DHT node (only fetching records)
 		Repo: repo,
 	}

@@ -6,15 +6,20 @@ by the following parts:
 * [Benchmarks](./banchmarks): Set of benchmarking scripts that enables the replication of certain tests without the need of additional configuration.
 
 ### Usage
+*TODO*
 * Use the dashboard notebook to send a single test and process the results:
 * Run a benchmark:
 * Process the results from a benchmark:
 * Configure your own dataset and feed it to the testbed
 
+### Plans
+* [`ipfs-transfer`](./test/ipfsTransfer.go): Tests the exchange of files over a network of IPFS nodes.
+* [`bitswap-transfer`](./test/transfer.go): Tests the exchange of the files over a network of Bitswap nodes.
+* [`waves`](./test/waves.go): Tests the request of files by subsequent waves of leechers.
+
 ### Benchmarks
 * [`Template`](./benchmarks/template.sh): Use this template if you want to configure your own benchmark.
 * [`Number of Wants`](./benchmarks/wantcount.sh): Tests the number of want messages seen by a node when exchanging a large number of small files.
-
 
 
 # `Plan:` transfer - Combinations of Seeds and Leeches

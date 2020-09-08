@@ -70,6 +70,8 @@ instances = { min = 2, max = 64, default = 2 }
   max_connection_rate = { type = "int", desc = "max connection allowed per peer according to total nodes", unit = "%", default = 100 }
   seeder_rate = { type = "int", desc = "percentage of nodes seeding the file", unit = "%", default = 100 }
   enable_tcp = { type="bool", desc="Enable TCP comparison", default=true }
+  enable_dht = { type="bool", desc="Enable DHT in IPFS nodes", default=false }
+
 
 [[testcases]]
 name = "waves"
@@ -95,6 +97,8 @@ instances = { min = 2, max = 64, default = 2 }
   seeder_rate = { type = "int", desc = "percentage of nodes seeding the file", unit = "%", default = 100 }
   number_waves = { type = "int", desc = "Number of waves of leechers", unit = "%", default = 4 }
   enable_tcp = { type="bool", desc="Enable TCP comparison", default=true }
+  enable_dht = { type="bool", desc="Enable DHT in IPFS nodes", default=false }
+
 
 
 [[testcases]]

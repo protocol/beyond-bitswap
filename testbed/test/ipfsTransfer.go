@@ -57,7 +57,7 @@ func IPFSTransfer(runenv *runtime.RunEnv) error {
 		return err
 	}
 	// Create IPFS node
-	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch)
+	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch, testvars.DHTEnabled)
 	// ipfsNode, err := utils.CreateIPFSNode(ctx)
 	if err != nil {
 		runenv.RecordFailure(err)

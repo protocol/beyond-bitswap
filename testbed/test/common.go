@@ -30,6 +30,7 @@ type TestVars struct {
 	MaxConnectionRate int
 	TCPEnabled        bool
 	SeederRate        int
+	DHTEnabled        bool
 }
 
 func getEnvVars(runenv *runtime.RunEnv) *TestVars {
@@ -44,6 +45,7 @@ func getEnvVars(runenv *runtime.RunEnv) *TestVars {
 		MaxConnectionRate: runenv.IntParam("max_connection_rate"),
 		TCPEnabled:        runenv.BooleanParam("enable_tcp"),
 		SeederRate:        runenv.IntParam("seeder_rate"),
+		DHTEnabled:        runenv.BooleanParam("enable_dht"),
 	}
 }
 
