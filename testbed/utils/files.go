@@ -155,8 +155,13 @@ func (n *IPFSNode) GenerateFile(ctx context.Context, runenv *runtime.RunEnv, f T
 }
 
 func (n *IPFSNode) Add(ctx context.Context, runenv *runtime.RunEnv, tmpFile files.Node) (path.Resolved, error) {
+	start := time.Now()
 	cid, err := n.API.Unixfs().Add(ctx, tmpFile)
-	runenv.RecordMessage("Added to network %v", cid)
+	end := time.Since(start).Milliseconds()
+	if err != nil {
+		runenv.RecordMessage("Error adding file to network: %w", err)
+	}
+	runenv.RecordMessage("Added to network %v in %d (ms)", cid, end)
 	return cid, err
 }
 

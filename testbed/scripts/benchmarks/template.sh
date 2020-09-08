@@ -1,7 +1,7 @@
 #!/bin/bash
 
-RUNNER="local:docker"
-BUILDER="docker:go"
+RUNNER="local:exec"
+BUILDER="exec:go"
 
 
 echo "Cleaning previous results..."
@@ -18,11 +18,11 @@ LATENCY=5
 JITTER=10
 BANDWIDTH=100
 PARALLEL_GEN=100
-TESTCASE=ipfs-transfer
+TESTCASE=waves
 INPUT_DATA=random
 DATA_DIR=../extra/inputData
 TCP_ENABLED=false
-MAX_CONNECTION_RATE=50
+MAX_CONNECTION_RATE=100
 
 source ./exec.sh
 

@@ -18,6 +18,53 @@ import (
 	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 )
 
+// TestVars testing variables
+type TestVars struct {
+	ExchangeInterface string
+	Timeout           time.Duration
+	RunTimeout        time.Duration
+	LeechCount        int
+	PassiveCount      int
+	RequestStagger    time.Duration
+	RunCount          int
+	MaxConnectionRate int
+	TCPEnabled        bool
+	SeederRate        int
+}
+
+func getEnvVars(runenv *runtime.RunEnv) *TestVars {
+	return &TestVars{
+		ExchangeInterface: runenv.StringParam("exchange_interface"),
+		Timeout:           time.Duration(runenv.IntParam("timeout_secs")) * time.Second,
+		RunTimeout:        time.Duration(runenv.IntParam("run_timeout_secs")) * time.Second,
+		LeechCount:        runenv.IntParam("leech_count"),
+		PassiveCount:      runenv.IntParam("passive_count"),
+		RequestStagger:    time.Duration(runenv.IntParam("request_stagger")) * time.Millisecond,
+		RunCount:          runenv.IntParam("run_count"),
+		MaxConnectionRate: runenv.IntParam("max_connection_rate"),
+		TCPEnabled:        runenv.BooleanParam("enable_tcp"),
+		SeederRate:        runenv.IntParam("seeder_rate"),
+	}
+}
+
+func generateAndAdd(ctx context.Context, runenv *runtime.RunEnv, ipfsNode *utils.IPFSNode, f utils.TestFile) (*cid.Cid, error) {
+	runenv.RecordMessage("Generating the new file in seeder")
+	// Generate the file
+	tmpFile, err := ipfsNode.GenerateFile(ctx, runenv, f)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("Adding the file to IPFS", tmpFile)
+	// Add file to the IPFS network
+	cidFile, err := ipfsNode.Add(ctx, runenv, tmpFile)
+	if err != nil {
+		runenv.RecordMessage("Error adding file to IPFS %w", err)
+		return nil, err
+	}
+	cid := cidFile.Cid()
+	return &cid, nil
+}
+
 func parseType(ctx context.Context, runenv *runtime.RunEnv, client *sync.DefaultClient, addrInfo *peer.AddrInfo, seq int64) (int64, utils.NodeType, int, error) {
 	leechCount := runenv.IntParam("leech_count")
 	passiveCount := runenv.IntParam("passive_count")
