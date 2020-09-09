@@ -9,8 +9,9 @@ echo "Cleaning previous results..."
 rm -rf ../results
 mkdir ../results
 
-FILE_SIZE=15728640,31457280,47185920,57671680
-RUN_COUNT=2
+# FILE_SIZE=15728640,31457280,47185920,57671680
+FILE_SIZE=57671680
+RUN_COUNT=5
 INSTANCES=18
 LEECH_COUNT=17
 PASSIVE_COUNT=0
@@ -24,6 +25,7 @@ DATA_DIR=../extra/testDataset
 # DATA_DIR=/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/testDataset
 TCP_ENABLED=false
 MAX_CONNECTION_RATE=70
+# WAVES = 6
 
 source ./exec.sh
 

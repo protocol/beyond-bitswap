@@ -241,11 +241,14 @@ def plot_want_messages(byFileSize, byTopology):
         arr_wants_max = []
         arr_wants_total = []
         arr_wants_avg_single = []
+        arr_want_haves = []
+        arr_want_blocks = []
+
 
         for f in byFileSize:
             labels.append(int(f)/1e6)
             x = np.arange(len(labels))  # the label locations
-            wants = 0
+            wants = want_haves = want_blocks = 0
             wants_n = want_max = 0
             width = 1/4
 
@@ -256,10 +259,16 @@ def plot_want_messages(byFileSize, byTopology):
                         wants_n += 1
                         if want_max < i["value"]:
                             want_max = i["value"]
+                    if i["name"] == "want_blocks_rcvd":
+                        want_blocks += i["value"]
+                    if i["name"] == "want_haves_rcvd":
+                        want_haves += i["value"]
 
             # Computing averages
             # Remove the division if you want to see total values 
             # arr_wants_avg.append(round(wants/instances/1000,1))
+            arr_want_haves.append(round(want_haves/wants_n,1))
+            arr_want_blocks.append(round(want_blocks/wants_n,1))
             arr_wants_avg_single.append(round(wants/wants_n,1))
             arr_wants_max.append(want_max)
             arr_wants_total.append(wants/1000)
@@ -268,19 +277,21 @@ def plot_want_messages(byFileSize, byTopology):
             wants_n = want_max = 0
 
         fig, ax = plt.subplots()
-        # bar1 = ax.bar(x-(3/2)*width, arr_wants_avg, width, label="Average wants exchanged in test per node (kMessages)")
+        bar1a = ax.bar(x-(3/2)*width, arr_want_haves, width, label="Average want-haves")
+        bar1b = ax.bar(x-(3/2)*width, arr_want_blocks, width, label="Average want-blocks")
         bar2 = ax.bar(x-width/2, arr_wants_avg_single, width, label="Average wants per node in single file")
         bar3 = ax.bar(x+width/2, arr_wants_max, width, label="Max wants received by node in single file")
         bar4 = ax.bar(x+(3/2)*width, arr_wants_total, width, label="Total want messages exchanged in test (KMessages)")
 
-        # autolabel(ax, bar1)
+        autolabel(ax, bar1a)
+        autolabel(ax, bar1b)
         autolabel(ax, bar2)
         autolabel(ax, bar3)
         autolabel(ax, bar4)
 
 
         ax.set_ylabel('Number of messages')
-        ax.set_title('Average number of messages exchanged ' + t)
+        ax.set_title('Average number of WANTs exchanged ' + t)
         ax.set_xticks(x)
         ax.set_xticklabels(labels)
         ax.legend()
@@ -429,6 +440,8 @@ if __name__ == "__main__":
     byFileSize = groupBy(agg, "fileSize")
     byBandwidth = groupBy(agg, "bandwidthMB")
     byTopology = groupBy(agg, "topology")
+    byConnectionRate = groupBy(agg, "maxConnectionRate")
+
     if args.plots is None:
         print("[!!] No plots provided...")
         sys.exit()

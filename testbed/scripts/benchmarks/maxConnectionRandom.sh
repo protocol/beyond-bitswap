@@ -1,7 +1,7 @@
 #!/bin/bash
 
-RUNNER="local:exec"
-BUILDER="exec:go"
+RUNNER="local:docker"
+BUILDER="docker:go"
 
 
 echo "Cleaning previous results..."

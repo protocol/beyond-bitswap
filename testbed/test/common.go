@@ -56,7 +56,7 @@ func generateAndAdd(ctx context.Context, runenv *runtime.RunEnv, ipfsNode *utils
 	if err != nil {
 		return nil, err
 	}
-	runenv.RecordMessage("Adding the file to IPFS", tmpFile)
+	// runenv.RecordMessage("Adding the file to IPFS", tmpFile)
 	// Add file to the IPFS network
 	cidFile, err := ipfsNode.Add(ctx, runenv, tmpFile)
 	if err != nil {

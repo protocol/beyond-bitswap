@@ -597,15 +597,15 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_rcvd", id), float64(stats.BlocksReceived))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:wants_rcvd", id), float64(stats.WantsRecvd))
+	runenv.R().RecordPoint(fmt.Sprintf("%s/name:want_blocks_rcvd", id), float64(stats.WantBlocksRecvd))
+	runenv.R().RecordPoint(fmt.Sprintf("%s/name:want_haves_rcvd", id), float64(stats.WantHavesRecvd))
 
 	// IPFS Node Stats
-	runenv.RecordMessage("Getting new metrics")
 	bwTotal := n.Node.Reporter.GetBandwidthTotals()
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:total_in", id), float64(bwTotal.TotalIn))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:total_out", id), float64(bwTotal.TotalOut))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:rate_in", id), float64(bwTotal.RateIn))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:rate_out", id), float64(bwTotal.RateOut))
-	runenv.RecordMessage("Finished with new metric and resetting.")
 
 	// Restart all counters for the next test.
 	n.Node.Reporter.Reset()
