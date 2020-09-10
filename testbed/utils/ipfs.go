@@ -586,7 +586,7 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", id), float64(timeToFetch))
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:leech_fails", id), float64(leechFails))
 		runenv.R().RecordPoint(fmt.Sprintf("%s/name:tcp_fetch", id), float64(tcpFetch))
-		runenv.R().RecordPoint(fmt.Sprintf("%s/name:num_dht", id), float64(stats.NumDHT))
+		// runenv.R().RecordPoint(fmt.Sprintf("%s/name:num_dht", id), float64(stats.NumDHT))
 	}
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:msgs_rcvd", id), float64(stats.MessagesReceived))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:data_sent", id), float64(stats.DataSent))
