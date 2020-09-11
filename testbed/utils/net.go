@@ -34,9 +34,9 @@ func SetupNetwork(ctx context.Context, runenv *runtime.RunEnv,
 	bandwidth := runenv.IntParam("bandwidth_mb")
 
 	cfg := &network.Config{
-		Network: "default",
-		Enable:  true,
-		// RoutingPolicy: network.AllowAll,
+		Network:       "default",
+		Enable:        true,
+		RoutingPolicy: network.AllowAll,
 		Default: network.LinkShape{
 			Latency:   latency,
 			Bandwidth: uint64(bandwidth) * 1024 * 1024,
