@@ -254,8 +254,7 @@ func Transfer(runenv *runtime.RunEnv) error {
 			}
 
 			// Dial all peers
-			maxConnections := maxConnectionRate * runenv.TestInstanceCount
-			dialed, err := utils.DialOtherPeers(ctx, h, addrInfos, maxConnections)
+			dialed, err := utils.DialOtherPeers(ctx, h, addrInfos, maxConnectionRate)
 			if err != nil {
 				return err
 			}
