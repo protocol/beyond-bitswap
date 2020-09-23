@@ -4,7 +4,8 @@ This is a simple CLI tool to help debug the exchange of content between differen
 ### Usage
 * To run the tool use:
 ```
-$ go run probe.go
+$ go build
+$ ./probe
 ```
 * The command will start a new IPFS node and add a set of files from a directory and
 randomly generated to start testing. When this task is finished you will be prompted to
@@ -19,6 +20,7 @@ Adding inputData directory
 Adding file to the network: /ipfs/QmNdGY4t8ZPU1StBRs7fNpyr6TarwVaYNFtWFwT2tZunw5
 >> Enter command: 
 ```
+* Optionally you can use the `--debug` flag to show verbose Bitswap DEBUG traces.
 
 There are currently four available commands:
 * `get_<ipfs_path>`: Gets `path` from the IPFS network.

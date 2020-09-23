@@ -82,8 +82,9 @@ func CreateIPFSNode(ctx context.Context) (*IPFSNode, error) {
 
 	// Construct the node
 	nodeOptions := &core.BuildCfg{
-		Online:  true,
-		Routing: ipfslibp2p.DHTOption,
+		Online: true,
+		// Routing: ipfslibp2p.DHTOption,
+		Routing: ipfslibp2p.NilRouterOption,
 		Repo:    repo,
 	}
 
@@ -198,7 +199,7 @@ func RandReader(len int) io.Reader {
 
 // getContent gets a file from the network and computes time_to_fetch
 func getContent(ctx context.Context, n *IPFSNode, fPath path.Path, pin bool) error {
-	ctx, cancel := context.WithTimeout(ctx, 200*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	var (
 		timeToFetch time.Duration

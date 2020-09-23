@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	logging "github.com/ipfs/go-log"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	// This package is needed so that all the preloaded plugins are loaded automatically
 	// bsnet "github.com/ipfs/go-bitswap/network"
@@ -72,7 +73,12 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 
 func main() {
 	addDirectory := flag.String("addDirectory", "", "Add a directory to the probe")
+	debug := flag.Bool("debug", false, "Set debug logging")
+
 	flag.Parse()
+	if *debug {
+		logging.SetLogLevel("bitswap", "DEBUG")
+	}
 
 	reader := bufio.NewReader(os.Stdin)
 
