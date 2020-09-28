@@ -599,6 +599,7 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:wants_rcvd", id), float64(stats.WantsRecvd))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:want_blocks_rcvd", id), float64(stats.WantBlocksRecvd))
 	runenv.R().RecordPoint(fmt.Sprintf("%s/name:want_haves_rcvd", id), float64(stats.WantHavesRecvd))
+	runenv.R().RecordPoint(fmt.Sprintf("%s/name:stream_data_sent", id), float64(stats.StreamDataSent))
 
 	// IPFS Node Stats
 	bwTotal := n.Node.Reporter.GetBandwidthTotals()

@@ -24,6 +24,17 @@ enabled = true
 [runners."local:exec"]
 enabled = true
 
+["aws"]
+region = "eu-west-2"
+
+[runners."cluster:k8s"]
+testplan_pod_cpu      = "100m"
+testplan_pod_memory   = "100Mi"
+provider = "aws"
+autoscaler_enabled = false
+collect_outputs_pod_cpu     = "102m"
+collect_outputs_pod_memory  = "103Mi"
+
 [runners."cluster:swarm"]
 enabled = true
 

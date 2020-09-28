@@ -15,6 +15,10 @@ def parse_args():
                         One or more plots to be shown.
                         Available: latency, throughput, overhead, messages, wants, tcp.
                         ''')
+    parser.add_argument('-o', '--outputs', nargs='+', help='''
+                        One or more outputs to be shown.
+                        Available: data
+                        ''')
     parser.add_argument('-dir', '--dir', type=str, help='''
                         Result directory to process
                         ''')
@@ -297,7 +301,6 @@ def plot_want_messages(byFileSize, byTopology):
         ax.legend()
         fig.tight_layout()
 
-# TODO: This is wrong. Here we only accoun for the data exchanged using Bitswap.
 def plot_bw_overhead(byFileSize, byTopology):
 
     # plt.figure()
@@ -364,6 +367,38 @@ def plot_bw_overhead(byFileSize, byTopology):
         ax.legend()
         fig.tight_layout()
 
+def output_avg_stream_data(byFileSize, byTopology):
+
+    for t in byTopology:
+        labels = []
+        arr_data_stream_sent = []
+
+        for f in byFileSize:
+            labels.append(int(f)/1e6)
+
+            #TODO: Considering a 5.5% overhead of TPC
+            stream_data_sent = 0
+            stream_data_sent_n = 0
+
+            for i in byFileSize[f]:
+                # We are only interested in leechers so we don't duplicate measurements.
+                if i["nodeType"] == "Seed" and i["topology"]==t:
+                    if i["name"] == "stream_data_sent":
+                        stream_data_sent += i["value"]
+                        stream_data_sent_n += 1
+                        
+            # Computing averages
+            # Remove the division if you want to see total values 
+            arr_data_stream_sent.append(round(stream_data_sent/stream_data_sent_n/1e6,3))
+            stream_data_sent = 0
+            stream_data_sent_n = 0
+
+        print("=== Stream Data Sent ===")
+        print("[*] Topology: ", t)
+        i = 0
+        for x in labels:
+            print("Filesize: %s MB -- Avg. Stream Data Sent Seeders: %s" % (x, arr_data_stream_sent[i]) )
+            i+=1
 
 def plot_througput(byLatency, byBandwidth, byFileSize, byTopology, testcases):
 
@@ -433,7 +468,6 @@ if __name__ == "__main__":
     if args.dir:
         results_dir = args.dir
 
-    print("Starting to run...")
     agg, testcases = aggregate_results(results_dir)
     byLatency = groupBy(agg, "latencyMS")
     byNodeType = groupBy(agg, "nodeType")
@@ -442,21 +476,27 @@ if __name__ == "__main__":
     byTopology = groupBy(agg, "topology")
     byConnectionRate = groupBy(agg, "maxConnectionRate")
 
-    if args.plots is None:
-        print("[!!] No plots provided...")
+    if args.plots is None and args.outputs is None:
+        print("[!!] No plots or outputs provided...")
         sys.exit()
 
-    if "latency" in args.plots:
-        plot_latency(byLatency, byBandwidth, byFileSize)
-    if "messages" in args.plots:
-        plot_messages(byFileSize, byTopology)
-    if "overhead" in args.plots:
-        plot_bw_overhead(byFileSize, byTopology)
-    if "throughput" in args.plots:
-        plot_througput(byLatency, byBandwidth, byFileSize, byTopology, testcases)
-    if "tcp" in args.plots:
-        plot_tcp_latency(byLatency, byBandwidth, byFileSize)
-    if "wants" in args.plots:
-        plot_want_messages(byFileSize, byTopology)
+    if args.plots is not None:
+        if "latency" in args.plots:
+            plot_latency(byLatency, byBandwidth, byFileSize)
+        if "messages" in args.plots:
+            plot_messages(byFileSize, byTopology)
+        if "overhead" in args.plots:
+            plot_bw_overhead(byFileSize, byTopology)
+        if "throughput" in args.plots:
+            plot_througput(byLatency, byBandwidth, byFileSize, byTopology, testcases)
+        if "tcp" in args.plots:
+            plot_tcp_latency(byLatency, byBandwidth, byFileSize)
+        if "wants" in args.plots:
+            plot_want_messages(byFileSize, byTopology)
+        
+        plt.show()
 
-    plt.show()
+
+if args.outputs is not None:
+        if "data" in args.outputs:
+            output_avg_stream_data(byFileSize, byTopology)

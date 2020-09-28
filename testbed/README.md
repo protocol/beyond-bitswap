@@ -6,6 +6,9 @@ by the following parts:
 * [Benchmarks](./banchmarks): Set of benchmarking scripts that enables the replication of certain tests without the need of additional configuration.
 
 ### Usage
+To point to a specific version of `go-bitswsap` to test a specific RFC, point to the specific commit
+of the branch in go.mod and build the source, the reference will be automatically updated.
+
 *TODO*
 * Use the dashboard notebook to send a single test and process the results:
 * Run a benchmark:

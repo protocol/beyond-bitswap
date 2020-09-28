@@ -49,7 +49,9 @@ require (
 	golang.org/x/text v0.3.3 // indirect
 )
 
-// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200909065718-674118d87e39
-
+// LOCAL
 replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
-// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap feature/rfcBBL104
+// Baseline
+// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200910120545-d151875a9404
+// RFCBBL203A
+// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200928082451-4186ba0c569c

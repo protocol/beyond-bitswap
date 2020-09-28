@@ -78,6 +78,7 @@ func main() {
 	flag.Parse()
 	if *debug {
 		logging.SetLogLevel("bitswap", "DEBUG")
+		logging.SetLogLevel("bitswap_network", "DEBUG")
 	}
 
 	reader := bufio.NewReader(os.Stdin)
