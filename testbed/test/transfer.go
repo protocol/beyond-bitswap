@@ -9,6 +9,7 @@ import (
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 
 	"github.com/testground/sdk-go/network"
+	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
@@ -24,7 +25,7 @@ import (
 // testground run single --plan=beyond-bitswap --testcase=baseline --builder=docker:go --runner=local:docker --instances=2
 
 // Transfer data from S seeds to L leeches
-func Transfer(runenv *runtime.RunEnv) error {
+func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Test Parameters
 	timeout := time.Duration(runenv.IntParam("timeout_secs")) * time.Second
 	runTimeout := time.Duration(runenv.IntParam("run_timeout_secs")) * time.Second

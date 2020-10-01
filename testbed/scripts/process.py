@@ -47,7 +47,7 @@ def aggregate_results(results_dir):
         for filename in files:
             filepath = subdir + os.sep + filename
             if filepath.split("/")[-1] == "results.out":
-                print (filepath)
+                # print (filepath)
                 resultFile = open(filepath, 'r')
                 for l in resultFile.readlines():
                     res.append(process_result_line(l))
@@ -397,7 +397,7 @@ def output_avg_stream_data(byFileSize, byTopology):
         print("[*] Topology: ", t)
         i = 0
         for x in labels:
-            print("Filesize: %s MB -- Avg. Stream Data Sent Seeders: %s" % (x, arr_data_stream_sent[i]) )
+            print("Filesize: %s MB -- Avg. Stream Data Sent Seeders: %s MB" % (x, arr_data_stream_sent[i]) )
             i+=1
 
 def plot_througput(byLatency, byBandwidth, byFileSize, byTopology, testcases):

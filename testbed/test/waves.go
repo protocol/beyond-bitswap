@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/testground/sdk-go/network"
+	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
@@ -23,7 +24,7 @@ import (
 // testground run single --plan=beyond-bitswap --testcase=ipfs-transfer --runner="local:exec" --builder=exec:go --instances=2
 
 // IPFSTransfer data from S seeds to L leeches
-func Waves(runenv *runtime.RunEnv) error {
+func Waves(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Test Parameters
 	testvars := getEnvVars(runenv)
 	numWaves := runenv.IntParam("number_waves")

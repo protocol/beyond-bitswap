@@ -50,8 +50,9 @@ require (
 )
 
 // LOCAL
-replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
+// replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
 // Baseline
-// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200910120545-d151875a9404
+replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200928095440-64951107fd58
+
 // RFCBBL203A
 // replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200928082451-4186ba0c569c
