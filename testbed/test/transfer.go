@@ -48,15 +48,15 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	nwClient := network.NewClient(client, runenv)
 
 	/// --- Tear down
-	defer func() {
-		_, err := client.SignalAndWait(ctx, "end", runenv.TestInstanceCount)
-		if err != nil {
-			runenv.RecordFailure(err)
-		} else {
-			runenv.RecordSuccess()
-		}
-		client.Close()
-	}()
+	// defer func() {
+	// 	_, err := client.SignalAndWait(ctx, "end", runenv.TestInstanceCount)
+	// 	if err != nil {
+	// 		runenv.RecordFailure(err)
+	// 	} else {
+	// 		runenv.RecordSuccess()
+	// 	}
+	// 	client.Close()
+	// }()
 
 	// Create libp2p node
 	h, err := libp2p.New(ctx)

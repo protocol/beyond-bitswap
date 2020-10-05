@@ -57,6 +57,8 @@ github.com/adlrocha/go-bitswap v0.2.20-0.20200928082451-4186ba0c569c h1:0v9lKqtZ
 github.com/adlrocha/go-bitswap v0.2.20-0.20200928082451-4186ba0c569c/go.mod h1:3cPec3q5Km1wfn76GaZQ8bceqeH5qUGxXDjziiNDP3Q=
 github.com/adlrocha/go-bitswap v0.2.20-0.20200928095440-64951107fd58 h1:ZZuFKDue+Cxci02UHkJqVWwGqXS2XR7p+1nuffVnIJQ=
 github.com/adlrocha/go-bitswap v0.2.20-0.20200928095440-64951107fd58/go.mod h1:Wxv8HCi8VSTvaeMmuvWf8dg7Q2UPwMC1r3av3gCqiEk=
+github.com/adlrocha/go-bitswap v0.2.20-0.20201002103752-9be5ba579788 h1:VP6oAmV/T5JCDRq5x0T5XNXTAtV51ACL6rWBkBfsnuA=
+github.com/adlrocha/go-bitswap v0.2.20-0.20201002103752-9be5ba579788/go.mod h1:1Svm9h8Tpy17eZPM0Rf9eq8WoNF6/xO9txzoUTzhFt4=
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=
 github.com/alangpierce/go-forceexport v0.0.0-20160317203124-8f1d6941cd75/go.mod h1:uAXEEpARkRhCZfEvy/y0Jcc888f9tHCc1W7/UeEtreE=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
