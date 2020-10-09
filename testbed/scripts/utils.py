@@ -5,7 +5,7 @@ TESTGROUND_BIN="testground"
 BUILDER = "exec:go"
 RUNNER = "local:exec"
 BUILDCFG = " --build-cfg skip_runtime_image=true"
-BASE_CMD = TESTGROUND_BIN + " run single --plan=beyond-bitswap --builder=" + \
+BASE_CMD = TESTGROUND_BIN + " run single --plan=testbed --builder=" + \
     BUILDER + " --runner=" + RUNNER + BUILDCFG
 
 # Parses yaml configs
@@ -46,7 +46,7 @@ def process_layout_config(layout):
     if layout.isDocker.value:
         BUILDER = "docker:go"
         RUNNER = "local:docker"
-        base = TESTGROUND_BIN + " run single --plan=beyond-bitswap --builder=" + \
+        base = TESTGROUND_BIN + " run single --plan=testbed --builder=" + \
             BUILDER + " --runner=" + RUNNER + BUILDCFG
 
     if layout.tcpEnabled:

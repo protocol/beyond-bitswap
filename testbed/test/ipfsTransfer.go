@@ -20,9 +20,6 @@ import (
 	"github.com/ipfs/interface-go-ipfs-core/path"
 )
 
-// NOTE: To run use:
-// testground run single --plan=beyond-bitswap --testcase=ipfs-transfer --runner="local:exec" --builder=exec:go --instances=2
-
 // IPFSTransfer data from S seeds to L leeches
 func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Test Parameters
