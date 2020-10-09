@@ -1,18 +1,17 @@
 # P2P File-Sharing Testbed
 
-*Disclaimer: This is a work in progress, expect the base code to change rapidly and frequently break. Post issues and contributions are more than welcome, they are needed. Let's drive speed-ups to file-sharing in P2P networks together*
+*Disclaimer: This is a work in progress, expect the base code to change rapidly and potentially to frequently break. Post issues, and contributions are not only welcome but needed. Let's drive speed-ups to file-sharing in P2P networks together*
 
-This testbed offers a set of Testground test cases to test the performance of exchange interfaces over IPFS. It is composed
+This testbed offers a set of Testground test cases to evaluate the the performance of different exchange interface implementations over IPFS. It is composed
 by the following parts:
 * [Test Cases](./test): It includes the code for the test cases.
 * [Scripts](./scripts): Set of scripts to easily configure, run, and process your own test.
-* [Benchmarks](./banchmarks): Set of benchmarking scripts that enables the replication of certain tests without the need of additional configuration.
+* [Benchmarks](./scripts/benchmarks): Set of benchmarking scripts that enables the replication of certain tests without the need of additional configuration.
 
 
 ### Plans
 * [`ipfs-transfer`](./test/ipfsTransfer.go): Tests the exchange of files over a network of IPFS nodes.
-* [`bitswap-transfer`](./test/transfer.go): Tests the exchange of the files over a network of Bitswap nodes.
-  - To try compression in libp2p within Bitswap, this test cases includes a `libp2p_compressed` parameter the Bitswap node libp2p host is spawned with compression enabled.
+* [`bitswap-transfer`](./test/transfer.go): Tests the exchange of files over a network of Bitswap nodes.
 * [`waves`](./test/waves.go): Tests the request of files by subsequent waves of leechers.
 * [`sparse`](./test/sparse.go): Tests seeders which are not connected directly to seeders. Between them there are always a set of passive nodes.
 
@@ -21,12 +20,12 @@ by the following parts:
 * [`Number of Wants`](./benchmarks/wantcount.sh): Tests the number of want messages seen by a node when exchanging a large number of small files.
 
 ## Installation
+Clone the repository to start the installation:
+```
+$ git clone https://github.com/adlrocha/beyond-bitswap.git
+```
 
 ### Testground
-Download the following repository:
-```
-https://github.com/adlrocha/beyond-bitswap.git
-```
 
 To run the testbed in your local environment, first you need to install [Testground](https://github.com/testground/testground). Testrgound requires Docker and Go ^1.14 installed in your machine.
 ```
@@ -46,7 +45,7 @@ $ sudo cp testground /usr/local/bin
 You can check that Testground is conveniently installed in your environment by running `testground --help`.
 
 
-With Testground installed, you need to import the testbed plan to the testbed, to do so you need to:
+With Testground installed, you need to import the testbed plan from the testbed, to do so you need to:
 * Go to the root of the project: `cd beyond-bitswap`
 * Run the testground daemon in an independent terminal (or the background): `testground daemon`
 * And from another terminal (or in the foreground) run: `testground plan import --from testbed/`
@@ -96,8 +95,8 @@ $ pip install -r requirements.txt
 With this you have the dependencies to run the processing python scripts and start the Jupyter Notebook.
 
 ### Deploying a Jupyter notebook server.
-You can enable access to you testbed remotely by starting a Jupyter notebook server that allows the run of experiments through `dashboard.pynb`. To set up the Jupyter notebook:
-* Create a jupyter with config file:
+You can enable access to your testbed remotely by starting a Jupyter notebook server that allows the run of experiments through `dashboard.pynb`. To set up the Jupyter notebook:
+* Create a jupyter server with a generated config file:
 ```
 $ jupyter notebook --generate-config
 $ jupyter notebook password
@@ -108,8 +107,12 @@ c.NotebookApp.ip = "*"
 c.NotebookApp.notebook_dir = "TESTBED_DIR"
 c.NotebookApp.open_browser = False
 ```
+* And run the jupyter server:
+```
+$ jupyter notebook --config ~/.jupyter/jupyter_notebook_config.py
+```
 
-## Run experiments
+## Running experiments
 You have several ways of running an experiment in the testbed. For all of these ways remember that your testground daemon need to be running (i.e. `testground daemon` in the background).
 
 * Running a benchmark script: This is the most straightforward way, and the perfect way to test your installation you just need to go to `./scripts/benchmarks` and run any of the benchmark scripts. This will run the template experiment, collect your results and place them in `./scripts/results`.
