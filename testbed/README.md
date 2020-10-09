@@ -18,7 +18,9 @@ of the branch in go.mod and build the source, the reference will be automaticall
 ### Plans
 * [`ipfs-transfer`](./test/ipfsTransfer.go): Tests the exchange of files over a network of IPFS nodes.
 * [`bitswap-transfer`](./test/transfer.go): Tests the exchange of the files over a network of Bitswap nodes.
+  - To try compression in libp2p within Bitswap, this test cases includes a `libp2p_compressed` parameter the Bitswap node libp2p host is spawned with compression enabled.
 * [`waves`](./test/waves.go): Tests the request of files by subsequent waves of leechers.
+* [`sparse`](./test/sparse.go): Tests seeders which are not connected directly to seeders. Between them there are always a set of passive nodes.
 
 ### Benchmarks
 * [`Template`](./benchmarks/template.sh): Use this template if you want to configure your own benchmark.

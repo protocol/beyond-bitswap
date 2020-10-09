@@ -10,5 +10,6 @@ func main() {
 		"bitswap-transfer": test.Transfer,
 		"ipfs-transfer":    test.IPFSTransfer,
 		"waves":            test.Waves,
+		"sparse":           test.Sparse,
 	})
 }

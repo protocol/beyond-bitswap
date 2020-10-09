@@ -39,15 +39,18 @@ collect_outputs_pod_memory  = "103Mi"
 enabled = true
 
 [[testcases]]
-name = "transfer"
+name = "ipfs-transfer"
 instances = { min = 2, max = 64, default = 2 }
 
   [testcases.params]
+  input_data = { type="string", desc="input data to be used in the test (files, random, custom)", default="random"}
+  data_dir = { type="string", desc="directory with data is located", default="/plan/scripts/inputData"}
+  exchange_interface = { type="string", desc="exchange interface to use in IPFS node", default="bitswap"}
   run_count = { type = "int", desc = "number of iterations of the test", unit = "iteration", default = 1 }
   run_timeout_secs = { type = "int", desc = "timeout for an individual run", unit = "seconds", default = 90 }
   leech_count = { type = "int", desc = "number of leech nodes", unit = "peers", default = 1 }
   passive_count = { type = "int", desc = "number of passive nodes (neither leech nor seed)", unit = "peers", default = 0 }
-  timeout_secs = { type = "int", desc = "timeout", unit = "seconds", default = 30 } #TODO: Increase to 300 if not debugging
+  timeout_secs = { type = "int", desc = "timeout", unit = "seconds", default = 4000 }#TODO: Decrease to 300 if not debugging. Bear this in mind while making long tests.
   bstore_delay_ms = { type = "int", desc = "blockstore get / put delay", unit = "milliseconds", default = 5 }
   request_stagger = { type = "int", desc = "time between each leech's first request", unit = "ms", default = 0}
   file_size = { type = "int", desc = "file size", unit = "bytes", default = 4194304 }
@@ -56,10 +59,13 @@ instances = { min = 2, max = 64, default = 2 }
   bandwidth_mb = { type = "int", desc = "bandwidth", unit = "Mib", default = 1024 }
   parallel_gen_mb = { type = "int", desc = "maximum allowed size of seed data to generate in parallel", unit = "Mib", default = 100 }
   max_connection_rate = { type = "int", desc = "max connection allowed per peer according to total nodes", unit = "%", default = 100 }
+  seeder_rate = { type = "int", desc = "percentage of nodes seeding the file", unit = "%", default = 100 }
+  enable_tcp = { type="bool", desc="Enable TCP comparison", default=true }
+  enable_dht = { type="bool", desc="Enable DHT in IPFS nodes", default=false }
 
 
 [[testcases]]
-name = "ipfs-transfer"
+name = "sparse"
 instances = { min = 2, max = 64, default = 2 }
 
   [testcases.params]
@@ -133,3 +139,4 @@ instances = { min = 2, max = 64, default = 2 }
   bandwidth_mb = { type = "int", desc = "bandwidth", unit = "Mib", default = 1024 }
   parallel_gen_mb = { type = "int", desc = "maximum allowed size of seed data to generate in parallel", unit = "Mib", default = 100 }
   max_connection_rate = { type = "int", desc = "max connection allowed per peer according to total nodes", unit = "%", default = 100 }
+  libp2p_compressed = {type = "bool", desc = "flag to determine if to use compression at a libp2p level or not", default = false}

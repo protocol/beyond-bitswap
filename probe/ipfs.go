@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -79,6 +80,9 @@ func CreateIPFSNode(ctx context.Context) (*IPFSNode, error) {
 	if err := repo.SetConfigKey("Addresses.Swarm", swarmAddrs); err != nil {
 		return nil, err
 	}
+	if err := repo.SetConfigKey("Discovery.MDNS.Enabled", false); err != nil {
+		return nil, err
+	}
 
 	// Construct the node
 	nodeOptions := &core.BuildCfg{
@@ -90,6 +94,14 @@ func CreateIPFSNode(ctx context.Context) (*IPFSNode, error) {
 
 	node, err := core.NewNode(ctx, nodeOptions)
 	fmt.Println("Listening at: ", node.PeerHost.Addrs())
+	for _, i := range node.PeerHost.Addrs() {
+		a := strings.Split(i.String(), "/")
+		if a[1] == "ip4" && a[2] == "127.0.0.1" && a[3] == "tcp" {
+			fmt.Println("Connect from other peers using: ")
+			fmt.Printf("connect_/ip4/127.0.0.1/tcp/%v/p2p/%s\n", a[4], node.PeerHost.ID().Pretty())
+		}
+
+	}
 	fmt.Println("PeerInfo: ", host.InfoFromHost(node.PeerHost))
 	if err != nil {
 		return nil, fmt.Errorf("Failed starting the node: %s", err)
@@ -136,14 +148,15 @@ func connectPeer(ctx context.Context, ipfs *IPFSNode, id string) error {
 		fmt.Println("Invalid peer ID")
 		return err
 	}
+	fmt.Println("Multiaddr", maddr)
 	addrInfo, err := peer.AddrInfoFromP2pAddr(maddr)
 	if err != nil {
-		fmt.Println("Invalid peer info")
+		fmt.Println("Invalid peer info", err)
 		return err
 	}
 	err = ipfs.API.Swarm().Connect(ctx, *addrInfo)
 	if err != nil {
-		fmt.Println("Couldn't connect to peer")
+		fmt.Println("Couldn't connect to peer", err)
 		return err
 	}
 	fmt.Println("Connected successfully to peer")
