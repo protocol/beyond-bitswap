@@ -16,6 +16,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	gzip "github.com/libp2p/go-libp2p-gzip"
 
 	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 )
@@ -59,7 +60,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// }()
 
 	// Create libp2p node
-	h, err := libp2p.New(ctx)
+	h, err := libp2p.New(ctx, libp2p.Compression(gzip.ID, gzip.New))
 	if err != nil {
 		return err
 	}
@@ -74,7 +75,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		return err
 	}
 	// Type of node and identifiers assigned.
-	grpseq, nodetp, tpindex, err := parseType(ctx, runenv, client, host.InfoFromHost(h), seq)
+	_, nodetp, tpindex, err := parseType(ctx, runenv, client, host.InfoFromHost(h), seq)
 	if err != nil {
 		return err
 	}
@@ -115,7 +116,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	/// --- Warm up
 
 	// Set up network (with traffic shaping)
-	latency, bandwidthMB, err := utils.SetupNetwork(ctx, runenv, nwClient, nodetp, tpindex)
+	_, _, err = utils.SetupNetwork(ctx, runenv, nwClient, nodetp, tpindex)
 	if err != nil {
 		return fmt.Errorf("Failed to set up network: %w", err)
 	}
@@ -292,11 +293,11 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 				return err
 			}
 
-			/// --- Report stats
-			err = emitMetrics(runenv, bsnode, runNum, seq, grpseq, latency, bandwidthMB, fileSize, nodetp, tpindex, timeToFetch)
-			if err != nil {
-				return err
-			}
+			// /// --- Report stats
+			// err = emitMetrics(runenv, bsnode, runNum, seq, grpseq, latency, bandwidthMB, fileSize, nodetp, tpindex, timeToFetch)
+			// if err != nil {
+			// 	return err
+			// }
 
 			// Shut down bitswap
 			err = bsnode.Close()

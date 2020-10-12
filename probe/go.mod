@@ -26,13 +26,13 @@ require (
 	github.com/ipfs/interface-go-ipfs-core v0.4.0
 	github.com/libp2p/go-libp2p v0.10.2
 	github.com/libp2p/go-libp2p-autonat v0.3.2 // indirect
-	github.com/libp2p/go-libp2p-core v0.6.1
+	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/libp2p/go-libp2p-peerstore v0.2.6
 	github.com/libp2p/go-mplex v0.1.3 // indirect
 	github.com/libp2p/go-reuseport-transport v0.0.4 // indirect
 	github.com/libp2p/go-sockaddr v0.1.0 // indirect
 	github.com/libp2p/go-yamux v1.3.8 // indirect
-	github.com/multiformats/go-multiaddr v0.2.2
+	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/multiformats/go-multihash v0.0.14
 	github.com/pkg/errors v0.9.1
 	github.com/polydawn/refmt v0.0.0-20190807091052-3d65705ee9f1 // indirect
@@ -49,3 +49,13 @@ require (
 replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
 
 // replace github.com/ipfs/test-plans => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/test-plans
+
+replace github.com/libp2p/go-libp2p-core => github.com/adlrocha/go-libp2p-core v0.6.2-0.20201008055055-b309947fc237
+
+replace github.com/libp2p/go-libp2p => github.com/adlrocha/go-libp2p v0.11.1-0.20201009165647-9e32a3d1018e
+
+replace github.com/libp2p/go-libp2p-gzip => github.com/adlrocha/go-libp2p-gzip v0.0.0-20201008055912-3c159e9de091
+
+replace github.com/libp2p/go-conn-compression-multistream => github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907
+
+replace github.com/libp2p/go-libp2p-transport-upgrader => github.com/adlrocha/go-libp2p-transport-upgrader v0.3.1-0.20201009165416-df4b32d10a02

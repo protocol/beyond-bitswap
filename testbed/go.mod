@@ -29,7 +29,8 @@ require (
 	github.com/jbenet/goprocess v0.1.4
 	github.com/libp2p/go-libp2p v0.10.2
 	github.com/libp2p/go-libp2p-autonat v0.3.2 // indirect
-	github.com/libp2p/go-libp2p-core v0.6.1
+	github.com/libp2p/go-libp2p-core v0.7.0
+	github.com/libp2p/go-libp2p-gzip v0.0.0-00010101000000-000000000000
 	// github.com/libp2p/go-libp2p-gzip v0.0.0-00010101000000-000000000000
 	github.com/libp2p/go-libp2p-kad-dht v0.8.2
 	github.com/libp2p/go-libp2p-peerstore v0.2.6
@@ -67,15 +68,12 @@ replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolL
 // replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap 4bc0294c2e9a222b7c520874bad3c8b32f2266d0
 
 // Replaces to support compression.
-// Compression with go-libp2p-core 0.7
-// replace github.com/libp2p/go-libp2p-core => github.com/adlrocha/go-libp2p-core bf5d45ca7e53c6c20d8f319f0f23c2fef93bf7f6
-// Compression with go-libp2p-core 0.6
-// replace github.com/libp2p/go-libp2p-core => github.com/adlrocha/go-libp2p-core v0.6.2-0.20201008055055-b309947fc237
+replace github.com/libp2p/go-libp2p-core => github.com/adlrocha/go-libp2p-core v0.6.2-0.20201008055055-b309947fc237
 
-// replace github.com/libp2p/go-libp2p => github.com/adlrocha/go-libp2p v0.11.1-0.20201008063238-d1909d9adebc
+replace github.com/libp2p/go-libp2p => github.com/adlrocha/go-libp2p v0.11.1-0.20201009165647-9e32a3d1018e
 
-// replace github.com/libp2p/go-libp2p-gzip => github.com/adlrocha/go-libp2p-gzip v0.0.0-20201008055912-3c159e9de091
+replace github.com/libp2p/go-libp2p-gzip => github.com/adlrocha/go-libp2p-gzip v0.0.0-20201008055912-3c159e9de091
 
-// replace github.com/libp2p/go-conn-compression-multistream => github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907
+replace github.com/libp2p/go-conn-compression-multistream => github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907
 
-// replace github.com/libp2p/go-libp2p-transport-upgrader => github.com/adlrocha/go-libp2p-transport-upgrader v0.3.1-0.20201007105011-1e846954f580
+replace github.com/libp2p/go-libp2p-transport-upgrader => github.com/adlrocha/go-libp2p-transport-upgrader v0.3.1-0.20201009165416-df4b32d10a02

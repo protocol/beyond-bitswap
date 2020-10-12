@@ -63,12 +63,16 @@ github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc1
 github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907/go.mod h1:0F55yqtkfblbm4keDI6cwfpW3QbPMEFDgWRPnh7mZoQ=
 github.com/adlrocha/go-libp2p v0.11.1-0.20201008063238-d1909d9adebc h1:LqYYRj+abbPkZRRBo0QeoCM9Oa/U4pedWDzqSEfTFR0=
 github.com/adlrocha/go-libp2p v0.11.1-0.20201008063238-d1909d9adebc/go.mod h1:MOzduE9LDbSKvMc+Ug3CdAqK3XUQFHwwjOeacaUAkeQ=
+github.com/adlrocha/go-libp2p v0.11.1-0.20201009165647-9e32a3d1018e h1:15HR/QWRY8gbKWYYgCL3wSkc1zKaM9kn1nUR+TbaE1A=
+github.com/adlrocha/go-libp2p v0.11.1-0.20201009165647-9e32a3d1018e/go.mod h1:MOzduE9LDbSKvMc+Ug3CdAqK3XUQFHwwjOeacaUAkeQ=
 github.com/adlrocha/go-libp2p-core v0.6.2-0.20201008055055-b309947fc237 h1:pnwlPPNI1LmXgCpdOX8wpUU3i1qOVRAZmTAUYMkqRaA=
 github.com/adlrocha/go-libp2p-core v0.6.2-0.20201008055055-b309947fc237/go.mod h1:FfewUH/YpvWbEB+ZY9AQRQ4TAD8sJBt/G1rVvhz5XT8=
 github.com/adlrocha/go-libp2p-gzip v0.0.0-20201008055912-3c159e9de091 h1:SRAKpJk0aBUe4iOv/bLAas0diC8FESLpLQUA8//bafI=
 github.com/adlrocha/go-libp2p-gzip v0.0.0-20201008055912-3c159e9de091/go.mod h1:Wd/b/1nwaXHs+rq4V/d0NDwV9/O40++fbjlvaoFxnmY=
 github.com/adlrocha/go-libp2p-transport-upgrader v0.3.1-0.20201007105011-1e846954f580 h1:2Rzhpj8jYjRwrSQXiR1WgC7w5UtfiIvyxf2ks2rROEw=
 github.com/adlrocha/go-libp2p-transport-upgrader v0.3.1-0.20201007105011-1e846954f580/go.mod h1:fH1YRmRiMYVyOE6YbLXQPnyWQrBq11zIF39iHqJSwIk=
+github.com/adlrocha/go-libp2p-transport-upgrader v0.3.1-0.20201009165416-df4b32d10a02 h1:tjZBQJ0+yznr3XBNOKf4BHq98T4BfCn9xpe2mQBIzZ0=
+github.com/adlrocha/go-libp2p-transport-upgrader v0.3.1-0.20201009165416-df4b32d10a02/go.mod h1:fH1YRmRiMYVyOE6YbLXQPnyWQrBq11zIF39iHqJSwIk=
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=
 github.com/alangpierce/go-forceexport v0.0.0-20160317203124-8f1d6941cd75/go.mod h1:uAXEEpARkRhCZfEvy/y0Jcc888f9tHCc1W7/UeEtreE=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=

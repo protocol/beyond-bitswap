@@ -27,5 +27,6 @@ There are currently four available commands:
 * `add_<size>`: Adds a random file of size `<size>`
 * `addFile_<os_path>`: Adds file from path to the network.
 * `connect_<p2pAddr>`: Connects to an IPFS node.
+* `disconnect`: Disconnect peer from every other peer it is connected to.
 * `pin_<ipfs_path>`: Pins content to the node.
 * `exit`: Exits the command line tool.

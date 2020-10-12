@@ -367,7 +367,7 @@ def plot_bw_overhead(byFileSize, byTopology):
         ax.legend()
         fig.tight_layout()
 
-def output_avg_stream_data(byFileSize, byTopology):
+def output_avg_stream_data_bitswap(byFileSize, byTopology):
 
     for t in byTopology:
         labels = []
@@ -499,4 +499,4 @@ if __name__ == "__main__":
 
 if args.outputs is not None:
         if "data" in args.outputs:
-            output_avg_stream_data(byFileSize, byTopology)
+            output_avg_stream_data_bitswap(byFileSize, byTopology)

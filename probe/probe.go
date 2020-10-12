@@ -31,6 +31,16 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 	if words[0] == "exit" {
 		os.Exit(0)
 	}
+	if words[0] == "disconnect" {
+		for _, c := range ipfs.Node.PeerHost.Network().Conns() {
+			err := c.Close()
+			if err != nil {
+				return fmt.Errorf("Error disconnecting: %w", err)
+			}
+			fmt.Println("Disconnected from every peer")
+			return nil
+		}
+	}
 	if len(words) < 2 {
 		fmt.Println("Wrong number of arguments")
 		return fmt.Errorf("Wrong number of arguments")
@@ -64,10 +74,6 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 	} else {
 		fmt.Println("[!] Wrong command! Only available add, addFile, pin, get, connect, exit")
 	}
-	// We could show metrics after each command in certain cases.
-	// fmt.Println("=== METRICS ===")
-	// bw := ipfs1.Node.Reporter.GetBandwidthTotals()
-	// printStats(&bw)
 	return nil
 }
 
