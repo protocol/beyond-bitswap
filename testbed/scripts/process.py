@@ -400,6 +400,40 @@ def output_avg_stream_data_bitswap(byFileSize, byTopology):
             i+=1
 
 
+def output_latency(byFileSize, byTopology):
+
+    for t in byTopology:
+        labels = []
+        arr_time_to_fetch = []
+
+        for f in byFileSize:
+            labels.append(int(f)/1e6)
+
+            time_to_fetch = 0
+            time_to_fetch_n = 0
+
+            for i in byFileSize[f]:
+                # We are only interested in leechers so we don't duplicate measurements.
+                if i["nodeType"] == "Leech" and i["topology"]==t:
+                    if i["name"] == "time_to_fetch":
+                        time_to_fetch += i["value"]
+                        time_to_fetch_n += 1
+            
+            # Computing averages
+            # Remove the division if you want to see total values 
+            arr_time_to_fetch.append(round(time_to_fetch/1e6,3))
+
+            time_to_fetch = 0
+            time_to_fetch_n = 0
+
+        print("=== Time to fetch ====")
+        print("[*] Topology: ", t)
+        i = 0
+        for x in labels:
+            print("[*]Filesize: %s MB" % x)
+            print("Avg. Time to Fetch: %s ms" % (arr_time_to_fetch[i]) )
+            i+=1
+
 def output_avg_data(byFileSize, byTopology, nodeType):
 
     for t in byTopology:
@@ -549,6 +583,8 @@ if __name__ == "__main__":
     if args.outputs is not None:
             if "bitswap-data" in args.outputs:
                 output_avg_stream_data_bitswap(byFileSize, byTopology)
+            if "latency" in args.outputs:
+                output_latency(byFileSize, byTopology)
             if "data" in args.outputs:
                 output_avg_data(byFileSize, byTopology, "Seed")
                 output_avg_data(byFileSize, byTopology, "Leech")
