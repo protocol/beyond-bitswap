@@ -140,6 +140,16 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	var runNum int
 	var tcpFetch int64
 
+	// starting liveness process
+	go func(n *utils.IPFSNode, runenv *runtime.RunEnv) {
+		for {
+			runenv.RecordMessage("I am still alive! Total In: %d - TotalOut: %d",
+				ipfsNode.Node.Reporter.GetBandwidthTotals().TotalIn,
+				ipfsNode.Node.Reporter.GetBandwidthTotals().TotalOut)
+			time.Sleep(15 * time.Second)
+		}
+	}(ipfsNode, runenv)
+
 	// For each file found in the test
 	for fIndex, f := range testFiles {
 
