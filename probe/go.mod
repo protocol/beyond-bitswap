@@ -45,7 +45,5 @@ require (
 	golang.org/x/text v0.3.3 // indirect
 )
 
-// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200811113214-8663be04154d
-replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
-
-// replace github.com/ipfs/test-plans => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/test-plans
+replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200811113214-8663be04154d
+// replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
