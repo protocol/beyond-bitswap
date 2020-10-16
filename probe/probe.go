@@ -41,6 +41,13 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 			return nil
 		}
 	}
+	if words[0] == "stats" {
+		fmt.Println("=== STATS ===")
+		bw := ipfs.Node.Reporter.GetBandwidthTotals()
+		printStats(&bw)
+		return nil
+	}
+
 	if len(words) < 2 {
 		fmt.Println("Wrong number of arguments")
 		return fmt.Errorf("Wrong number of arguments")
@@ -100,9 +107,19 @@ func main() {
 
 	// Spawn a node using a temporary path, creating a temporary repo for the run
 	fmt.Println("Spawning node on a temporary repo")
-	ipfs, err := CreateIPFSNode(ctx)
+	// ipfs, err := CreateIPFSNode(ctx)
+	// if err != nil {
+	// 	panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
+	// }
+	nConfig, err := GenerateAddrInfo("127.0.0.1")
 	if err != nil {
-		panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
+		panic(err)
+	}
+	// Create IPFS node
+	ipfs, err := CreateIPFSNodeWithConfig(ctx, nConfig, false)
+	// ipfsNode, err := utils.CreateIPFSNode(ctx)
+	if err != nil {
+		panic(err)
 	}
 
 	// Adding random content for testing.

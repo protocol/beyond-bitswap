@@ -29,7 +29,7 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	testvars := getEnvVars(runenv)
 
 	/// --- Set up
-	ctx, cancel := context.WithTimeout(context.Background(), testvars.Timeout)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	client := sync.MustBoundClient(ctx, runenv)
@@ -152,7 +152,7 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		// Run the test runcount times
 		for runNum = 1; runNum < testvars.RunCount+1; runNum++ {
 			// Reset the timeout for each run
-			ctx, cancel := context.WithTimeout(ctx, testvars.RunTimeout)
+			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			isFirstRun := runNum == 1
@@ -295,7 +295,7 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 				// Right now using a path.
 				fPath := path.IpfsPath(rootCid)
 				runenv.RecordMessage("Got path for file: %v", fPath)
-				ctxFetch, cancel := context.WithTimeout(ctx, (testvars.RunTimeout/2)*time.Second)
+				ctxFetch, cancel := context.WithCancel(context.Background())
 				// Pin Add also traverse the whole DAG
 				// err := ipfsNode.API.Pin().Add(ctxFetch, fPath)
 				rcvFile, err := ipfsNode.API.Unixfs().Get(ctxFetch, fPath)
