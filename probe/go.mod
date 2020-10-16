@@ -27,6 +27,7 @@ require (
 	github.com/ipfs/go-unixfs v0.2.4
 	github.com/ipfs/interface-go-ipfs-core v0.4.0
 	github.com/jbenet/goprocess v0.1.4
+	github.com/klauspost/compress v1.11.1 // indirect
 	github.com/libp2p/go-libp2p v0.10.2
 	github.com/libp2p/go-libp2p-autonat v0.3.2 // indirect
 	github.com/libp2p/go-libp2p-core v0.7.0

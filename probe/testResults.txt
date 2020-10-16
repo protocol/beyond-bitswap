@@ -1,0 +1,134 @@
+/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/xkcd
+
+
+add_15728640
+add_31457280
+add_47185920
+add_57671680
+
+connect_/ip4/127.0.0.1/tcp/4865/p2p/QmeCSqzCAz6gaU8bggGE6P6sVXHCFosULSoypbtFmysKX9
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/IETF
+get_/ipfs/QmNvTjdqEPjZVWCvRWsFJA1vK7TTw1g9JP6we1WBJTRADM
+
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/xkcd
+get_/ipfs/QmUpziToA4ftyLqEf6NKWGGXtc9nBeAYfiW916dU8iKiM1
+
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/www-history
+get_/ipfs/QmRTSA1UFHSx3z7taNRwUVM8AjB2EQwKvyZu3BfJg9QRtZ
+
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/wikipedia.xml
+get_ CAN'T PUT IT
+
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/yarchive.net
+get_/ipfs/QmdA5WkDNALetBn4iFeSepHjdLGJdxPBwZyY47ir1bZGAK
+
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/cifar-10
+get_/ipfs/QmZPBxZ95iPC86KP5AZypn864yxsSYkCnQS1xcC1Qb6Ksm
+
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/texfiles
+get_/ipfs/QmNoscE3kNc83dM5rZNUC5UDXChiTdDcgf16RVtFCRWYuU
+
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/cdnjs
+get_/ipfs/QmUqWBJLMU9mFn6U7CiKjgebKFGZuQrU8dAbxCJeQorcQi
+
+IETF no compression: 509.667
+IETF compressed: 230.83
+
+XKCD no compression: 226.220
+XKCD compression: 270
+
+WWW compressed: 52.677
+WWW uncompressed: 100.512
+
+yarchive uncompressed 200.709
+yarchive compressed 177.473
+
+cifar-10 uncompressed 152.77
+cifar-10 compressed 223.038
+
+ENGLISH_WIKIPEDIA
+ENGLISH_WIKIPEDIA
+
+TEXTFILES uncompressed 1658.862
+TEXTFILES compressed 836.012
+
+CDNJS compressed *
+CDNJS uncompressed
+
+sudo nethogs -v 3 -a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------
+IETF no compression: 509.667
+IETF compressed: 230.83
+54.709643748 %
+
+XKCD no compression: 226.220
+XKCD compression: 270
+-19.35%
+
+WWW compressed: 52.677
+WWW uncompressed: 100.512
+90.808132582 %
+
+yarchive uncompressed 200.709
+yarchive compressed 177.473
+11.58%
+
+cifar-10 uncompressed 152.77
+cifar-10 compressed 223.038
+-45.995941612%
+
+We achieve improvements for textfiles, we are worst with images.
+We can have different compressor according to the application. Negotiate the protocol.
+The problem of being at a low level is that we can’t negotiate ata 
+
+Average bandwidth in the world:
+https://en.wikipedia.org/wiki/List_of_countries_by_Internet_connection_speeds
+Datasets:
+CIFAR_10 Image recognition dataset: https://www.cs.toronto.edu/~kriz/cifar.html
+A few datasets from: https://awesome.ipfs.io/datasets/ IETF RFC Archive and xkcd archive.
+
+https://github.com/klauspost/compress
+
+CIFAR-10-Dataset.
+
+
+
+
+testground run single --plan=testbed --builder=docker:go --runner=local:docker --build-cfg skip_runtime_image=true --testcase=ipfs-transfer --instances=2 -tp input_data=files -tp data_dir=../extra/dataset -tp file_size=15728640,31457280,47185920 -tp leech_count=1 -tp passive_count=0 -tp max_connection_rate=100 -tp run_count=1 -tp bandwidth_mb=50 -tp latency_ms=100 -tp jitter_pct=2 -tp enable_tcp=false
+
+
+Mirrors to the wikipedia: https://dumps.wikimedia.org/mirrors.html
+The one downloaded: https://tools.wmflabs.org/thibtools/dump-torrents/enwiki-20200401-pages-articles-multistream.xml.bz2.torrent
+
+IETF compressed 50MB 50ms: bu3f8jmf3j3ucaurv6u Avg. Time to Fetch: 1338464.149 ms
+IETF uncompressed 50MB 50ms: bu3f9t6f3j3ucaurv6v0 Avg. Time to Fetch: 1339478.42 ms
+IETF compressed 10MB 50ms: bu3g5vmf3j3okmm1cfh0 Avg. Time to Fetch: 1364802.015 ms
+IETF uncompressed 10MB 50ms: bu3g77uf3j3okmm1cfhg Avg. Time to Fetch: 1370513.152 ms
+WWW uncompressed 10MB 50ms: bu3hj1mf3j3kha0a8ab0  Avg. Time to Fetch: 1098871.324 ms
+WWW compressed  10MB 50ms: bu3hg9uf3j3kha0a8aag Avg. Time to Fetch: 1092393.89 ms
+WWW compressed 50MB 50ms: bu3i16ef3j3kha0a8ac0 Avg. Time to Fetch: 1102996.511 ms
+WWW uncompressed 50MB 50ms: bu3i0k6f3j3kha0a8abg Avg. Time to Fetch: 1100764.033 ms
+WWW compressed 150ms 50mb bu3lnumf3j3m0hebfi7g Avg. Time to Fetch: 3444306.049 ms
+
+TEXFILES compressed 10MB 100 ms: bu4anlef3j3ttfvihdjg Avg. Time to Fetch: 15528328.612 ms
+TEXFILES uncompressed 10MB 100 ms: bu47ig6f3j3ttfvihdj0 Avg. Time to Fetch: 15556763.445 ms
+
+
+TEXFILES compressed 30MB 100 ms: 
+TEXFILES uncompressed 30MB 100 ms: 
+TEXFILES compressed 50MB 100 ms: 
+TEXFILES uncompressed 50MB 100 ms: 
