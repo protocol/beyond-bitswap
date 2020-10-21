@@ -64,7 +64,7 @@ replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.2
 // replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20201002103752-9be5ba579788
 
 // RFCBBL104
-// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap 4bc0294c2e9a222b7c520874bad3c8b32f2266d0
+// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap 345472ed20503fffe20ce3290cdd3f96d0d934a0
 
 // Replaces to support compression.
 // Compression with go-libp2p-core 0.7
