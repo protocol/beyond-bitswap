@@ -17,7 +17,7 @@ addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datas
 get_/ipfs/QmRTSA1UFHSx3z7taNRwUVM8AjB2EQwKvyZu3BfJg9QRtZ
 
 addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/wikipedia.xml
-get_ CAN'T PUT IT
+get_/ipfs/QmUqWBJLMU9mFn6U7CiKjgebKFGZuQrU8dAbxCJeQorcQi
 
 addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/yarchive.net
 get_/ipfs/QmdA5WkDNALetBn4iFeSepHjdLGJdxPBwZyY47ir1bZGAK
@@ -31,11 +31,18 @@ get_/ipfs/QmNoscE3kNc83dM5rZNUC5UDXChiTdDcgf16RVtFCRWYuU
 addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/cdnjs
 get_/ipfs/QmUqWBJLMU9mFn6U7CiKjgebKFGZuQrU8dAbxCJeQorcQi
 
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/cifar-10-python.tar.gz
+get_/ipfs/QmVTfRrYzATMedFUq4U3rB5ZEQgPxrPk5DdabN4Byk593p
+
+addFile_/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/texfiles.zip
+get_/ipfs/QmNUocaTBdprRFw4tMTPuqppHkaP5o3J5eH62Lrmcksa9v
+
 IETF no compression: 509.667
 IETF compressed: 230.83
+IETF compression 1MB blocks: 
 
 XKCD no compression: 226.220
-XKCD compression: 270
+XKCD compression: 270 
 
 WWW compressed: 52.677
 WWW uncompressed: 100.512
@@ -52,15 +59,16 @@ ENGLISH_WIKIPEDIA
 TEXTFILES uncompressed 1658.862
 TEXTFILES compressed 836.012
 
-CDNJS compressed *
-CDNJS uncompressed
+CDNJS compressed 4334.358
+CDNJS uncompressed 22GB
 
 sudo nethogs -v 3 -a
 
+cifar-10 compressed default chunker 166.094
+cifar-10 1MB chunks 166.282
 
-
-
-
+textfiles compressed default chunker 742.670
+textfiles 1MB chunks 742.158
 
 
 

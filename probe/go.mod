@@ -30,6 +30,7 @@ require (
 	github.com/klauspost/compress v1.11.1 // indirect
 	github.com/libp2p/go-libp2p v0.10.2
 	github.com/libp2p/go-libp2p-autonat v0.3.2 // indirect
+	github.com/libp2p/go-libp2p-cbrotli v0.0.0-00010101000000-000000000000 // indirect
 	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/libp2p/go-libp2p-gzip v0.0.0-00010101000000-000000000000
 	github.com/libp2p/go-libp2p-peerstore v0.2.6
@@ -62,6 +63,8 @@ replace github.com/libp2p/go-libp2p-core => github.com/adlrocha/go-libp2p-core v
 replace github.com/libp2p/go-libp2p => github.com/adlrocha/go-libp2p v0.11.1-0.20201009165647-9e32a3d1018e
 
 replace github.com/libp2p/go-libp2p-gzip => github.com/adlrocha/go-libp2p-gzip v0.0.0-20201008055912-3c159e9de091
+
+replace github.com/libp2p/go-libp2p-cbrotli => github.com/adlrocha/go-libp2p-cbrotli v0.0.0-20201022105126-59db745ce5f1
 
 replace github.com/libp2p/go-conn-compression-multistream => github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907
 

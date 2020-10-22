@@ -6,7 +6,10 @@ import (
 	config "github.com/ipfs/go-ipfs-config"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/compression/none"
-	gzip "github.com/libp2p/go-libp2p-gzip"
+
+	// gzip "github.com/libp2p/go-libp2p-gzip"
+	cbrotli "github.com/libp2p/go-libp2p-cbrotli"
+
 	"go.uber.org/fx"
 )
 
@@ -62,7 +65,7 @@ func Compression(enabled bool) interface{} {
 		opts.Opts = append(opts.Opts, prioritizeOptions([]priorityOption{{
 			priority:        100,
 			defaultPriority: 100,
-			opt:             libp2p.Compression(gzip.ID, gzip.New),
+			opt:             libp2p.Compression(cbrotli.ID, cbrotli.New),
 		}}))
 		return opts
 	}

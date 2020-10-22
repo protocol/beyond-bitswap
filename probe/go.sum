@@ -41,6 +41,10 @@ github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc1
 github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907/go.mod h1:0F55yqtkfblbm4keDI6cwfpW3QbPMEFDgWRPnh7mZoQ=
 github.com/adlrocha/go-libp2p v0.11.1-0.20201009165647-9e32a3d1018e h1:15HR/QWRY8gbKWYYgCL3wSkc1zKaM9kn1nUR+TbaE1A=
 github.com/adlrocha/go-libp2p v0.11.1-0.20201009165647-9e32a3d1018e/go.mod h1:MOzduE9LDbSKvMc+Ug3CdAqK3XUQFHwwjOeacaUAkeQ=
+github.com/adlrocha/go-libp2p-cbrotli v0.0.0-20201022095630-f5f18e9677b1 h1:6Q73gUtf0TFDg+NmyTnaE4bbiHFqcfa+LM2CeeCb9sY=
+github.com/adlrocha/go-libp2p-cbrotli v0.0.0-20201022095630-f5f18e9677b1/go.mod h1:56uS2lEf6X66uEy43kUd9AZGosvBCuh3xszPFS0bVTw=
+github.com/adlrocha/go-libp2p-cbrotli v0.0.0-20201022105126-59db745ce5f1 h1:CVQdAqfMqNrCpEvVGjOeKienWG9vqOuuoCeS/DPbiTk=
+github.com/adlrocha/go-libp2p-cbrotli v0.0.0-20201022105126-59db745ce5f1/go.mod h1:56uS2lEf6X66uEy43kUd9AZGosvBCuh3xszPFS0bVTw=
 github.com/adlrocha/go-libp2p-core v0.6.2-0.20201008055055-b309947fc237 h1:pnwlPPNI1LmXgCpdOX8wpUU3i1qOVRAZmTAUYMkqRaA=
 github.com/adlrocha/go-libp2p-core v0.6.2-0.20201008055055-b309947fc237/go.mod h1:FfewUH/YpvWbEB+ZY9AQRQ4TAD8sJBt/G1rVvhz5XT8=
 github.com/adlrocha/go-libp2p-gzip v0.0.0-20201008055912-3c159e9de091 h1:SRAKpJk0aBUe4iOv/bLAas0diC8FESLpLQUA8//bafI=
@@ -191,6 +195,8 @@ github.com/golang/protobuf v1.4.2 h1:+Z5KGCizgyZCbGh1KZqA0fcLLkwbsjIzS4aV2v7wJX0
 github.com/golang/protobuf v1.4.2/go.mod h1:oDoupMAO8OvCJWAcko0GGGIgR6R6ocIYbsSw735rRwI=
 github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db h1:woRePGFeVFfLKN/pOkfl+p/TAqKOfFu+7KPlMVpok/w=
 github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
+github.com/google/brotli/go/cbrotli v0.0.0-20201008125033-fcda9db7fd55 h1:NUJM1LC//7oSHaLGpvXhdiT+jjESax/2UJUcQCJrTA4=
+github.com/google/brotli/go/cbrotli v0.0.0-20201008125033-fcda9db7fd55/go.mod h1:nOPhAkwVliJdNTkj3gXpljmWhjc4wCaVqbMJcPKWP4s=
 github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=

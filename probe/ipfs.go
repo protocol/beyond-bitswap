@@ -338,9 +338,9 @@ func getContent(ctx context.Context, n *IPFSNode, fPath path.Path, pin bool) err
 		fmt.Println("Error cleaning blockstore", err)
 	}
 	// We could show metrics after each command in certain cases.
-	fmt.Println("=== METRICS ===")
-	bw := n.Node.Reporter.GetBandwidthTotals()
-	printStats(&bw)
+	// fmt.Println("=== METRICS ===")
+	// bw := n.Node.Reporter.GetBandwidthTotals()
+	// printStats(&bw)
 	return nil
 }
 
@@ -348,6 +348,7 @@ func getContent(ctx context.Context, n *IPFSNode, fPath path.Path, pin bool) err
 func addRandomContent(ctx context.Context, n *IPFSNode, size int) {
 	tmpFile := files.NewReaderFile(RandReader(size))
 
+	// cidRandom, err := n.API.Unixfs().Add(ctx, tmpFile, options.Unixfs.Chunker("size-1048576"))
 	cidRandom, err := n.API.Unixfs().Add(ctx, tmpFile)
 	if err != nil {
 		panic(fmt.Errorf("Could not add random: %s", err))
