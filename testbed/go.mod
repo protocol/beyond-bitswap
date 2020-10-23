@@ -29,6 +29,7 @@ require (
 	github.com/jbenet/goprocess v0.1.4
 	github.com/libp2p/go-libp2p v0.10.2
 	github.com/libp2p/go-libp2p-autonat v0.3.2 // indirect
+	github.com/libp2p/go-libp2p-cbrotli v0.0.0-00010101000000-000000000000
 	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/libp2p/go-libp2p-gzip v0.0.0-00010101000000-000000000000
 	// github.com/libp2p/go-libp2p-gzip v0.0.0-00010101000000-000000000000
@@ -53,10 +54,10 @@ require (
 )
 
 // LOCAL
-replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
+// replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
 
 // Baseline
-// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200928095440-64951107fd58
+replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200928095440-64951107fd58
 
 // RFCBBL203A
 // replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200928082451-4186ba0c569c
@@ -77,3 +78,5 @@ replace github.com/libp2p/go-libp2p-gzip => github.com/adlrocha/go-libp2p-gzip v
 replace github.com/libp2p/go-conn-compression-multistream => github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907
 
 replace github.com/libp2p/go-libp2p-transport-upgrader => github.com/adlrocha/go-libp2p-transport-upgrader v0.3.1-0.20201009165416-df4b32d10a02
+
+replace github.com/libp2p/go-libp2p-cbrotli => github.com/adlrocha/go-libp2p-cbrotli v0.0.0-20201022105126-59db745ce5f1
