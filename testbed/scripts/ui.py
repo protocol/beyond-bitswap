@@ -64,7 +64,7 @@ class ProcessLayout:
 
     def show(self):
         self.grid[0, 0] = self.testid
-        self.grid[0, 1] = self.runButton
+        # self.grid[0, 1] = self.runButton
         return self.grid
     
     # def run_test(self):
