@@ -164,6 +164,12 @@ testground-redis
 
 * Directly through Testground: In the end this testbed are just a bunch of Testground testplans so you can use Testground to run experiments manually. Check [the docs](https://docs.testground.ai/v/master/running-test-plans) to learn how to do this. We currently only support single runs, in the future we will also support composite-files. If you run through Testground you wil have to collect the results manually.
 
+* Using a Testground composition file: The same way you run Testground in simple mode you can easily replicate experiments expressed in composition files running: 
+```
+testground run composition -f <composition_file>
+```
+You can find examples of compositions files in the `./compositions` directory.
+
 ## Processing the results.
 The results can be processed using the Jupyter notebook or the `scripts/process.py` script. If you want to process the results generated from a benchmark you can run diretly:
 ```
