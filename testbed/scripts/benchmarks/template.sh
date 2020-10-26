@@ -33,4 +33,4 @@ source ./exec.sh
 
 eval $CMD
 
-# docker rm -f testground-redis
+docker rm -f testground-redis

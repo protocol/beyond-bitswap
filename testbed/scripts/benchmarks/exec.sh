@@ -31,12 +31,32 @@ run_bitswap(){
 
 run() {
     echo "Running test with ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${10}, ${11}, ${12}, ${13}, ${14}) (TESTCASE, INSTANCES, FILE_SIZE, RUN_COUNT, LATENCY, JITTER, PARALLEL, LEECH, BANDWIDTH, INPUT_DATA, DATA_DIR, TCP_ENABLED, MAX_CONNECTION_RATE, PASSIVE_COUNT)"
-    TESTID=`run_bitswap $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14}| tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'`
-    echo $TESTID
-    echo "Finished test $TESTID"
+    TESTID=`run_bitswap $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14}| tail -n 1 | awk -F 'run is queued with ID:' '{ print $2 }'`
+    checkstatus $TESTID
+    # `run_bitswap $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14}| tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'`
+    # echo $TESTID
+    # echo "Finished test $TESTID"
     $TESTGROUND_BIN collect --runner=$RUNNER $TESTID
     tar xzvf $TESTID.tgz
     rm $TESTID.tgz
     mv $TESTID ../results/
     echo "Collected results"
 }
+
+getstatus() {
+    STATUS=`testground status --task $1 | tail -n 2 | awk -F 'Status:' '{ print $2 }'`
+    echo ${STATUS//[[:blank:]]/}
+}
+
+checkstatus(){
+    STATUS="none"
+    while [ "$STATUS" != "complete" ]
+    do
+        STATUS=`getstatus $1`
+        echo "Getting status: $STATUS"
+        sleep 10s
+    done
+    echo "Task completed"
+}
+
+# checkstatus bub74h523089p79be5ng

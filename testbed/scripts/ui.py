@@ -18,9 +18,7 @@ class Layout:
         self.bandwidth_mb = widgets.IntSlider(description="Nodes Bandwidth (MB)", value=100, min=0, max=500)
         self.latency_ms = widgets.IntSlider(description="Nodes Latency (ms)", value=10, min=10, max=500)
         self.jitter_pct = widgets.IntSlider(description="Pct Jitter (%)", value=5, min=0, max=100)
-        self.tcpEnabled = widgets.Checkbox(value=False,description='TCP enabled',disabled=False,indent=False)
-
-        
+        self.tcpEnabled = widgets.Checkbox(value=False,description='TCP enabled',disabled=False,indent=False)  
         self.runButton = widgets.Button(
                 description='Run Test',
                 disabled=False,
@@ -51,9 +49,9 @@ class Layout:
         return self.grid
 
 
-class ConfigLayout:
+class ProcessLayout:
     def __init__(self):
-        self.config_dir = widgets.Text(description="Config dir")
+        self.testid = widgets.Text(description="Test ID")
         
         self.runButton = widgets.Button(
                 description='Run Test',
@@ -63,10 +61,10 @@ class ConfigLayout:
                 icon='check' # (FontAwesome names without the `fa-` prefix)
             )
         self.grid = widgets.GridspecLayout(1, 1)
-        self.testid = ""
 
     def show(self):
-        self.grid[0, 0] = self.config_dir
+        self.grid[0, 0] = self.testid
+        self.grid[0, 1] = self.runButton
         return self.grid
     
     # def run_test(self):

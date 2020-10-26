@@ -1,6 +1,6 @@
 # P2P File-Sharing Testbed
 
-*Disclaimer: This is a work in progress, expect the base code to change rapidly and potentially to frequently break. Post issues, and contributions are not only welcome but needed. Let's drive speed-ups to file-sharing in P2P networks together*
+*Disclaimer: This is a work in progress, expect the base code to change rapidly and potentially to frequently break. Post issues, and contributions are not only welcome but needed. Let's drive speed-ups to file-sharing in P2P networks together!*
 
 This testbed offers a set of Testground test cases to evaluate the the performance of different exchange interface implementations over IPFS. It is composed
 by the following parts:
@@ -31,7 +31,6 @@ To run the testbed in your local environment, first you need to install [Testgro
 ```
 $ git clone https://github.com/testground/testground.git
 $ cd testground
-$ git checkout 92ff5c6314f6b80cc574c02cf980835f1429f6a4 # Right now we are freezing to this version of testgrond until the new changes are adapted in the testbed.
 $ make install       # builds testground and the Docker image, used by the local:docker runner.
 ```
 

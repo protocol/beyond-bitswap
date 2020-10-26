@@ -41,7 +41,7 @@ require (
 	github.com/multiformats/go-multihash v0.0.14
 	github.com/pkg/errors v0.9.1
 	github.com/polydawn/refmt v0.0.0-20190807091052-3d65705ee9f1 // indirect
-	github.com/testground/sdk-go v0.2.4
+	github.com/testground/sdk-go v0.2.6-0.20201016180515-1e40e1b0ec3a
 	github.com/whyrusleeping/cbor-gen v0.0.0-20200723185710-6a3894a6352b // indirect
 	go.uber.org/fx v1.12.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
