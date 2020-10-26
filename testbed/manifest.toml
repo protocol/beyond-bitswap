@@ -2,17 +2,15 @@ name = "testbed"
 
 [builders."docker:go"]
 enabled = true
-go_version = "1.13"
+go_version = "1.14"
 module_path = "github.com/ipfs/test-plans/beyond-bitswap"
 exec_pkg = "."
 
-# [extra_sources]
-#   "docker:go" = ["../datasets/testDataset"]
+[extra_sources]
+  "docker:go" = ["../extra/datasets"]
 
 # extra_sources = { "exec:go" = ["./scripts/inputData"] }
 
-# TODO: exec:go does not support traffic shaping, hence you should not use it
-#  with this test plan.
 [builders."exec:go"]
 enabled = true
 module_path = "github.com/ipfs/test-plans/beyond-bitswap"
