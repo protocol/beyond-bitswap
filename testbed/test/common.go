@@ -31,6 +31,7 @@ type TestVars struct {
 	TCPEnabled        bool
 	SeederRate        int
 	DHTEnabled        bool
+	LlEnabled         bool
 }
 
 func getEnvVars(runenv *runtime.RunEnv) *TestVars {
@@ -46,6 +47,7 @@ func getEnvVars(runenv *runtime.RunEnv) *TestVars {
 		TCPEnabled:        runenv.BooleanParam("enable_tcp"),
 		SeederRate:        runenv.IntParam("seeder_rate"),
 		DHTEnabled:        runenv.BooleanParam("enable_dht"),
+		LlEnabled:         runenv.BooleanParam("long_lasting"),
 	}
 }
 

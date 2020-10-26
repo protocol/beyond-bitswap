@@ -1,11 +1,12 @@
 import yaml
 import os
+import time
 
 TESTGROUND_BIN="testground"
 BUILDER = "exec:go"
 RUNNER = "local:exec"
 BUILDCFG = " --build-cfg skip_runtime_image=true"
-BASE_CMD = TESTGROUND_BIN + " run single --plan=beyond-bitswap --builder=" + \
+BASE_CMD = TESTGROUND_BIN + " run single --plan=testbed --builder=" + \
     BUILDER + " --runner=" + RUNNER + BUILDCFG
 
 # Parses yaml configs
@@ -46,10 +47,10 @@ def process_layout_config(layout):
     if layout.isDocker.value:
         BUILDER = "docker:go"
         RUNNER = "local:docker"
-        base = TESTGROUND_BIN + " run single --plan=beyond-bitswap --builder=" + \
+        base = TESTGROUND_BIN + " run single --plan=testbed --builder=" + \
             BUILDER + " --runner=" + RUNNER + BUILDCFG
 
-    if layout.tcpEnabled:
+    if layout.tcpEnabled.value:
         tcpFlag = "true"
     else:
         tcpFlag = "false"
@@ -78,14 +79,35 @@ def process_layout_config(layout):
 # Testground runner
 def runner(cmd):
     print("Running as: ", cmd)
-    cmd = cmd + "| tail -n 1 | awk -F 'run with ID: ' '{ print $2 }'"
+    cmd = cmd + "| tail -n 1 | awk -F 'run is queued with ID:' '{ print $2 }'"
     stream = os.popen(cmd)
     testID = stream.read().replace("\n", "").replace(" ", "")
-    if len(testID) < 13 and len(testID) > 1:
-        print("Run completed successfully with testID: %s" % testID)
-    else:
-        print("There was an error running the testcase. Check daemon.")
+
+    print("Received testID: " + testID)
+
+    check_status(testID)
+
+    print("Run for task completed")
+    # if len(testID) < 13 and len(testID) > 1:
+    #     print("Run completed successfully with testID: %s" % testID)
+    # else:
+    #     print("There was an error running the testcase. Check daemon.")
     return testID
+
+def check_status(testid):
+    cmd = "testground status --task " + testid
+    print(cmd)
+    cmd = cmd + "| tail -n 2 | awk -F 'Status:' '{ print $2 }'"
+    status = "none"
+    while status != "complete":
+        stream = os.popen(cmd)
+        status = stream.read().replace("\n", "").replace(" ", "").strip()
+        print("Task status:", status)
+        if status == "":
+            print("There was an error running the experiment. Check Testground daemon for further details.")
+            return
+        time.sleep(10)
+
 
 # Collect data from a testcase
 def collect_data(layout, testid, save=False):
@@ -111,3 +133,4 @@ def collect_data(layout, testid, save=False):
 
 # testid = runner(process_config("./config.yaml"))
 # collect_data("96c6ff2b6ebf")
+# check_status("bub8gid23084pljmerqg")

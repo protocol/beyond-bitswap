@@ -3,7 +3,7 @@ name    = "rfcBBL103A"
 author  = "adlrocha"
 
 [global]
-plan    = "beyond-bitswap"
+plan    = "testbed"
 case    = "ipfs-transfer"
 builder = "exec:go"
 runner  = "local:exec"
@@ -21,7 +21,7 @@ instances = { count = 18 }
 
     [groups.run]
         [groups.run.test_params]
-            run_count = "5"
+            run_count = "1"
             leech_count="15"
             max_connection_rate="100"
             file_size="15728640,31457280,47185920,57671680"

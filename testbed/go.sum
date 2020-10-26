@@ -59,6 +59,8 @@ github.com/adlrocha/go-bitswap v0.2.20-0.20200928095440-64951107fd58 h1:ZZuFKDue
 github.com/adlrocha/go-bitswap v0.2.20-0.20200928095440-64951107fd58/go.mod h1:Wxv8HCi8VSTvaeMmuvWf8dg7Q2UPwMC1r3av3gCqiEk=
 github.com/adlrocha/go-bitswap v0.2.20-0.20201002103752-9be5ba579788 h1:VP6oAmV/T5JCDRq5x0T5XNXTAtV51ACL6rWBkBfsnuA=
 github.com/adlrocha/go-bitswap v0.2.20-0.20201002103752-9be5ba579788/go.mod h1:1Svm9h8Tpy17eZPM0Rf9eq8WoNF6/xO9txzoUTzhFt4=
+github.com/adlrocha/go-bitswap v0.2.20-0.20201006081544-fad1a007cf9b h1:LsawLVDWRTTP+RqMn9e2JYGWTK9Ki2MhtPL07aQg4ns=
+github.com/adlrocha/go-bitswap v0.2.20-0.20201006081544-fad1a007cf9b/go.mod h1:Wxv8HCi8VSTvaeMmuvWf8dg7Q2UPwMC1r3av3gCqiEk=
 github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907 h1:THlrravAXb+nDWFjTS0y+rUK+OKcvdQRgrG5x7n0DbQ=
 github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907/go.mod h1:0F55yqtkfblbm4keDI6cwfpW3QbPMEFDgWRPnh7mZoQ=
 github.com/adlrocha/go-libp2p v0.11.1-0.20201008063238-d1909d9adebc h1:LqYYRj+abbPkZRRBo0QeoCM9Oa/U4pedWDzqSEfTFR0=
@@ -1163,6 +1165,10 @@ github.com/testground/sdk-go v0.2.3 h1:Fyxu1qRrW7D5nMWg9I/CV6TqN085OXNBvBNO4LnX8
 github.com/testground/sdk-go v0.2.3/go.mod h1:3ewI3dydDseP7eCO1MHGh+67simvbkcUnguPYssFqiA=
 github.com/testground/sdk-go v0.2.4 h1:n290IL49MSyEa64rc8LsXBqmKqVgLd/GmeXuxTUbWOE=
 github.com/testground/sdk-go v0.2.4/go.mod h1:3ewI3dydDseP7eCO1MHGh+67simvbkcUnguPYssFqiA=
+github.com/testground/sdk-go v0.2.5 h1:t+4mHQyOUbENiG5tqta91lf54BjAbIg0hMwMYz9lbdk=
+github.com/testground/sdk-go v0.2.5/go.mod h1:3ewI3dydDseP7eCO1MHGh+67simvbkcUnguPYssFqiA=
+github.com/testground/sdk-go v0.2.6-0.20201016180515-1e40e1b0ec3a h1:iQDLQpTGtdfatdQtGqQBuoXFrl2AQ0n3Q8mNKkqbmnw=
+github.com/testground/sdk-go v0.2.6-0.20201016180515-1e40e1b0ec3a/go.mod h1:Q4dnWsUBH+dZ1u7aEGDBHWGUaLfhitjUq3UJQqxeTmk=
 github.com/texttheater/golang-levenshtein v0.0.0-20180516184445-d188e65d659e/go.mod h1:XDKHRm5ThF8YJjx001LtgelzsoaEcvnA7lVWz9EeX3g=
 github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c/go.mod h1:hzIxponao9Kjc7aWznkXaL4U4TWaDSs8zcsY4Ka08nM=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
@@ -1524,6 +1530,7 @@ google.golang.org/protobuf v0.0.0-20200228230310-ab0ca4ff8a60/go.mod h1:cfTl7dwQ
 google.golang.org/protobuf v1.20.1-0.20200309200217-e05f789c0967/go.mod h1:A+miEFZTKqfCUM6K7xSMQL9OKL/b6hQv+e19PK+JZNE=
 google.golang.org/protobuf v1.21.0/go.mod h1:47Nbq4nVaFHyn7ilMalzfO3qCViNmqZ2kzikPIcrTAo=
 google.golang.org/protobuf v1.22.0/go.mod h1:EGpADcykh3NcUnDUJcl1+ZksZNG86OlYog2l/sGQquU=
+google.golang.org/protobuf v1.23.0 h1:4MY060fB1DLGMB/7MBTLnwQUY6+F09GEiz6SsrNqyzM=
 google.golang.org/protobuf v1.23.0/go.mod h1:EGpADcykh3NcUnDUJcl1+ZksZNG86OlYog2l/sGQquU=
 google.golang.org/protobuf v1.23.1-0.20200526195155-81db48ad09cc/go.mod h1:EGpADcykh3NcUnDUJcl1+ZksZNG86OlYog2l/sGQquU=
 google.golang.org/protobuf v1.25.0 h1:Ejskq+SyPohKW+1uil0JJMtmHCgJPJ/qWTxr8qp+R4c=

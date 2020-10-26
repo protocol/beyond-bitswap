@@ -10,8 +10,8 @@ rm -rf ../results
 mkdir ../results
 
 # FILE_SIZE=15728640,31457280,47185920,57671680
-FILE_SIZE=57671680
-RUN_COUNT=5
+FILE_SIZE=31457280
+RUN_COUNT=1
 INSTANCES=18
 LEECH_COUNT=17
 PASSIVE_COUNT=0
@@ -21,10 +21,10 @@ BANDWIDTH=100
 PARALLEL_GEN=100
 TESTCASE=waves
 INPUT_DATA=random
-DATA_DIR=../extra/testDataset
-# DATA_DIR=/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/datasets/testDataset
+# DATA_DIR=../extra/testDataset
+# DATA_DIR=/home/adlrocha/Desktop/main/work/ProtocolLabs/repos/beyond-bitswap/testbed/scripts/saved/test
 TCP_ENABLED=false
-MAX_CONNECTION_RATE=70
+MAX_CONNECTION_RATE=100
 # WAVES = 6
 
 source ./exec.sh
@@ -34,4 +34,4 @@ eval $CMD
 docker rm -f testground-redis
 
 # Plot latency and messages to see the behavior of this RFC
-python ../process.py --plots latency messages wants
+# python ../process.py --plots latency messages wants

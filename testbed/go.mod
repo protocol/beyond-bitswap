@@ -43,7 +43,7 @@ require (
 	github.com/multiformats/go-multihash v0.0.14
 	github.com/pkg/errors v0.9.1
 	github.com/polydawn/refmt v0.0.0-20190807091052-3d65705ee9f1 // indirect
-	github.com/testground/sdk-go v0.2.4
+	github.com/testground/sdk-go v0.2.6-0.20201016180515-1e40e1b0ec3a
 	github.com/whyrusleeping/cbor-gen v0.0.0-20200723185710-6a3894a6352b // indirect
 	go.uber.org/fx v1.12.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
@@ -57,7 +57,7 @@ require (
 // replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
 
 // Baseline
-replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200928095440-64951107fd58
+replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20201006081544-fad1a007cf9b
 
 // RFCBBL203A
 // replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200928082451-4186ba0c569c
@@ -66,7 +66,7 @@ replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.2
 // replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20201002103752-9be5ba579788
 
 // RFCBBL104
-// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap 4bc0294c2e9a222b7c520874bad3c8b32f2266d0
+// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap 345472ed20503fffe20ce3290cdd3f96d0d934a0
 
 // Replaces to support compression.
 replace github.com/libp2p/go-libp2p-core => github.com/adlrocha/go-libp2p-core v0.6.2-0.20201008055055-b309947fc237

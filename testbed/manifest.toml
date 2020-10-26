@@ -1,18 +1,16 @@
-name = "beyond-bitswap"
+name = "testbed"
 
 [builders."docker:go"]
 enabled = true
-go_version = "1.13"
+go_version = "1.14"
 module_path = "github.com/ipfs/test-plans/beyond-bitswap"
 exec_pkg = "."
 
 [extra_sources]
-  "docker:go" = ["../datasets/testDataset"]
+  "docker:go" = ["../extra/datasets"]
 
 # extra_sources = { "exec:go" = ["./scripts/inputData"] }
 
-# TODO: exec:go does not support traffic shaping, hence you should not use it
-#  with this test plan.
 [builders."exec:go"]
 enabled = true
 module_path = "github.com/ipfs/test-plans/beyond-bitswap"
@@ -62,6 +60,7 @@ instances = { min = 2, max = 64, default = 2 }
   seeder_rate = { type = "int", desc = "percentage of nodes seeding the file", unit = "%", default = 100 }
   enable_tcp = { type="bool", desc="Enable TCP comparison", default=true }
   enable_dht = { type="bool", desc="Enable DHT in IPFS nodes", default=false }
+  long_lasting = {type="bool", desc="Enable to retrieve feedback from running nodes in long-lasting experiments", default=false}
 
 
 [[testcases]]

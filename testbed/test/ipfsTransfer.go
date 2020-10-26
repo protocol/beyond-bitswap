@@ -20,9 +20,6 @@ import (
 	"github.com/ipfs/interface-go-ipfs-core/path"
 )
 
-// NOTE: To run use:
-// testground run single --plan=beyond-bitswap --testcase=ipfs-transfer --runner="local:exec" --builder=exec:go --instances=2
-
 // IPFSTransfer data from S seeds to L leeches
 func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Test Parameters
@@ -142,6 +139,18 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 	var runNum int
 	var tcpFetch int64
+
+	// starting liveness process for long-lasting experiments.
+	if testvars.LlEnabled {
+		go func(n *utils.IPFSNode, runenv *runtime.RunEnv) {
+			for {
+				runenv.RecordMessage("I am still alive! Total In: %d - TotalOut: %d",
+					ipfsNode.Node.Reporter.GetBandwidthTotals().TotalIn,
+					ipfsNode.Node.Reporter.GetBandwidthTotals().TotalOut)
+				time.Sleep(15 * time.Second)
+			}
+		}(ipfsNode, runenv)
+	}
 
 	// For each file found in the test
 	for fIndex, f := range testFiles {

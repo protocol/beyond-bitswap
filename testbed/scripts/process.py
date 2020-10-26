@@ -376,7 +376,6 @@ def output_avg_stream_data_bitswap(byFileSize, byTopology):
         for f in byFileSize:
             labels.append(int(f)/1e6)
 
-            #TODO: Considering a 5.5% overhead of TPC
             stream_data_sent = 0
             stream_data_sent_n = 0
 
@@ -398,6 +397,93 @@ def output_avg_stream_data_bitswap(byFileSize, byTopology):
         i = 0
         for x in labels:
             print("Filesize: %s MB -- Avg. Stream Data Sent Seeders: %s MB" % (x, arr_data_stream_sent[i]) )
+            i+=1
+
+
+def output_latency(byFileSize, byTopology):
+
+    for t in byTopology:
+        labels = []
+        arr_time_to_fetch = []
+
+        for f in byFileSize:
+            labels.append(int(f)/1e6)
+
+            time_to_fetch = 0
+            time_to_fetch_n = 0
+
+            for i in byFileSize[f]:
+                # We are only interested in leechers so we don't duplicate measurements.
+                if i["nodeType"] == "Leech" and i["topology"]==t:
+                    if i["name"] == "time_to_fetch":
+                        time_to_fetch += i["value"]
+                        time_to_fetch_n += 1
+            
+            # Computing averages
+            # Remove the division if you want to see total values 
+            arr_time_to_fetch.append(round(time_to_fetch/1e6,3))
+
+            time_to_fetch = 0
+            time_to_fetch_n = 0
+
+        print("=== Time to fetch ====")
+        print("[*] Topology: ", t)
+        i = 0
+        for x in labels:
+            print("[*]Filesize: %s MB" % x)
+            print("Avg. Time to Fetch: %s ms" % (arr_time_to_fetch[i]) )
+            i+=1
+
+def output_avg_data(byFileSize, byTopology, nodeType):
+
+    for t in byTopology:
+        labels = []
+        arr_total_data_in = []
+        arr_total_data_out = []
+        arr_total_rate_in = []
+        arr_total_rate_out = []
+
+        for f in byFileSize:
+            labels.append(int(f)/1e6)
+
+            total_data_in = total_data_out = total_rate_in = total_rate_out = 0
+            total_data_in_n = total_data_out_n = total_rate_in_n = total_rate_out_n = 0
+
+            for i in byFileSize[f]:
+                # We are only interested in leechers so we don't duplicate measurements.
+                if i["nodeType"] == nodeType and i["topology"]==t:
+                    if i["name"] == "total_in":
+                        total_data_in += i["value"]
+                        total_data_in_n += 1
+                    elif i["name"] == "total_out":
+                        total_data_out += i["value"]
+                        total_data_out_n += 1
+                    elif i["name"] == "rate_in":
+                        total_rate_in += i["value"]
+                        total_rate_in_n += 1
+                    elif i["name"] == "rate_out":
+                        total_rate_out += i["value"]
+                        total_rate_out_n += 1
+            
+            # Computing averages
+            # Remove the division if you want to see total values 
+            arr_total_data_in.append(round(total_data_in/total_data_in_n/1e6,3))
+            arr_total_data_out.append(round(total_data_out/total_data_out_n/1e6,3))
+            arr_total_rate_in.append(round(total_rate_in/total_rate_in_n/1e6,3))
+            arr_total_rate_out.append(round(total_rate_out/total_rate_out_n/1e6,3))
+
+            total_data_in = total_data_out = total_rate_in = total_rate_out = 0
+            total_data_in_n = total_data_out_n = total_rate_in_n = total_rate_out_n = 0
+
+        print("=== Data Exchanges for %s ===" % nodeType)
+        print("[*] Topology: ", t)
+        i = 0
+        for x in labels:
+            print("[*]Filesize: %s MB" % x)
+            print("Avg. Data In: %s MB" % (arr_total_data_in[i]) )
+            print("Avg. Data Out: %s MB" % (arr_total_data_out[i]) )
+            print("Avg. Rate In: %s MBps" % (arr_total_rate_in[i]) )
+            print("Avg. Rate Out: %s MBps" % (arr_total_rate_out[i]) )
             i+=1
 
 def plot_througput(byLatency, byBandwidth, byFileSize, byTopology, testcases):
@@ -493,10 +579,14 @@ if __name__ == "__main__":
             plot_tcp_latency(byLatency, byBandwidth, byFileSize)
         if "wants" in args.plots:
             plot_want_messages(byFileSize, byTopology)
-        
-        plt.show()
 
-
-if args.outputs is not None:
-        if "data" in args.outputs:
-            output_avg_stream_data_bitswap(byFileSize, byTopology)
+    if args.outputs is not None:
+            if "bitswap-data" in args.outputs:
+                output_avg_stream_data_bitswap(byFileSize, byTopology)
+            if "latency" in args.outputs:
+                output_latency(byFileSize, byTopology)
+            if "data" in args.outputs:
+                output_avg_data(byFileSize, byTopology, "Seed")
+                output_avg_data(byFileSize, byTopology, "Leech")
+    
+    plt.show()

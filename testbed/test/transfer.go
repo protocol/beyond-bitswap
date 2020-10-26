@@ -21,10 +21,6 @@ import (
 	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 )
 
-// NOTE: To run use:
-// ./testground run data-exchange/transfer --builder=docker:go --runner="local:docker" --dep="github.com/ipfs/go-bitswap=master"
-// testground run single --plan=beyond-bitswap --testcase=baseline --builder=docker:go --runner=local:docker --instances=2
-
 // Transfer data from S seeds to L leeches
 func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Test Parameters

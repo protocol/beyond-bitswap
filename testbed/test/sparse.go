@@ -42,9 +42,6 @@ func PeerInfosFromChan(peerCh chan *peerInfo, count int) ([]peerInfo, error) {
 	return ais, nil
 }
 
-// NOTE: To run use:
-// testground run single --plan=beyond-bitswap --testcase=ipfs-transfer --runner="local:exec" --builder=exec:go --instances=2
-
 // Sparse transfers data from S seeds to L leeches but seeders can only connect to passive nodes
 func Sparse(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// logging.SetLogLevel("engine", "DEBUG")
