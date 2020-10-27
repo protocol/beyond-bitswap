@@ -6,8 +6,8 @@ go_version = "1.14"
 module_path = "github.com/ipfs/test-plans/beyond-bitswap"
 exec_pkg = "."
 
-[extra_sources]
-  "docker:go" = ["../datasets"]
+# [extra_sources]
+#   "docker:go" = ["../datasets"]
 
 # extra_sources = { "exec:go" = ["./scripts/inputData"] }
 
