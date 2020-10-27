@@ -1,0 +1,24 @@
+[metadata]
+name    = "rfcBBL103A"
+author  = "adlrocha"
+
+[global]
+plan    = "testbed"
+case    = "ipfs-transfer"
+builder = "docker:generic"
+runner  = "local:docker"
+
+total_instances = 6
+
+[[groups]]
+id = "nodes"
+instances = { count = 6 }
+
+    [groups.run]
+        [groups.run.test_params]
+            run_count = "5"
+            leech_count="15"
+            max_connection_rate="100"
+            file_size="15728640,31457280,47185920,57671680"
+
+    # test_params = { run_count = 5, leech_count = 15, max_connection_rate=100, input_data="random", file_size=[15728640,31457280,47185920,57671680]}
