@@ -9,6 +9,7 @@ func main() {
 	run.InvokeMap(map[string]interface{}{
 		"bitswap-transfer": test.Transfer,
 		"ipfs-transfer":    test.IPFSTransfer,
+		"tcp-transfer":     test.TCPTransfer,
 		"waves":            test.Waves,
 		"sparse":           test.Sparse,
 	})
