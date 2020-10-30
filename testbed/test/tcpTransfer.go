@@ -22,7 +22,7 @@ func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	seq := initCtx.GlobalSeq
 
 	/// --- Set up
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Minute)
 	defer cancel()
 
 	initCtx.MustWaitAllInstancesInitialized(ctx)
@@ -77,8 +77,7 @@ func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// For each file found in the test
 	for fIndex, f := range testFiles {
 
-		// Wait for all nodes to be ready to start the run
-		err = signalAndWaitForAll(fmt.Sprintf("transfer-complete-%d", fIndex))
+		err = signalAndWaitForAll(fmt.Sprintf("transfer-start-%d", fIndex))
 		if err != nil {
 			return err
 		}
@@ -100,6 +99,7 @@ func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 				return fmt.Errorf("Failed to get Redis Sync tcpAddr %w", err)
 			}
 			runenv.RecordMessage("Waiting to end finish TCP")
+
 		case "leech":
 			tcpAddrCh := make(chan *string, 1)
 			if _, err := client.Subscribe(ctx, tcpAddrTopic, tcpAddrCh); err != nil {
@@ -116,6 +116,7 @@ func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			utils.FetchFileTCP(*tcpAddrPtr)
 			tcpFetch = time.Since(start).Nanoseconds()
 			runenv.RecordMessage("Fetched TCP file after %d (ns)", tcpFetch)
+			runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", nodetp), float64(tcpFetch))
 		}
 
 		// Wait for all leeches to have downloaded the data from seeds
@@ -123,7 +124,6 @@ func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		if err != nil {
 			return err
 		}
-		runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", nodetp), float64(tcpFetch))
 
 		// At this point TCP interactions are finished.
 		if nodetp == "seed" {
