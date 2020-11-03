@@ -320,7 +320,7 @@ func Waves(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 					}
 					runenv.RecordMessage("Waiting 5 seconds between waves for wave %d", waveNum)
 					time.Sleep(5 * time.Second)
-					_, err = client.SignalAndWait(ctx, "leech-wave", testvars.LeechCount)
+					_, err = client.SignalAndWait(ctx, sync.State(fmt.Sprintf("leech-wave-%d", waveNum)), testvars.LeechCount)
 				}
 			}
 
