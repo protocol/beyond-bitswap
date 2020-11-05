@@ -61,8 +61,18 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 			fmt.Println("Couldn't find content", err)
 			return err
 		}
+	} else if words[0] == "graphsync" {
+		p := words[1]
+		c := words[2]
+		fmt.Println("Looking graphsync", p, c)
+
+		err := getGraphsync(ctx, ipfs, p, c)
+		if err != nil {
+			fmt.Println("Couldn't find content with graphsync:", err)
+			return err
+		}
 	} else {
-		fmt.Println("[!] Wrong command! Only available add, addFile, pin, get, connect, exit")
+		fmt.Println("[!] Wrong command! Only available add, addFile, pin, get, connect, exit, graphsync_peer_cid")
 	}
 	// We could show metrics after each command in certain cases.
 	// fmt.Println("=== METRICS ===")
@@ -94,9 +104,18 @@ func main() {
 
 	// Spawn a node using a temporary path, creating a temporary repo for the run
 	fmt.Println("Spawning node on a temporary repo")
-	ipfs, err := CreateIPFSNode(ctx)
+	// ipfs, err := CreateIPFSNode(ctx)
+	// if err != nil {
+	// 	panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
+	// }
+	nConfig, err := GenerateAddrInfo("127.0.0.1")
 	if err != nil {
-		panic(fmt.Errorf("failed to spawn ephemeral node: %s", err))
+		panic(err)
+	}
+	// Create IPFS node
+	ipfs, err := CreateIPFSNodeWithConfig(ctx, nConfig, false)
+	if err != nil {
+		panic(err)
 	}
 
 	// Adding random content for testing.
