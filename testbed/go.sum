@@ -61,6 +61,10 @@ github.com/adlrocha/go-bitswap v0.2.20-0.20201002103752-9be5ba579788 h1:VP6oAmV/
 github.com/adlrocha/go-bitswap v0.2.20-0.20201002103752-9be5ba579788/go.mod h1:1Svm9h8Tpy17eZPM0Rf9eq8WoNF6/xO9txzoUTzhFt4=
 github.com/adlrocha/go-bitswap v0.2.20-0.20201006081544-fad1a007cf9b h1:LsawLVDWRTTP+RqMn9e2JYGWTK9Ki2MhtPL07aQg4ns=
 github.com/adlrocha/go-bitswap v0.2.20-0.20201006081544-fad1a007cf9b/go.mod h1:Wxv8HCi8VSTvaeMmuvWf8dg7Q2UPwMC1r3av3gCqiEk=
+github.com/adlrocha/go-bitswap v0.2.20-0.20201020072614-345472ed2050 h1:3fkIUsfqOVilaJLNuOiG1ROQqh0b9+vDJZwcgHRx6gs=
+github.com/adlrocha/go-bitswap v0.2.20-0.20201020072614-345472ed2050/go.mod h1:GKc2qL+ziEK5p17Glbx6vxcyBTIAiGtGKi1fpucJqp4=
+github.com/adlrocha/go-bitswap v0.2.20-0.20201104081555-6f5c6dc5e81b h1:Dx45+6eo9ARBYKc/OYWpn05prhy785YnSEpejrg94gc=
+github.com/adlrocha/go-bitswap v0.2.20-0.20201104081555-6f5c6dc5e81b/go.mod h1:eHCUwlYYvOiVEp+mn1lyt15fb3YORqSDYGisRoLy6cA=
 github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907 h1:THlrravAXb+nDWFjTS0y+rUK+OKcvdQRgrG5x7n0DbQ=
 github.com/adlrocha/go-conn-compression-multistream v0.0.0-20201008054958-988bc118b907/go.mod h1:0F55yqtkfblbm4keDI6cwfpW3QbPMEFDgWRPnh7mZoQ=
 github.com/adlrocha/go-libp2p v0.11.1-0.20201008063238-d1909d9adebc h1:LqYYRj+abbPkZRRBo0QeoCM9Oa/U4pedWDzqSEfTFR0=
