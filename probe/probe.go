@@ -17,6 +17,16 @@ import (
 	// bsnet "github.com/ipfs/go-bitswap/network"
 )
 
+func helpcmd() {
+	fmt.Println(`[!] Commands available:
+	* addFile_<file_fir>
+	* pin_<path>
+	* get_<path> 
+	* connect_<peer_multiaddr>
+	* graphsync_<peer_multiaddr>_<cid>
+	* exit`)
+}
+
 // Process commands received from prompt
 func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bool) error {
 	text = strings.ReplaceAll(text, "\n", "")
@@ -30,6 +40,10 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 
 	if words[0] == "exit" {
 		os.Exit(0)
+	}
+	if words[0] == "help" {
+		helpcmd()
+		return nil
 	}
 	if len(words) < 2 {
 		fmt.Println("Wrong number of arguments")
@@ -72,7 +86,8 @@ func processInput(ctx context.Context, ipfs *IPFSNode, text string, done chan bo
 			return err
 		}
 	} else {
-		fmt.Println("[!] Wrong command! Only available add, addFile, pin, get, connect, exit, graphsync_peer_cid")
+		fmt.Println("[!] Wrong command")
+		helpcmd()
 	}
 	// We could show metrics after each command in certain cases.
 	// fmt.Println("=== METRICS ===")

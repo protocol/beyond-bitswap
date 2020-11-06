@@ -107,8 +107,9 @@ func getGraphsync(ctx context.Context, n *IPFSNode, p string, cidString string) 
 	// Store in /tmp/
 	fileName := "/tmp/" + time.Now().String()
 
-	start := time.Now()
 	gs := n.Node.GraphExchange
+	start := time.Now()
+	// Fetch graph
 	err = fetch(ctx, gs, ai.ID, target)
 	if err != nil {
 		return err
@@ -119,18 +120,16 @@ func getGraphsync(ctx context.Context, n *IPFSNode, p string, cidString string) 
 	if err != nil {
 		return err
 	}
-	// reader, err := uio.NewDirectoryFromNode(dag, root)
-	// reader, err := uio.NewDagReader(ctx, root, dag)
-	// TODO: I am here!
-	node, err := unixfsFile.NewUnixfsFile(ctx, dag, root)
+	// Traverse it and store it in file
+	f, err := unixfsFile.NewUnixfsFile(ctx, dag, root)
 	if err != nil {
 		return err
 	}
-	files.WriteTo(node, fileName)
+	files.WriteTo(f, fileName)
 	timeToFetch = time.Since(start)
 	// TODO: Store in a file to check also the size retrieved.
-	// s, _ := f.Size()
-	fmt.Println("[*] Time to fetch: ", timeToFetch)
+	s, _ := f.Size()
+	fmt.Printf("[*] Time to fetch file of size %d: %d ns\n", s, timeToFetch)
 
 	fmt.Println("Cleaning datastore")
 	n.ClearDatastore(ctx)

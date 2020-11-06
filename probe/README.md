@@ -26,6 +26,7 @@ There are currently four available commands:
 * `get_<ipfs_path>`: Gets `path` from the IPFS network.
 * `add_<size>`: Adds a random file of size `<size>`
 * `addFile_<os_path>`: Adds file from path to the network.
-* `connect_<p2pAddr>`: Connects to an IPFS node.
+* `connect_<peerMultiaddr>`: Connects to an IPFS node.
 * `pin_<ipfs_path>`: Pins content to the node.
+* `graphsync_<peerMultiaddr>_<rootCid>`: Fetches content from a peer using graphsync.
 * `exit`: Exits the command line tool.
