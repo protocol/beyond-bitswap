@@ -12,6 +12,8 @@ by the following parts:
 ### Plans
 * [`ipfs-transfer`](./test/ipfsTransfer.go): Tests the exchange of files over a network of IPFS nodes.
 * [`bitswap-transfer`](./test/transfer.go): Tests the exchange of files over a network of Bitswap nodes.
+* [`bitswap-transfer`](./test/graphsyncTransfer.go): Tests the exchange of files beetween two IPFS nodes using Graphsync.
+
 * [`tcp-transfer`](./test/TCPtransfer.go): Tests the exchange of files using TCP between two nodes.
 * [`waves`](./test/waves.go): Tests the request of files by subsequent waves of leechers.
 * [`sparse`](./test/sparse.go): Tests seeders which are not connected directly to seeders. Between them there are always a set of passive nodes.
