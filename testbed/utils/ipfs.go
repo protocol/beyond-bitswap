@@ -219,32 +219,6 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTen
 		return dhtOption
 	})
 
-	// Uncomment if you want to set Graphsync as exchange interface.
-	// gsExchange := func(mctx helpers.MetricsCtx, lc fx.Lifecycle,
-	// 	host host.Host, rt routing.Routing, bs blockstore.GCBlockstore) exchange.Interface {
-
-	// 	// TODO: Graphsync currently doesn't follow exchange.Interface. Is missing Close()
-	// 	ctx := helpers.LifecycleCtx(mctx, lc)
-	// 	network := network.NewFromLibp2pHost(host)
-	// 	ipldBridge := ipldbridge.NewIPLDBridge()
-	// 	gsExch := gsimpl.New(ctx,
-	// 		network, ipldBridge,
-	// 		storeutil.LoaderForBlockstore(bs),
-	// 		storeutil.StorerForBlockstore(bs),
-	// 	)
-
-	// 	lc.Append(fx.Hook{
-	// 		OnStop: func(ctx context.Context) error {
-	// 			if exch.Close != nil {
-	// 				return exch.Close()
-	// 			}
-	// 			return nil
-
-	// 		},
-	// 	})
-	// 	return exch
-	// }
-
 	// Return repo datastore
 	repoDS := func(repo repo.Repo) datastore.Datastore {
 		return d
@@ -283,6 +257,8 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTen
 		// Network dependencies
 		// Set exchange option.
 		fx.Provide(exch),
+		// Provide graphsync
+		fx.Provide(Graphsync),
 		fx.Provide(node.Namesys(ipnsCacheSize)),
 		fx.Provide(node.Peering),
 		node.PeerWith(cfg.Peering.Peers...),

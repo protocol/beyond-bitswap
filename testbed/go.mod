@@ -3,15 +3,17 @@ module github.com/adlrocha/beyond-bitswap/testbed
 go 1.14
 
 require (
+	github.com/alangpierce/go-forceexport v0.0.0-20160317203124-8f1d6941cd75 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/google/gopacket v1.1.18 // indirect
-	github.com/ipfs/go-bitswap v0.2.19
+	github.com/ipfs/go-bitswap v0.2.20
 	github.com/ipfs/go-blockservice v0.1.3
 	github.com/ipfs/go-cid v0.0.7
-	github.com/ipfs/go-datastore v0.4.4
+	github.com/ipfs/go-datastore v0.4.5
 	github.com/ipfs/go-filestore v1.0.0
-	github.com/ipfs/go-ipfs v0.6.0
+	github.com/ipfs/go-graphsync v0.1.1
+	github.com/ipfs/go-ipfs v0.7.0
 	github.com/ipfs/go-ipfs-blockstore v1.0.1
 	github.com/ipfs/go-ipfs-chunker v0.0.5
 	github.com/ipfs/go-ipfs-config v0.9.0
@@ -26,12 +28,13 @@ require (
 	github.com/ipfs/go-metrics-interface v0.0.1
 	github.com/ipfs/go-unixfs v0.2.4
 	github.com/ipfs/interface-go-ipfs-core v0.4.0
+	github.com/ipld/go-ipld-prime v0.0.2-0.20200428162820-8b59dc292b8e
 	github.com/jbenet/goprocess v0.1.4
-	github.com/libp2p/go-libp2p v0.10.2
+	github.com/libp2p/go-libp2p v0.11.0
 	github.com/libp2p/go-libp2p-autonat v0.3.2 // indirect
 	github.com/libp2p/go-libp2p-core v0.6.1
 	// github.com/libp2p/go-libp2p-gzip v0.0.0-00010101000000-000000000000
-	github.com/libp2p/go-libp2p-kad-dht v0.8.2
+	github.com/libp2p/go-libp2p-kad-dht v0.9.0
 	github.com/libp2p/go-libp2p-peerstore v0.2.6
 	github.com/libp2p/go-mplex v0.1.3 // indirect
 	github.com/libp2p/go-reuseport-transport v0.0.4 // indirect
@@ -40,10 +43,11 @@ require (
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/multiformats/go-multihash v0.0.14
 	github.com/pkg/errors v0.9.1
-	github.com/polydawn/refmt v0.0.0-20190807091052-3d65705ee9f1 // indirect
 	github.com/testground/sdk-go v0.2.6-0.20201016180515-1e40e1b0ec3a
+	github.com/wangjia184/sortedset v0.0.0-20160527075905-f5d03557ba30 // indirect
 	github.com/whyrusleeping/cbor-gen v0.0.0-20200723185710-6a3894a6352b // indirect
-	go.uber.org/fx v1.12.0
+	github.com/whyrusleeping/go-notifier v0.0.0-20170827234753-097c5d47330f // indirect
+	go.uber.org/fx v1.13.1
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
