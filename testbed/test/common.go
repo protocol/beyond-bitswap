@@ -16,6 +16,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/adlrocha/beyond-bitswap/testbed/utils"
+
+	"github.com/testground/sdk-go/network"
 )
 
 // TestVars testing variables
@@ -34,6 +36,21 @@ type TestVars struct {
 	LlEnabled         bool
 }
 
+type TestData struct {
+	client              *sync.DefaultClient
+	ipfsNode            *utils.IPFSNode
+	testFiles           []utils.TestFile
+	nConfig             *utils.NodeConfig
+	addrInfos           []peer.AddrInfo
+	latency             time.Duration
+	bandwidth           int
+	signalAndWaitForAll func(state string) error
+	seq                 int64
+	grpseq              int64
+	nodetp              utils.NodeType
+	tpindex             int
+}
+
 func getEnvVars(runenv *runtime.RunEnv) *TestVars {
 	return &TestVars{
 		ExchangeInterface: runenv.StringParam("exchange_interface"),
@@ -49,6 +66,125 @@ func getEnvVars(runenv *runtime.RunEnv) *TestVars {
 		DHTEnabled:        runenv.BooleanParam("enable_dht"),
 		LlEnabled:         runenv.BooleanParam("long_lasting"),
 	}
+}
+
+func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars) (*TestData, error) {
+	client := sync.MustBoundClient(ctx, runenv)
+	nwClient := network.NewClient(client, runenv)
+
+	runenv.RecordMessage("Preparing exchange for node: %v", testvars.ExchangeInterface)
+	// Set exchange Interface
+	exch, err := utils.SetExchange(ctx, testvars.ExchangeInterface)
+	if err != nil {
+		return nil, err
+	}
+	nConfig, err := utils.GenerateAddrInfo(nwClient.MustGetDataNetworkIP().String())
+	if err != nil {
+		runenv.RecordMessage("Error generating node config")
+		return nil, err
+	}
+	// Create IPFS node
+	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch, testvars.DHTEnabled)
+	// ipfsNode, err := utils.CreateIPFSNode(ctx)
+	if err != nil {
+		runenv.RecordFailure(err)
+		return nil, err
+	}
+
+	peers := sync.NewTopic("peers", &peer.AddrInfo{})
+
+	// Get sequence number of this host
+	seq, err := client.Publish(ctx, peers, *nConfig.AddrInfo)
+	if err != nil {
+		return nil, err
+	}
+	// Type of node and identifiers assigned.
+	grpseq, nodetp, tpindex, err := parseType(ctx, runenv, client, nConfig.AddrInfo, seq)
+	if err != nil {
+		return nil, err
+	}
+
+	var seedIndex int64
+	if nodetp == utils.Seed {
+		if runenv.TestGroupID == "" {
+			// If we're not running in group mode, calculate the seed index as
+			// the sequence number minus the other types of node (leech / passive).
+			// Note: sequence number starts from 1 (not 0)
+			seedIndex = seq - int64(testvars.LeechCount+testvars.PassiveCount) - 1
+		} else {
+			// If we are in group mode, signal other seed nodes to work out the
+			// seed index
+			seedSeq, err := getNodeSetSeq(ctx, client, nConfig.AddrInfo, "seeds")
+			if err != nil {
+				return nil, err
+			}
+			// Sequence number starts from 1 (not 0)
+			seedIndex = seedSeq - 1
+		}
+	}
+	runenv.RecordMessage("Seed index %v for: %v", &nConfig.AddrInfo.ID, seedIndex)
+
+	// Get addresses of all peers
+	peerCh := make(chan *peer.AddrInfo)
+	sctx, cancelSub := context.WithCancel(ctx)
+	if _, err := client.Subscribe(sctx, peers, peerCh); err != nil {
+		cancelSub()
+		return nil, err
+	}
+	addrInfos, err := utils.AddrInfosFromChan(peerCh, runenv.TestInstanceCount)
+	if err != nil {
+		cancelSub()
+		return nil, fmt.Errorf("no addrs in %d seconds", testvars.Timeout/time.Second)
+	}
+	cancelSub()
+	runenv.RecordMessage("Got all addresses from other peers and network setup")
+
+	/// --- Warm up
+
+	// Set up network (with traffic shaping)
+	latency, bandwidthMB, err := utils.SetupNetwork(ctx, runenv, nwClient, nodetp, tpindex)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to set up network: %v", err)
+	}
+
+	// According to the input data get the file size or the files to add.
+	testFiles, err := utils.GetFileList(runenv)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("Got file list: %v", testFiles)
+
+	// Signal that this node is in the given state, and wait for all peers to
+	// send the same signal
+	signalAndWaitForAll := func(state string) error {
+		_, err := client.SignalAndWait(ctx, sync.State(state), runenv.TestInstanceCount)
+		return err
+	}
+
+	err = signalAndWaitForAll("file-list-ready")
+	if err != nil {
+		return nil, err
+	}
+
+	return &TestData{client, ipfsNode, testFiles,
+		nConfig, addrInfos,
+		latency, bandwidthMB, signalAndWaitForAll,
+		seq, grpseq, nodetp, tpindex}, nil
+}
+
+func (t *TestData) stillAlive(runenv *runtime.RunEnv, v *TestVars) {
+	// starting liveness process for long-lasting experiments.
+	if v.LlEnabled {
+		go func(n *utils.IPFSNode, runenv *runtime.RunEnv) {
+			for {
+				runenv.RecordMessage("I am still alive! Total In: %d - TotalOut: %d",
+					t.ipfsNode.Node.Reporter.GetBandwidthTotals().TotalIn,
+					t.ipfsNode.Node.Reporter.GetBandwidthTotals().TotalOut)
+				time.Sleep(15 * time.Second)
+			}
+		}(t.ipfsNode, runenv)
+	}
+
 }
 
 func generateAndAdd(ctx context.Context, runenv *runtime.RunEnv, ipfsNode *utils.IPFSNode, f utils.TestFile) (*cid.Cid, error) {
