@@ -103,10 +103,10 @@ def plot_latency(byLatency, byBandwidth, byFileSize):
                     ax.scatter([int(i)/1e6]*len(tc[i]), scaled_tc, marker="*")
                     avg_tc.append(sum(scaled_tc)/len(scaled_tc))
 
-            # print(y)
+            #print(y)
+            ax.plot(x, avg, label="Bitswap fetch")
             ax.plot(x, avg_tc, label="TCP fetch")
 
-            ax.plot(x, avg, label="Bitswap fetch")
             ax.legend()
 
             pindex+=1
