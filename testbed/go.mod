@@ -56,10 +56,10 @@ require (
 )
 
 // LOCAL
-// replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/go-bitswap
+replace github.com/ipfs/go-bitswap => /home/adlrocha/Desktop/main/work/ProtocolLabs/repos/ipfs/go-bitswap
 
 // Baseline
-replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20201006081544-fad1a007cf9b
+// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20201006081544-fad1a007cf9b
 
 // RFCBBL203A
 // replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200928082451-4186ba0c569c
@@ -69,6 +69,9 @@ replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.2
 
 // RFCBBL104
 // replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap 39aeae7a7b188abfc659d49c12e27059e1e7b8ee
+
+// RFCBBL102+RFCBBL104
+// replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap 5f82e1f53671cdd88bb809a8a86087069d90fc08
 
 // Replaces to support compression.
 // Compression with go-libp2p-core 0.7
