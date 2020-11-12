@@ -48,7 +48,7 @@ func newGraphsync(ctx context.Context, p2p host.Host, bs blockstore.Blockstore) 
 }
 
 var selectAll ipld.Node = func() ipld.Node {
-	ssb := builder.NewSelectorSpecBuilder(basicnode.Style.Any)
+	ssb := builder.NewSelectorSpecBuilder(basicnode.Prototype.Any)
 	return ssb.ExploreRecursive(
 		ipldselector.RecursionLimitDepth(100), // default max
 		ssb.ExploreAll(ssb.ExploreRecursiveEdge()),

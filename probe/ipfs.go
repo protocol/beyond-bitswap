@@ -635,11 +635,12 @@ func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, DHTEnabl
 	for _, i := range n.PeerHost.Addrs() {
 		a := strings.Split(i.String(), "/")
 		if a[1] == "ip4" && a[2] == "127.0.0.1" && a[3] == "tcp" {
-			fmt.Println("Connect from other peers using: ")
+			fmt.Println("[*] Connect from other peers using: ")
 			fmt.Printf("connect_/ip4/127.0.0.1/tcp/%v/p2p/%s\n", a[4], n.PeerHost.ID().Pretty())
 		}
-
 	}
+	fmt.Println("[*] Try graphsync from other peers using: ")
+	fmt.Printf("graphsync_<multiaddr>_<CID>")
 
 	// Attach the Core API to the constructed node
 	return &IPFSNode{n, api, stopNode}, nil
