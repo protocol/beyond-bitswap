@@ -1,5 +1,11 @@
 # Beyond Bitswap Testbed
 
+<p align="left">
+  <a href="https://github.com/protocol/ResNetLab" title="ResNetLab">
+    <img src="https://research.protocol.ai/images/resnetlab/resnetlab_logo_blue.svg" width="150" />
+  </a>
+</p>
+
 This repo implements a testbed to evaluate the performance of different IPFS exchange interfaces. It is currently used in the scope of the Beyond Bitswap project to test improvement proposals over the base code.
 
 For the full project description, please consult [BEYOND_BITSWAP](https://github.com/protocol/ResNetLab/tree/master/BEYOND_BITSWAP)
