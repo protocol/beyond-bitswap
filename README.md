@@ -51,37 +51,21 @@ We are making all our contributions, ideas, testbed, benchmarking and analysis s
 This section shares a list of improvement RFCs that are being currently tackled, discussed and prototyped. Each RFC aims to test a specific idea or assumption, and they may initially be implemented over Bitswap, but that doesn't mean the conclusions drawn are exclusively applicable to the Bitswap protocol. RFCs are divided in the different layers for file-sharing in P2P sytems identified in the [Related Work](https://docs.google.com/document/d/14AE8OJvSpkhguq2k1Gfc9h0JvorvLgOUSVrj3CnOkQk/edit#heading=h.nxkc23tlbqhl).
 | RFC                                                                                                         | Status      |
 |-------------------------------------------------------------------------------------------------------------|-------------|
+|**Layer 0: Data Structure**||
 | [RFC\|BB\|L0-09: Hashing algorithm improvements](./RFC/rfcBBL009)                                             | `brainstorm`|
-| [RFC\|BB\|L1-04: Track WANT messages for future queries](./RFC/rfcBBL104)                                  | `prototype` |
-| [RFC\|BB\|L1-02: TTLs for rebroadcasting WANT messages](./RFC/rfcBBL102)                                   | `prototype` |
-| [RFC\|BB\|L1-06: Content Anchors](https://github.com/protocol/ResNetLab/issues/6)                             | `brainstorm`|
-| [RFC\|BB\|L1/2-05: Use of super nodes and decentralized trackers](./RFC/rfcBBL1205)                        | `brainstorm`|
-| [RFC\|BB\|L12-01: Bitswap/Graphsync exchange messages extension and transmission choice](./RFC/rfcBBL1201) | `draft`     |
-| [RFC\|BB\|L2-03A: Use of compression and adjustable block size](./RFC/rfcBBL203A)                          | `prototype` |
-| [RFC\|BB\|L2-03B: Use of network coding and erasure codes](./RFC/rfcBBL203B)                               | `brainstorm`|
-| [RFC\|BB\|L2-07: Request minimum piece size and content protocol extension](./RFC/rfcBBL207)               | `brainstorm`|
-| [RFC\|BB\|L2-08: Delegate download to other nodes (bandwidth aggregation)](./RFC/rfcBBL208)                | `brainstorm`|
-
+|**Layer 1 RFCs: Discovery and announcement of content**||
+| [RFC\|BB\|L1-04: Track WANT messages for future queries](./RFC/rfcBBL104): Evaluates how using information from a nodes surrounding can help the discovery and fetching of popular content in the network.                                   | `prototype` |
+| [RFC\|BB\|L1-02: TTLs for rebroadcasting WANT messages](./RFC/rfcBBL102): It evaluates how broadcasting exchange requests TTL hops away, and allowing other nodes to discover and retrieve content on behalf of other peers, may help the discovery of content improving performance.                                   | `prototype` |
+| [RFC\|BB\|L1-06: Content Anchors](https://github.com/protocol/ResNetLab/issues/6): Evaluate the use of gossipsub to perform more efficient content routing.                             | `brainstorm`|
+| [RFC\|BB\|L1/2-05: Use of super nodes and decentralized trackers](./RFC/rfcBBL1205): Aknowledge the fact that P2P networks are also social networks and nodes in the network have different relationships and capabilities. Explore the use of side-channel discovery mechanisms.                        | `brainstorm`|
+|**Layer 2 RFCs: Negotiation and transmission of content**||
+| [RFC\|BB\|L12-01: Bitswap/Graphsync exchange messages extension and transmission choice](./RFC/rfcBBL1201): Proposes dividing the exchange of content in two phases: a negotiation phase used to discover the holders of the different chunks of a file, and a transfer file to explicitly request blocks from different chunk holders. This opens the door to additional exchange strategies and schemes to improve performance. | `draft`     |
+| [RFC\|BB\|L2-03A: Use of compression and adjustable block size](./RFC/rfcBBL203A): Evaluates the potential performance improvementes on the use of compression for the exchange of content in P2P networks.                          | `prototype` |
+| [RFC\|BB\|L2-03B: Use of network coding and erasure codes](./RFC/rfcBBL203B): Evaluates the potential performance improvementes on the use of network coding and erasure codes to leverage the transmission of content from multiple streams.                               | `brainstorm`|
+| [RFC\|BB\|L2-07: Request minimum piece size and content protocol extension](./RFC/rfcBBL207): Evaluates how the size of the chunks that comprises content requested in a P2P network may affect performance.               | `brainstorm`|
+| [RFC\|BB\|L2-08: Delegate download to other nodes (bandwidth aggregation)](./RFC/rfcBBL208): Leverage the resources of other peer "friends" to collaboratively discover and retrieve content, and perform faster content retrievals.                | `brainstorm`|
 
 If you want to familiarize with our work, we highly recommend exploring first the RFCs in `prototype` state, and then move to the ones at a `draft` or `brainstorm` state. `prototyped` RFCs are in a stage where there is working prototype you can start evaluating and playing with. The `draft` state means that the RFC is ready for implementation, while `brainstorm` RFCs require further discussions and design work.
-
-
-
-**Layer 0: Data Structure:**
-* [RFC|BB|L0-09: Hashing algorithm improvements](./RFC/rfcBBL009):
-
-**Layer 1 RFCs: Discovery and announcement of content:**
-* [RFC|BB|L1-04: Track WANT messages for future queries](./RFC/rfcBBL104): Evaluates how using information from a nodes surrounding can help the discovery and fetching of popular content in the network. 
-* [RFC|BB|L1-02: TTLs for rebroadcasting WANT messages](./RFC/rfcBBL102): It evaluates how broadcasting exchange requests TTL hops away, and allowing other nodes to discover and retrieve content on behalf of other peers, may help the discovery of content improving performance.
-* [RFC|BB|L1/2-05: Use of super nodes and decentralized trackers](./RFC/rfcBBL1205): Aknowledge the fact that P2P networks are also social networks and nodes in the network have different relationships and capabilities. Explore the use of side-channel discovery mechanisms.
-* [RFC|BB|L1-06: Content Anchors](https://github.com/protocol/ResNetLab/issues/6): Evaluate the use of gossipsub to perform more efficient content routing.
-
-**Layer 2 RFCs: Negotiation and transmission of content:**
-* [RFC|BB|L12-01: Bitswap/Graphsync exchange messages extension and transmission choice](./RFC/rfcBBL1201): Proposes dividing the exchange of content in two phases: a negotiation phase used to discover the holders of the different chunks of a file, and a transfer file to explicitly request blocks from different chunk holders. This opens the door to additional exchange strategies and schemes to improve performance.
-* [RFC|BB|L2-03A: Use of compression and adjustable block size](./RFC/rfcBBL203A): Evaluates the potential performance improvementes on the use of compression for the exchange of content in P2P networks.
-* [RFC|BB|L2-03B: se of network coding and erasure codes](./RFC/rfcBBL203B): Evaluates the potential performance improvementes on the use of network coding and erasure codes to leverage the transmission of content from multiple streams.
-* [RFC|BB|L2-07: Request minimum piece size and content protocol extension](./RFC/rfcBBL207): Evaluates how the size of the chunks that comprises content requested in a P2P network may affect performance.
-* [RFC|BB|L2-08: Delegate download to other nodes (bandwidth aggregation)](./RFC/rfcBBL208): Leverage the resources of other peer "friends" to collaboratively discover and retrieve content, and perform faster content retrievals.
 
 Feel free to jump into the discussions around the project or to propose your own RFC opening an issue in the repo.
 
