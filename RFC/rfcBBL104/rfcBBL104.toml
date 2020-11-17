@@ -1,0 +1,37 @@
+[metadata]
+name    = "rfcBBL104"
+author  = "@adlrocha"
+
+[global]
+plan    = "testbed"
+case    = "waves"
+builder = "docker:go"
+runner  = "local:docker"
+
+total_instances = 30
+
+[[groups]]
+id = "nodes"
+instances = { count = 30 }
+
+    [groups.build]
+    dependencies = [
+        { module = "github.com/ipfs/go-bitswap", target="github.com/adlrocha/go-bitswap", version = "39aeae7a7b188abfc659d49c12e27059e1e7b8ee"}
+    ]
+
+    [groups.run]
+        [groups.run.test_params]
+            input_data = "files"
+            data_dir = "../extra/test-datasets"
+            run_timeout_secs = "900"
+            timeout_secs = "2000"
+            run_count = "1"
+            leech_count= "29"
+            max_connection_rate = "100"
+            # input_data = "random"
+            # file_size = "10000000,30000000,50000000"
+            latency_ms= "100"
+            bandwidth_mb= "100"
+            enable_tcp= "false"
+            enable_dht= "false"
+            number_waves= "10"

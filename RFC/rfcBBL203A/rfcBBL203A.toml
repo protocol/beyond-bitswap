@@ -1,0 +1,37 @@
+[metadata]
+name    = "rfcBBL203A"
+author  = "@adlrocha"
+
+[global]
+plan    = "testbed"
+case    = "ipfs-transfer"
+builder = "docker:go"
+runner  = "local:docker"
+
+total_instances = 5
+
+[[groups]]
+id = "nodes"
+instances = { count = 5 }
+
+    [groups.build]
+    skip_runtime_image = "true"
+    dependencies = [
+        { module = "github.com/ipfs/go-bitswap", target="github.com/adlrocha/go-bitswap", version = "60a2fbd339fbcb1e765d1e62021fdb9e0e62ae66"}
+    ]
+
+    [groups.run]
+        [groups.run.test_params]
+            # input_data = "files"
+            # data_dir = "../extra/test-datasets"
+            run_timeout_secs = "900"
+            timeout_secs = "2000"
+            run_count = "3"
+            leech_count= "4"
+            max_connection_rate = "100"
+            input_data = "random"
+            file_size = "10000000,30000000,50000000"
+            latency_ms= "100"
+            bandwidth_mb= "100"
+            enable_tcp= "false"
+            enable_dht= "false"
