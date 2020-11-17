@@ -5,6 +5,7 @@ enabled = true
 go_version = "1.14"
 module_path = "github.com/ipfs/test-plans/beyond-bitswap"
 exec_pkg = "."
+skip_runtime_image = true
 
 [extra_sources]
   "docker:go" = ["../test-datasets"]

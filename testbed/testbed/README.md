@@ -6,21 +6,15 @@ This testbed offers a set of Testground test cases to evaluate the the performan
 by the following parts:
 * [Test Cases](./test): It includes the code for the test cases.
 * [Scripts](./scripts): Set of scripts to easily configure, run, and process your own test.
-* [Benchmarks](./scripts/benchmarks): Set of benchmarking scripts that enables the replication of certain tests without the need of additional configuration.
-
 
 ### Plans
 * [`ipfs-transfer`](./test/ipfsTransfer.go): Tests the exchange of files over a network of IPFS nodes.
 * [`bitswap-transfer`](./test/transfer.go): Tests the exchange of files over a network of Bitswap nodes.
-* [`bitswap-transfer`](./test/graphsyncTransfer.go): Tests the exchange of files beetween two IPFS nodes using Graphsync.
+* [`graphsync-transfer`](./test/graphsyncTransfer.go): Tests the exchange of files beetween two IPFS nodes using Graphsync.
 
 * [`tcp-transfer`](./test/TCPtransfer.go): Tests the exchange of files using TCP between two nodes.
 * [`waves`](./test/waves.go): Tests the request of files by subsequent waves of leechers.
 * [`sparse`](./test/sparse.go): Tests seeders which are not connected directly to seeders. Between them there are always a set of passive nodes.
-
-### Benchmarks
-* [`Template`](./benchmarks/template.sh): Use this template if you want to configure your own benchmark.
-* [`Number of Wants`](./benchmarks/wantcount.sh): Tests the number of want messages seen by a node when exchanging a large number of small files.
 
 ## Installation
 Clone the repository to start the installation:
@@ -81,7 +75,7 @@ You see that the testbed plan should be included in the list of available plans.
 ### Processing tools
 The testbed includes several tools to help you run and process the results of your experiments. All of them are based in python and bash, so first of all be sure that you have `python3` and `python3-pip` installed. The code of these tools resides in `./scripts`. 
 
-You may optionally want to start a virtual environment for the installation of the python dependencies:
+* You may optionally want to start a virtual environment for the installation of the python dependencies:
 ```
 $ pip3 install virtualenv
 $ virtualenv env
@@ -89,7 +83,7 @@ $ source ~/env/bin/activate
 ```
 
 
-To install all the required dependencies run:
+* To install all the required dependencies run:
 ```
 $ cd scripts
 $ pip install -r requirements.txt
@@ -117,9 +111,9 @@ $ jupyter notebook --config ~/.jupyter/jupyter_notebook_config.py
 ## Running experiments
 You have several ways of running an experiment in the testbed. For all of these ways remember that your testground daemon need to be running (i.e. `testground daemon` in the background).
 
-* Running a benchmark script: This is the most straightforward way, and the perfect way to test your installation you just need to go to `./scripts/benchmarks` and run any of the benchmark scripts. This will run the template experiment, collect your results and place them in `./scripts/results`.
+* Running a benchmark script: This is the most straightforward way, and the perfect way to test your installation you just need to go to `./scripts/` and run any the `single_run.sh` script. This will run the template experiment, collect your results and place them in `./scripts/results`.
 ```
-$ ./template.sh
+$ ./single_run.sh
 Cleaning previous results...
 Starting test...
 Running test with (ipfs-transfer, 5, 15728640,31457280,47185920,57671680, 1, 10, 10, 100, 1, 150, random, ../extra/testDataset, false, 100, 2) (TESTCASE, INSTANCES, FILE_SIZE, RUN_COUNT, LATENCY, JITTER, PARALLEL, LEECH, BANDWIDTH, INPUT_DATA, DATA_DIR, TCP_ENABLED, MAX_CONNECTION_RATE, PASSIVE_COUNT)
@@ -163,7 +157,7 @@ Collected results
 testground-redis
 ```
 
-* Using the Jupyter Notebook: To run an experiment using the Notebook, run the first cell, and it will be kind of straightforward to you how to run a process the results. All the results are collected in `./scripts/results`.
+* Using the Jupyter Notebook: To run an experiment using the Notebook, run the first two cells, and it will be kind of straightforward to you how to run a process the results. All the results are collected in `./scripts/results`.
 
 * Directly through Testground: In the end this testbed are just a bunch of Testground testplans so you can use Testground to run experiments manually. Check [the docs](https://docs.testground.ai/v/master/running-test-plans) to learn how to do this. We currently only support single runs, in the future we will also support composite-files. If you run through Testground you wil have to collect the results manually.
 
@@ -196,6 +190,9 @@ optional arguments:
   -dir DIR, --dir DIR   Result directory to process
 ```
 
+## Replicating RFC experiments.
+You can replicate the experiments performed to evaluate the `prototyped` RFCs by going to `../../RFC` and following the instructions there.
+Spoiler alert! Try running `./run_experiment.sh rfcBBL102` if you have already installed the testbed and see what happens.
 
 
 ## Coming soon

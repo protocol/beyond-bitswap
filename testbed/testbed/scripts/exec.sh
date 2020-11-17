@@ -39,7 +39,7 @@ run() {
     $TESTGROUND_BIN collect --runner=$RUNNER $TESTID
     tar xzvf $TESTID.tgz
     rm $TESTID.tgz
-    mv $TESTID ../results/
+    mv $TESTID ./results/
     echo "Collected results"
 }
 
@@ -57,6 +57,17 @@ checkstatus(){
         sleep 10s
     done
     echo "Task completed"
+}
+
+run_composition() {
+    echo "Running composition test for $1"
+    TESTID=`testground run composition -f $1 | tail -n 1 | awk -F 'run is queued with ID:' '{ print $2 }'`
+    checkstatus $TESTID
+    $TESTGROUND_BIN collect --runner=$RUNNER $TESTID
+    tar xzvf $TESTID.tgz
+    rm $TESTID.tgz
+    mv $TESTID ./results/
+    echo "Collected results"
 }
 
 # checkstatus bub74h523089p79be5ng

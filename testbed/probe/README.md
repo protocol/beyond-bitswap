@@ -1,5 +1,5 @@
 ## Beyond Bitswap Probe
-This is a simple CLI tool to help debug the exchange of content between different IPFS nodes.
+This is a simple CLI tool to help debug and test the exchange of content between different IPFS nodes.
 
 ### Usage
 * To run the tool use:
@@ -22,7 +22,7 @@ Adding file to the network: /ipfs/QmNdGY4t8ZPU1StBRs7fNpyr6TarwVaYNFtWFwT2tZunw5
 ```
 * Optionally you can use the `--debug` flag to show verbose Bitswap DEBUG traces.
 
-There are currently four available commands:
+These are the currently available commands:
 * `get_<ipfs_path>`: Gets `path` from the IPFS network.
 * `add_<size>`: Adds a random file of size `<size>`
 * `addFile_<os_path>`: Adds file from path to the network.
@@ -30,3 +30,9 @@ There are currently four available commands:
 * `pin_<ipfs_path>`: Pins content to the node.
 * `graphsync_<peerMultiaddr>_<rootCid>`: Fetches content from a peer using graphsync.
 * `exit`: Exits the command line tool.
+
+### Using other Bitswap versions
+If you want to test this tool using other Bitswap/Graphsync versions (like an implementation of an RFC), just modify the `replace` direcive in the [`go.mod`](./go.mod) to the version you want to spawn within the IPFS node. For instance, if we want to test the implementation of RFCBBL102 we would add the following replace directive:
+```
+replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap 6f5c6dc5e81bb7a49c73d20aa3d9004747164928
+```

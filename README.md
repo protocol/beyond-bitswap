@@ -1,5 +1,11 @@
 # Project: Beyond Bitswap
 
+<p align="left">
+  <a href="https://github.com/protocol/ResNetLab" title="ResNetLab">
+    <img src="https://research.protocol.ai/images/resnetlab/resnetlab_logo_blue.svg" width="150" />
+  </a>
+</p>
+
 ## Motivation & Vision
 
 File-transfer is at the core of IPFS and every subsystem inside IPFS is built to enable it in a fast and secure way, while maintaining certain guarantees (e.g. discoverability, data integrity and so on).
@@ -25,6 +31,11 @@ Being said that, the fact that IPFS had an infrastructure in place to start test
 ResNetLab collaborates with over 10 Research Groups all over the world and Protocol Labs Research has developed research collaborations in multiples of ten in the last few years. We are always eager to collaborate with more researchers in all kinds of capacity, from thesis project (M.Sc or PhD), to Post-Doc, Grants, RFPs and independent research projects.
 
 We are making all our contributions, ideas, testbed, benchmarking and analysis scripts available below. You are more than welcome to pick any of these assets and build on top of it. If you have questions, please [mail us](mailto:resnetlab@protocol.ai).
+
+## Where to start?
+* If you are here to learn more about the ideas we are exploring to speed-up file transfers in IPFS go to our [RFC Enhancement Proposals](#Enhancement-RFCs).
+* If you want to run your own experiments and play with file-sharing in IPFS, either in a [testbed environment](./testbed/testbed), or with [an interactive CLI tool](./testbed/probe), go to [this page](./testbed) to learn more.
+* If on the contrary, you want to perform experiments with the prototypes right away, install the [testbed environment](./testbed/testbed), go to the [RFC directory](./testbed), and follow the instructions to run an experiment over any of the prototyped RFCs. 
 
 ## Contributions & Results
 
@@ -76,7 +87,7 @@ Feel free to jump into the discussions around the project or to propose your own
 
 ### Code & Testbed
 
-* [Testbed, benchmarking, analysis scripts and related assets](https://github.com/protocol/beyond-bitswap/): All the code used for the implementation and other auxiliary testing assets. Additional documentation is provided in the repo.
+* [Testbed, benchmarking, analysis scripts and related assets](./testbed): All the code used for the implementation and other auxiliary testing assets. Additional documentation is provided in the repo.
 * [Bitswap fork](https://github.com/adlrocha/go-bitswap): This fork of `go-bitswap` is the one being used to implement and evaluate some of the RFCs and where additional metrics that want to be tracked in the testbed are being included. RFCs are imeplemented in different branches with the name of the RFC code.
 
 ### Talks / Videos
