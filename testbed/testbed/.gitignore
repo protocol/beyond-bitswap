@@ -1,0 +1,5 @@
+scripts/env
+scripts/results
+scripts/saved
+scripts/inputData
+scripts/__pycache__
