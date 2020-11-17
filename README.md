@@ -32,7 +32,7 @@ ResNetLab collaborates with over 10 Research Groups all over the world and Proto
 
 We are making all our contributions, ideas, testbed, benchmarking and analysis scripts available below. You are more than welcome to pick any of these assets and build on top of it. If you have questions, please [mail us](mailto:resnetlab@protocol.ai).
 
-## Where to start?
+## 🛠️ Where to start?
 * If you are here to learn more about the ideas we are exploring to speed-up file transfers in IPFS go to our [RFC Enhancement Proposals](#Enhancement-RFCs).
 * If you want to run your own experiments and play with file-sharing in IPFS, either in a [testbed environment](./testbed/testbed), or with [an interactive CLI tool](./testbed/probe), go to [this page](./testbed) to learn more.
 * If on the contrary, you want to perform experiments with the prototypes right away, install the [testbed environment](./testbed/testbed), go to the [RFC directory](./testbed), and follow the instructions to run an experiment over any of the prototyped RFCs. 
