@@ -54,4 +54,4 @@ require (
 
 )
 
-replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20200811113214-8663be04154d
+replace github.com/ipfs/go-bitswap => github.com/adlrocha/go-bitswap v0.2.20-0.20201123095436-1e2319bd190f
