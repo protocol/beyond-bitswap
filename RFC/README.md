@@ -1,5 +1,5 @@
 # RFC Improvement Proposals
-In this directory you will find all the content related to the [RFC Improvement Proposals](../README.md#Enhancement-RFCs). Each directory belongs to an RFC. For those of them in a `prototype` state, apart from its description in a markdown file you will find a set of `.toml` files with the configuration to run a experiment for the RFC prototype in the [testbed]("../testbed/). Be sure to install the testbed and all its dependencies before trying to run any of these experiments.
+In this directory you will find all the content related to the [RFC Improvement Proposals](../README.md#Enhancement-RFCs). Each directory belongs to an RFC. For those of them in a `prototype` state, apart from its description in a markdown file you will find a set of `.toml` files with the configuration to run a experiment for the RFC prototype in the [testbed](../testbed). Be sure to install the testbed and all its dependencies before trying to run any of these experiments.
 
 Once you have the testbed environment ready you can run the experiments for any of the `prototyped` RFCs running the following script indicating the RFC to run:
 ```
