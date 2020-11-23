@@ -1,6 +1,8 @@
 ## Beyond Bitswap Probe
 This is a simple CLI tool to help debug and test the exchange of content between different IPFS nodes.
 
+[![asciicast](https://asciinema.org/a/2xqFne0tkGXprE3tDmAhHRKZo.svg)](https://asciinema.org/a/2xqFne0tkGXprE3tDmAhHRKZo)
+
 ### Usage
 * To run the tool use:
 ```
