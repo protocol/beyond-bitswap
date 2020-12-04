@@ -155,6 +155,11 @@ func GraphsyncTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 				cancel()
 			}
 
+			// Wait for all leeches to have downloaded the data from seeds
+			err = signalAndWaitForAll("transfer-complete-" + runID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
