@@ -101,7 +101,16 @@ func (s *TCPServer) sendFileToClient(connection net.Conn) {
 		return
 	}
 
-	f := files.ToFile(tmpFile)
+	var f io.Reader
+	f = files.ToFile(tmpFile)
+	if f == nil {
+		d := files.ToDir(tmpFile)
+		if d == nil {
+			fmt.Println("Must be a file or dir")
+			return
+		}
+		f = files.NewMultiFileReader(d, false)
+	}
 	size := s.file.Size()
 	// The first write is to notify the size.
 	fileSize := fillString(strconv.FormatInt(size, 10), 10)
