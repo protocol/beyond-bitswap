@@ -163,9 +163,28 @@ testground-redis
 
 * Using a Testground composition file: The same way you run Testground in simple mode you can easily replicate experiments expressed in composition files running: 
 ```
-testground run composition -f <composition_file>
+$ testground run composition -f <composition_file>
 ```
 You can find examples of compositions files in the `./compositions` directory.
+
+## Experiment configurations
+In [`manifest.toml`](./manifest.toml) there is a list of all the available config parameters for each testcase along with a description. Some of these configurations are not exposed in the Jupyter notebook and to use them you'll have to change the default in the `manifest` or set it explicitly when running the test cases using a Testground single/composition run.
+
+### Understanding testcase timeouts
+Test cases and Testground include different timeouts to avoid infinite running experiments. If you are planning to run long-lasting experiments with large datasets is important for you to understand when timeouts come into play and how to configure them (especially if you are trying to debug experiments that keep facing a `context deadline exceeded error`):
+* Testground default timeout: Testground includes a default timeout for experiments of `10min`. If you are planning to run experiments lasting more than 10 minutes you must change this timeout in your `~/testground/env.toml` config file. For instance, if you want to set Testground's task timeout to `200min` you need to add the following to your `~/testground/env.toml` file:
+```
+[daemon.scheduler]
+task_timeout_min          = 200
+```
+* Test case `run_timeout_secs`: This timeout determines the maximum time you want a single run of your test case/experiment to be running. Its value may be changed for each test case in the `manifest.toml` or as a parameter in the Testground run command. The number of runs for a test case is configured in the `run_count` parameter.
+
+* Test case `timeout_secs`: This timeout determines the maximum time you want your full experiment to be running. Its value may be changed for each test case in the `manifest.toml` or as a parameter in the Testground run command.
+
+### Bring your own dataset
+You can run the experiments using any dataset you want. To do this you need to set the `input_data` test parametr to `filse`, and specify the directory of your dataset in `data_dir`. If you are using the `local` runner the `data_dir` is directly the absolute path of your local environment. For the `docker` runner you need to point the dataset directory from th `[extra_sources]` of `manifest.toml` and set `data_dir` as `../extra/<included_dir>`.
+
+If you don't want to worry about configuring all of this when using `docker` you can put your datastets in the `test-datasets` default directory, and the testbed will automatically use your datasets to run the experiments. More info about `extra_sources` in Testground docs.
 
 ## Processing the results.
 The results can be processed using the Jupyter notebook or the `scripts/process.py` script. If you want to process the results generated from a benchmark you can run diretly:
@@ -196,10 +215,8 @@ Spoiler alert! Try running `./run_experiment.sh rfcBBL102` if you have already i
 
 
 ## Coming soon
-* Parameters of the testplans
-* Configure your own dataset for the experiments.
 * Create your own testplan.
-* Bring you rexchange interface.
+* Bring your exchange interface.
 
 <!-- 
 # `Plan:` transfer - Combinations of Seeds and Leeches
