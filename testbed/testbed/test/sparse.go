@@ -329,7 +329,7 @@ func Sparse(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 				// Right now using a path.
 				fPath := path.IpfsPath(rootCid)
 				runenv.RecordMessage("Got path for file: %v", fPath)
-				ctxFetch, cancel := context.WithTimeout(ctx, (testvars.RunTimeout/2)*time.Second)
+				ctxFetch, cancel := context.WithTimeout(ctx, testvars.RunTimeout/2)
 				// Pin Add also traverse the whole DAG
 				// err := ipfsNode.API.Pin().Add(ctxFetch, fPath)
 				rcvFile, err := ipfsNode.API.Unixfs().Get(ctxFetch, fPath)

@@ -282,7 +282,7 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTen
 		// Enable IPFS bandwidth metrics.
 		fx.Provide(libp2p.BandwidthCounter),
 
-		// Here you can see some more of the libp2p dependencies you could set.
+		// TODO: Here you can see some more of the libp2p dependencies you could set.
 		// fx.Provide(libp2p.Security(!bcfg.DisableEncryptedConnections, cfg.Swarm.Transports)),
 		// maybeProvide(libp2p.PubsubRouter, bcfg.getOpt("ipnsps")),
 		// maybeProvide(libp2p.BandwidthCounter, !cfg.Swarm.DisableBandwidthMetrics),
