@@ -186,6 +186,16 @@ You can run the experiments using any dataset you want. To do this you need to s
 
 If you don't want to worry about configuring all of this when using `docker` you can put your datastets in the `test-datasets` default directory, and the testbed will automatically use your datasets to run the experiments. More info about `extra_sources` in Testground docs.
 
+### Create your own dataset
+You can also create your own dataset by generating a set of random files with the `random-file.sh` script. To use this script go to `./scripts` and run it choosing the size of the file and the output directory.
+```
+$ cd scripts
+$ ./random-file.sh 10M ./
+[*] Generating a random file of 10MB in ./
+```
+If no output directory is set, the file will be generate in the default dataset directory `../../test-datasets`.
+*Note: If you want to perform experiments with large random files or dataset we highly recommend using this script instead of using the `input_data=random` configuration. Generating the random file from the experiments nodes is expensive computationally and may delay your experiments. Use this script to avoid these limitations*
+
 ## Processing the results.
 The results can be processed using the Jupyter notebook or the `scripts/process.py` script. If you want to process the results generated from a benchmark you can run diretly:
 ```
