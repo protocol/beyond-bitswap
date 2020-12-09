@@ -46,10 +46,10 @@ instances = { min = 2, max = 64, default = 2 }
   data_dir = { type="string", desc="directory with data is located", default="../extra/test-datasets"}
   exchange_interface = { type="string", desc="exchange interface to use in IPFS node", default="bitswap"}
   run_count = { type = "int", desc = "number of iterations of the test", unit = "iteration", default = 1 }
-  run_timeout_secs = { type = "int", desc = "timeout for an individual run", unit = "seconds", default = 90 }
+  run_timeout_secs = { type = "int", desc = "timeout for an individual run", unit = "seconds", default = 90000 }
   leech_count = { type = "int", desc = "number of leech nodes", unit = "peers", default = 1 }
   passive_count = { type = "int", desc = "number of passive nodes (neither leech nor seed)", unit = "peers", default = 0 }
-  timeout_secs = { type = "int", desc = "timeout", unit = "seconds", default = 4000 }#TODO: Decrease to 300 if not debugging. Bear this in mind while making long tests.
+  timeout_secs = { type = "int", desc = "timeout", unit = "seconds", default = 400000 }#TODO: Decrease to 300 if not debugging. Bear this in mind while making long tests.
   bstore_delay_ms = { type = "int", desc = "blockstore get / put delay", unit = "milliseconds", default = 5 }
   request_stagger = { type = "int", desc = "time between each leech's first request", unit = "ms", default = 0}
   file_size = { type = "int", desc = "file size", unit = "bytes", default = 4194304 }
@@ -86,10 +86,10 @@ instances = { min = 2, max = 64, default = 2 }
   data_dir = { type="string", desc="directory with data is located", default="../extra/test-datasets"}
   exchange_interface = { type="string", desc="exchange interface to use in IPFS node", default="bitswap"}
   run_count = { type = "int", desc = "number of iterations of the test", unit = "iteration", default = 1 }
-  run_timeout_secs = { type = "int", desc = "timeout for an individual run", unit = "seconds", default = 900 }
+  run_timeout_secs = { type = "int", desc = "timeout for an individual run", unit = "seconds", default = 90000 }
   leech_count = { type = "int", desc = "number of leech nodes", unit = "peers", default = 1 }
   passive_count = { type = "int", desc = "number of passive nodes (neither leech nor seed)", unit = "peers", default = 0 }
-  timeout_secs = { type = "int", desc = "timeout", unit = "seconds", default = 4000 }#TODO: Decrease to 300 if not debugging. Bear this in mind while making long tests.
+  timeout_secs = { type = "int", desc = "timeout", unit = "seconds", default = 400000 }#TODO: Decrease to 300 if not debugging. Bear this in mind while making long tests.
   bstore_delay_ms = { type = "int", desc = "blockstore get / put delay", unit = "milliseconds", default = 5 }
   request_stagger = { type = "int", desc = "time between each leech's first request", unit = "ms", default = 0}
   file_size = { type = "int", desc = "file size", unit = "bytes", default = 4194304 }
