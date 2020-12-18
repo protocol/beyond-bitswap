@@ -1,6 +1,8 @@
 #  RFC|BB|L1-02: TTLs for rebroadcasting WANT messages
-* Status: `Draft`
-* Implementation here: https://github.com/adlrocha/go-bitswap/tree/feature/rfcBBL102
+* Status: `Prototype`
+* Implementations: 
+    - RFCBBL102: https://github.com/adlrocha/go-bitswap/tree/feature/rfcBBL102
+    - RFCBBL102 + RFCBBL104: https://github.com/adlrocha/go-bitswap/tree/feature/rfcBBL102+rfcBBL104
 
 ## Abstract
 
@@ -22,9 +24,9 @@ The idea is to include a TTL to WANT messages. That way instead of forwarding WA
 
 -   Forwarder of discovered blocks: Nodes x-hops away from the source of the requests can send responses following two approaches:
 
-    -   Symmetric routing: Messages are forwarded to the requestor following the same path followed by the WANT messages.
+    -   Symmetric routing: Messages are forwarded to the requestor following the same path followed by the WANT messages. Results show is effective when the number of blocks relayed in the network is small, if not the amplification in the number of duplicate blocks wipes out the improvements in the time to fetch content.
 
-    -   Asymmetric routing: Messages do not follow the same path followed by the WANT message, and responses are directly forwarded to its original requestor. In this alternative, nodes follow a "fire-and-forget approach" where intermediate nodes only act as relays and don't track the status of sessions, the receiving node X-hops away answer the requestor node directly, and the only one tracking the state of the session is the originating peer (and maybe the directly connected peers while the session has not been canceled, so that if they see any of the requested blocks it can notify its discovery). When implementing this approach we have to also bear in mind that establishing connections is an expensive process so in order for this approach to be efficient we should evaluate when it is worth for nodes to open a dedicated connection to forward messages back to the original requestor. This does mean that the WANT messages need to have an additional field of “requester” so that the receiving node knows who to dial to deliver a block.
+    -   Asymmetric routing: Messages do not traverse the same path followed by the WANT message, and responses are directly forwarded to its original requestor. In this alternative, nodes follow a "fire-and-forget approach" where intermediate nodes only act as relays and don't track the status of sessions, the receiving node X-hops away answer the requestor node directly, and the only one tracking the state of the session is the originating peer (and maybe the directly connected peers while the session has not been canceled, so that if they see any of the requested blocks it can notify its discovery). When implementing this approach we have to also bear in mind that establishing connections is an expensive process so in order for this approach to be efficient we should evaluate when it is worth for nodes to open a dedicated connection to forward messages back to the original requestor. This does mean that the WANT messages need to have an additional field of “requester” so that the receiving node knows who to dial to deliver a block.
 
 Initially, the protocol will be designed using symmetric routing, and will explore other routing alternatives in the future work. When exploring symmetric routing we need to bear in mind that according to IPFS values, nodes shouldn't push content to other peers that haven't requested it.
 
@@ -35,7 +37,11 @@ Again, this proposal should include schemes to avoid flooding attacks and the fo
 
 - [X] Test the performance and bandwidth overhead of this scheme compared to plain Bitswap for different values of TTL.
 
-- [ ] Evaluate the use of a symmetric and asymmetric routing approach for the forwarding of discovered blocks.
+- [X] Evaluate the use of WANT inspection to reduce the number of duplicate blocks when using symmetric routing.
+
+- [X] Evaluate the use of a symmetric and asymmetric routing approach for the forwarding of discovered blocks.
+
+- [ ] Implement TTL with asymmetric routing.
 
 - [ ] Consider the implementation of "smart TTLs" in WANT requests, so according to the status of the network, bandwidth available, requests alive, number of connections or any other useful value, the TTL is determined.
 
@@ -73,11 +79,15 @@ We should expect a latency reduction in the discovery of content but it may lead
 This RFC was inspired by this proposal. The RFC is based on the assumption that DHT lookups are slow and therefore is better to increase our “Bitswap span” than resorting to the DHT. It would be great if we could validate this assumption before considering its implementation.
 
 ## Results
-TBA
+Details about the implementation of the prototypes and result of the experiments have been published here:
+- https://research.protocol.ai/blog/2020/teaching-bitswap-nodes-to-jump/
+- https://research.protocol.ai/blog/2020/our-bitswap-nodes-have-become-jumping-inspectors/
 
 ## Future Work
 Some future work lines to consider:
 
+-   Fine-tune the degree and TTL of the protocol. For the protocol to scale, for large networks and files, we need to use asymmetric routing. There is a limit in the reduction of duplicate blocks that can be achieved by making changes in symmetric routing. Already explored a prototype including the source of the request in WANT messages to limit the peers blocks are forwarded to if we have the requester as a connection. It reduces the number of duplicate blocks, but present still scalability limitations. 
+ 
 -   Combine with RFC|BB|L1-04 so apart from setting a TTL to WANT messages, every peer receiving a WANT message tracks it in its peer-block registry enhancing also the discovery scope with peer-block registries tables.
 
 -   With a very high number of connections the network is effectively flooded, which is not something we want. We could envision this technique as an efficient alternative to keeping many (questionable quality) connections. [[slides](http://conferences.sigcomm.org/acm-icn/2015/slides/01-01.pdf)]  

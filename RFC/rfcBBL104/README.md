@@ -29,9 +29,9 @@ Some of the known challenges to make this contribution efficient and effective a
 Initial explorations indicated that an HAMT with an accumulator like approach are good candidates for this job.
 
 ## Implementation plan
-- 🛠 Evaluate the use of HAMT and accumulators to easily access the peers from the structure that “potentially” has the CID.
+- [x]  Evaluate the use of HAMT and accumulators to easily access the peers from the structure that “potentially” has the CID.
     - [x] Do a test with 100K files of 1MB to see the number of Wants received by a single node.
-    - 🛠 Show how naïve approaches may not work on the scale of decentralized. For this we will add a test in which we track the memory footprint of the two implementations of registries, the FlatRegistry and the HAMTRegistry for a large amount of files.
+    - [x]  Show how naïve approaches may not work on the scale of decentralized. For this we will add a test in which we track the memory footprint of the two implementations of registries, the FlatRegistry and the HAMTRegistry for a large amount of files.
     - [x] Use HAMTRegistry as an efficient data structure for the registry.
     - ⚠ Current implementation of HAMTRegistry doesn’t include CHAMP modification.
     - [ ] Evaluate the use of accumulators to access registry entries and analyze how changing the size of the prefix in the accumulator structure used affects the bandwidth, memory footprint of peers, and the chance of finding discovery. This will allow us to put a ceiling to the number of entries to be tracked in the registry and its overhead.
@@ -60,6 +60,8 @@ We can expect the time to discover content in the network to be reduced.
 The results for the implementation of this RFC were reported here: https://research.protocol.ai/blog/2020/two-ears-one-mouth-how-to-leverage-bitswap-chatter-for-faster-transfers/
 
 ## Future Work
+- Change the number of peer from the peer-block registry chosen to send the optimistic WANT-BLOCK to 1. In vanilla Bitswap, the WANT-BLOCK is sent to a single peer. Thus, the performance and the reduction
+in the nunmber of messages can be further improved by contacting a single peer instead of three as it is currently done.
 - Protocol to share peer-block registries between nodes to increase “local views”.
 - A good idea for reducing the scope of the content we keep track of is to somehow monitor the latency to the node and keep track of content that lives nearby.
 - We can go further and think of budget-based forwarding schemes where nodes can forward only up to a fixed amount of requests. We’ve investigated several funky content discovery strategies in these two papers:
