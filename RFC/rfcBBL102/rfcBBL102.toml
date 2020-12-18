@@ -17,7 +17,7 @@ instances = { count = 30 }
     [groups.build]
     skip_runtime_image = "true"
     dependencies = [
-        { module = "github.com/ipfs/go-bitswap", target="github.com/adlrocha/go-bitswap", version = "6f5c6dc5e81bb7a49c73d20aa3d9004747164928"}
+        { module = "github.com/ipfs/go-bitswap", target="github.com/adlrocha/go-bitswap", version = "c40f2c5613e47bcff700eb154e6c0e0120e2f6d2"}
     ]
 
     [groups.run]
