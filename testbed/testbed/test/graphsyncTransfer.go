@@ -112,11 +112,11 @@ func GraphsyncTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			}
 
 			// dialed, err := ipfsNode.ConnectToPeers(ctx, runenv, addrInfos, maxConnections)
-			dialed, err := utils.DialOtherPeers(ctx, ipfsNode.Node.PeerHost, t.addrInfos, testvars.MaxConnectionRate)
+			dialed, err := t.dialFn(ctx, ipfsNode.Node.PeerHost, t.nodetp, t.peerInfos, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
 			}
-			runenv.RecordMessage("Dialed %d other nodes", len(dialed))
+			runenv.RecordMessage("%s Dialed %d other nodes:", t.nodetp.String(), len(dialed))
 
 			// Wait for all nodes to be connected
 			err = signalAndWaitForAll("connect-complete-" + runID)
@@ -129,9 +129,9 @@ func GraphsyncTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			if t.nodetp == utils.Leech {
 				// Stagger the start of the first request from each leech
 				// Note: seq starts from 1 (not 0)
-				targetPeer := t.addrInfos[0]
+				targetPeer := t.peerInfos[0].Addr
 				if targetPeer.ID == t.nConfig.AddrInfo.ID {
-					targetPeer = t.addrInfos[1]
+					targetPeer = t.peerInfos[1].Addr
 				}
 				startDelay := time.Duration(t.seq-1) * testvars.RequestStagger
 				runenv.RecordMessage("Starting to leech %d / %d (%d bytes)", runNum, testvars.RunCount, f.Size())
