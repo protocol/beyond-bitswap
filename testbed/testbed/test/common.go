@@ -16,6 +16,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/adlrocha/beyond-bitswap/testbed/utils"
+	"github.com/adlrocha/beyond-bitswap/testbed/utils/dialer"
 
 	"github.com/testground/sdk-go/network"
 )
@@ -34,14 +35,18 @@ type TestVars struct {
 	SeederRate        int
 	DHTEnabled        bool
 	LlEnabled         bool
+	Dialer            string
+	NumWaves          int
 }
 
 type TestData struct {
 	client              *sync.DefaultClient
+	nwClient            *network.Client
 	ipfsNode            *utils.IPFSNode
 	testFiles           []utils.TestFile
 	nConfig             *utils.NodeConfig
-	addrInfos           []peer.AddrInfo
+	peerInfos           []dialer.PeerInfo
+	dialFn              dialer.Dialer
 	latency             time.Duration
 	bandwidth           int
 	signalAndWaitForAll func(state string) error
@@ -65,6 +70,8 @@ func getEnvVars(runenv *runtime.RunEnv) *TestVars {
 		SeederRate:        runenv.IntParam("seeder_rate"),
 		DHTEnabled:        runenv.BooleanParam("enable_dht"),
 		LlEnabled:         runenv.BooleanParam("long_lasting"),
+		Dialer:            runenv.StringParam("dialer"),
+		NumWaves:          runenv.IntParam("number_waves"),
 	}
 }
 
@@ -104,6 +111,18 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 		return nil, err
 	}
 
+	peerInfos := sync.NewTopic("peerInfos", &dialer.PeerInfo{})
+	// Publish peer info for dialing
+	_, err = client.Publish(ctx, peerInfos, &dialer.PeerInfo{Addr: *nConfig.AddrInfo, Nodetp: nodetp})
+	if err != nil {
+		return nil, err
+	}
+
+	var dialFn dialer.Dialer = dialer.DialOtherPeers
+	if testvars.Dialer == "sparse" {
+		dialFn = dialer.SparseDial
+	}
+
 	var seedIndex int64
 	if nodetp == utils.Seed {
 		if runenv.TestGroupID == "" {
@@ -125,13 +144,13 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 	runenv.RecordMessage("Seed index %v for: %v", &nConfig.AddrInfo.ID, seedIndex)
 
 	// Get addresses of all peers
-	peerCh := make(chan *peer.AddrInfo)
+	peerCh := make(chan *dialer.PeerInfo)
 	sctx, cancelSub := context.WithCancel(ctx)
-	if _, err := client.Subscribe(sctx, peers, peerCh); err != nil {
+	if _, err := client.Subscribe(sctx, peerInfos, peerCh); err != nil {
 		cancelSub()
 		return nil, err
 	}
-	addrInfos, err := utils.AddrInfosFromChan(peerCh, runenv.TestInstanceCount)
+	infos, err := dialer.PeerInfosFromChan(peerCh, runenv.TestInstanceCount)
 	if err != nil {
 		cancelSub()
 		return nil, fmt.Errorf("no addrs in %d seconds", testvars.Timeout/time.Second)
@@ -166,8 +185,8 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 		return nil, err
 	}
 
-	return &TestData{client, ipfsNode, testFiles,
-		nConfig, addrInfos,
+	return &TestData{client, nwClient, ipfsNode, testFiles,
+		nConfig, infos, dialFn,
 		latency, bandwidthMB, signalAndWaitForAll,
 		seq, grpseq, nodetp, tpindex}, nil
 }

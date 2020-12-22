@@ -4,7 +4,7 @@ author  = "@adlrocha"
 
 [global]
 plan    = "testbed"
-case    = "sparse"
+case    = "ipfs-transfer"
 builder = "docker:go"
 runner  = "local:docker"
 
@@ -35,3 +35,4 @@ instances = { count = 30 }
             bandwidth_mb= "100"
             enable_tcp= "false"
             enable_dht= "true"
+            dialer = "sparse"
