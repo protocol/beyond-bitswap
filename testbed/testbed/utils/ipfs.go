@@ -5,11 +5,8 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
-	"log"
 	mathRand "math/rand"
 	"net"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -24,7 +21,6 @@ import (
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/jbenet/goprocess"
 	"github.com/libp2p/go-libp2p-kad-dht/providers"
-	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/testground/sdk-go/runtime"
 	"go.uber.org/fx"
@@ -35,10 +31,8 @@ import (
 	"github.com/ipfs/go-ipfs/core/node"
 	"github.com/ipfs/go-ipfs/core/node/helpers"
 	"github.com/ipfs/go-ipfs/core/node/libp2p"
-	"github.com/ipfs/go-ipfs/p2p"
-	"github.com/ipfs/go-ipfs/plugin/loader" // This package is needed so that all the preloaded plugins are loaded automatically
+	"github.com/ipfs/go-ipfs/p2p" // This package is needed so that all the preloaded plugins are loaded automatically
 	"github.com/ipfs/go-ipfs/repo"
-	"github.com/ipfs/go-ipfs/repo/fsrepo"
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	dsync "github.com/ipfs/go-datastore/sync"
@@ -109,48 +103,6 @@ func GenerateAddrInfo(ip string) (*NodeConfig, error) {
 	}
 
 	return &NodeConfig{addrs, &peer.AddrInfo{ID: pid, Addrs: multiAddrs}, privkeyb}, nil
-}
-
-// setupPlugins to spawn nodes.
-func setupPlugins(externalPluginsPath string) error {
-	// Load any external plugins if available on externalPluginsPath
-	plugins, err := loader.NewPluginLoader(filepath.Join(externalPluginsPath, "plugins"))
-	if err != nil {
-		return fmt.Errorf("error loading plugins: %s", err)
-	}
-
-	// Load preloaded and external plugins
-	if err := plugins.Initialize(); err != nil {
-		return fmt.Errorf("error initializing plugins: %s", err)
-	}
-
-	if err := plugins.Inject(); err != nil {
-		return fmt.Errorf("error initializing plugins: %s", err)
-	}
-
-	return nil
-}
-
-// createTempRepo creates temporal directory
-func createTempRepo(ctx context.Context) (string, error) {
-	repoPath, err := ioutil.TempDir("", "ipfs-shell")
-	if err != nil {
-		return "", fmt.Errorf("failed to get temp dir: %s", err)
-	}
-
-	// Create a config with default options and a 2048 bit key
-	cfg, err := config.Init(ioutil.Discard, 2048)
-	if err != nil {
-		return "", err
-	}
-
-	// Create the repo with the config
-	err = fsrepo.Init(repoPath, cfg)
-	if err != nil {
-		return "", fmt.Errorf("failed to init ephemeral node: %s", err)
-	}
-
-	return repoPath, nil
 }
 
 // baseProcess creates a goprocess which is closed when the lifecycle signals it to stop
@@ -370,145 +322,6 @@ func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch Exc
 	// Attach the Core API to the constructed node
 	return &IPFSNode{n, api, stopNode}, nil
 }
-
-// CreateIPFSNode an IPFS specifying exchange node and returns its coreAPI
-func CreateIPFSNode(ctx context.Context, ip string, DHTenabled bool) (*IPFSNode, error) {
-
-	// Set up plugins
-	if err := setupPlugins(""); err != nil {
-		return nil, fmt.Errorf("Failed setting up plugins: %s", err)
-	}
-
-	// Create temporal repo.
-	repoPath, err := createTempRepo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Listen in a free port, not the default one.
-	repo, err := fsrepo.Open(repoPath)
-	swarmAddrs := []string{
-		fmt.Sprintf("/ip4/%s/tcp/%s", ip, "0"),
-		"/ip6/::/tcp/" + "0",
-		fmt.Sprintf("/ip4/%s/udp/%s/quic", ip, "0"),
-		fmt.Sprintf("/ip6/::/udp/%s/quic", "0"),
-	}
-	if err := repo.SetConfigKey("Addresses.Swarm", swarmAddrs); err != nil {
-		return nil, err
-	}
-	dhtOption := libp2p.NilRouterOption
-	if DHTenabled {
-		dhtOption = libp2p.DHTOption // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
-		//dhtOption = libp2p.DHTClientOption, // This option sets the node to be a client DHT node (only fetching records)
-	}
-	// Construct the node
-	nodeOptions := &core.BuildCfg{
-		Online:  true,
-		Routing: dhtOption, //TODO: Reminder DHT disabled.
-		// Routing: libp2p.DHTOption, // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
-		// Routing: libp2p.DHTClientOption, // This option sets the node to be a client DHT node (only fetching records)
-		Repo: repo,
-	}
-
-	node, err := core.NewNode(ctx, nodeOptions)
-	if err != nil {
-		return nil, fmt.Errorf("Failed starting the node: %s", err)
-	}
-	api, err := coreapi.NewCoreAPI(node)
-	// Attach the Core API to the constructed node
-	return &IPFSNode{node, api, node.Close}, nil
-}
-
-// Get a randomSubset of peers to connect to.
-func (n *IPFSNode) getRandomSubset(peerInfo []peer.AddrInfo, maxConnections int) []peer.AddrInfo {
-	outputList := []peer.AddrInfo{}
-	mathRand.Seed(time.Now().Unix())
-	var i, con int
-
-	for len(peerInfo) > 0 {
-		x := mathRand.Intn(len(peerInfo))
-		if n.Node.PeerHost.ID() != peerInfo[x].ID {
-			outputList = append(outputList, peerInfo[x])
-			// Delete from peerInfo so that it can't be selected again
-			peerInfo = append(peerInfo[:x], peerInfo[x+1:]...)
-			con++
-		}
-		if con >= maxConnections || len(peerInfo) == 1 {
-			return outputList
-		}
-		i++
-	}
-
-	return outputList
-}
-
-// flatSubset removes self from list of peers to dial.
-func (n *IPFSNode) flatSubset(peerInfo []peer.AddrInfo, maxConnections int) []peer.AddrInfo {
-	outputList := []peer.AddrInfo{}
-
-	i := 0
-	for _, ai := range peerInfo {
-		if n.Node.PeerHost.ID() != ai.ID {
-			outputList = append(outputList, ai)
-			i++
-		}
-		if i >= maxConnections {
-			return outputList
-		}
-	}
-
-	return outputList
-}
-
-// ConnectToPeers connects to other IPFS nodes in the network.
-func (n *IPFSNode) ConnectToPeers(ctx context.Context, runenv *runtime.RunEnv,
-	peerInfos []peer.AddrInfo, maxConnections int) ([]peer.AddrInfo, error) {
-	ipfs := n.API
-	var wg sync.WaitGroup
-	// Do not include self.
-	// Careful, there is a known issue with SECIO where a connection shouldn't
-	// be started simultaneously.
-	peerInfos = n.getRandomSubset(peerInfos, maxConnections)
-	// In case we want a flat subset (in order from the start of the array) and not a random one.
-	// peerInfos = n.flatSubset(peerInfos, maxConnections)
-	runenv.RecordMessage("Subset of peers selected to connect: %v", peerInfos)
-	wg.Add(len(peerInfos))
-	for _, peerInfo := range peerInfos {
-		if n.Node.PeerHost.ID() != peerInfo.ID {
-			go func(peerInfo *peerstore.PeerInfo) {
-				defer wg.Done()
-				err := ipfs.Swarm().Connect(ctx, *peerInfo)
-				if err != nil {
-					log.Printf("failed to connect to %s: %s", peerInfo.ID, err)
-				}
-			}(&peerInfo)
-		}
-	}
-	wg.Wait()
-	return peerInfos, nil
-}
-
-// ClearDatastore removes a block from the datastore.
-// func (n *IPFSNode) ClearDatastore(ctx context.Context, runenv *runtime.RunEnv) error {
-// 	ds := n.Node.Repo.Datastore()
-// 	// Empty prefix to receive all the keys
-// 	qr, err := ds.Query(dsq.Query{})
-// 	runenv.RecordMessage("Datastore query performed")
-// 	if err != nil {
-// 		return err
-// 	}
-// 	for r := range qr.Next() {
-// 		runenv.RecordMessage("Entered the for loop...")
-// 		if r.Error != nil {
-// 			// handle.
-// 			return r.Error
-// 		}
-// 		runenv.RecordMessage("Received key %s", r.Entry.Key)
-// 		ds.Delete(datastore.NewKey(r.Entry.Key))
-// 		ds.Sync(datastore.NewKey(r.Entry.Key))
-// 	}
-// 	return nil
-// }
 
 // ClearDatastore removes a block from the datastore.
 // TODO: This function may be inefficient with large blockstore. Used the option above.
