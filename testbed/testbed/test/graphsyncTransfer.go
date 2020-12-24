@@ -8,8 +8,8 @@ import (
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 
-	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 	"github.com/ipfs/go-cid"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
 )
 
 // GraphsyncTransfer data from S seeds to L leeches

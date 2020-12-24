@@ -1,4 +1,4 @@
-module github.com/adlrocha/beyond-bitswap/testbed
+module github.com/protocol/beyond-bitswap/testbed/testbed
 
 go 1.14
 

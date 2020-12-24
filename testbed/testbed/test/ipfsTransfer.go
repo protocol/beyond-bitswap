@@ -10,10 +10,10 @@ import (
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
-	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 	"github.com/ipfs/go-cid"
 	files "github.com/ipfs/go-ipfs-files"
 	"github.com/ipfs/interface-go-ipfs-core/path"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
 )
 
 // IPFSTransfer data from S seeds to L leeches

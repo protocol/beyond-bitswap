@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 	core "github.com/libp2p/go-libp2p-core"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
 	"golang.org/x/sync/errgroup"
 )
 

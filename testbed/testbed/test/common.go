@@ -16,8 +16,8 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/adlrocha/beyond-bitswap/testbed/utils"
-	"github.com/adlrocha/beyond-bitswap/testbed/utils/dialer"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils/dialer"
 
 	"github.com/testground/sdk-go/network"
 )

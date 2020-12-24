@@ -15,7 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 
-	"github.com/adlrocha/beyond-bitswap/testbed/utils"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
 )
 
 // Transfer data from S seeds to L leeches
