@@ -1,7 +1,7 @@
 package main
 
 import (
-	test "github.com/adlrocha/beyond-bitswap/testbed/test"
+	test "github.com/protocol/beyond-bitswap/testbed/testbed/test"
 	"github.com/testground/sdk-go/run"
 )
 

@@ -23,7 +23,6 @@ import (
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
 	ipldselector "github.com/ipld/go-ipld-prime/traversal/selector"
 	"github.com/ipld/go-ipld-prime/traversal/selector/builder"
-	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 )
 
@@ -36,15 +35,6 @@ func Graphsync(lc fx.Lifecycle, mctx helpers.MetricsCtx, host p2p.Host, bs block
 		storeutil.LoaderForBlockstore(bs),
 		storeutil.StorerForBlockstore(bs),
 	)
-}
-
-func newGraphsync(ctx context.Context, p2p host.Host, bs blockstore.Blockstore) (graphsync.GraphExchange, error) {
-	network := network.NewFromLibp2pHost(p2p)
-	return gsimpl.New(ctx,
-		network,
-		storeutil.LoaderForBlockstore(bs),
-		storeutil.StorerForBlockstore(bs),
-	), nil
 }
 
 var selectAll ipld.Node = func() ipld.Node {

@@ -3,14 +3,13 @@ package test
 import (
 	"context"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 
-	"github.com/adlrocha/beyond-bitswap/testbed/utils"
 	"github.com/ipfs/go-cid"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
 )
 
 // GraphsyncTransfer data from S seeds to L leeches
@@ -20,7 +19,7 @@ func GraphsyncTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	/// --- Set up
 	ctx, cancel := context.WithTimeout(context.Background(), testvars.Timeout)
 	defer cancel()
-	t, err := InitializeTest(ctx, runenv, testvars)
+	t, err := InitializeIPFSTest(ctx, runenv, testvars)
 	if err != nil {
 		return err
 	}
@@ -31,6 +30,7 @@ func GraphsyncTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	t.stillAlive(runenv, testvars)
 
 	var runNum int
+	var tcpFetch int64
 
 	// For each file found in the test
 	for fIndex, f := range t.testFiles {
@@ -38,13 +38,49 @@ func GraphsyncTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		// Accounts for every file that couldn't be found.
 		var leechFails int64
 		var rootCid cid.Cid
+
+		// Wait for all nodes to be ready to start the file
+		err = signalAndWaitForAll(fmt.Sprintf("start-file-%d", fIndex))
+		if err != nil {
+			return err
+		}
+
+		switch t.nodetp {
+		case utils.Seed:
+			err = t.addPublishFile(ctx, fIndex, f, runenv, testvars)
+		case utils.Leech:
+			rootCid, err = t.readFile(ctx, fIndex, runenv, testvars)
+		}
+		if err != nil {
+			return err
+		}
+
+		runenv.RecordMessage("File injest complete...")
+		// Wait for all nodes to be ready to dial
+		err = signalAndWaitForAll(fmt.Sprintf("injest-complete-%d", fIndex))
+		if err != nil {
+			return err
+		}
+
+		if testvars.TCPEnabled {
+			runenv.RecordMessage("Running TCP test...")
+			switch t.nodetp {
+			case utils.Seed:
+				err = t.runTCPServer(ctx, fIndex, f, runenv, testvars)
+			case utils.Leech:
+				tcpFetch, err = t.runTCPFetch(ctx, fIndex, runenv, testvars)
+			}
+			if err != nil {
+				return err
+			}
+		}
+
 		// Run the test runcount times
 		for runNum = 1; runNum < testvars.RunCount+1; runNum++ {
 			// Reset the timeout for each run
 			ctx, cancel := context.WithTimeout(ctx, testvars.RunTimeout)
 			defer cancel()
 
-			isFirstRun := runNum == 1
 			runID := fmt.Sprintf("%d-%d", fIndex, runNum)
 
 			// Wait for all nodes to be ready to start the run
@@ -54,64 +90,7 @@ func GraphsyncTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			}
 
 			runenv.RecordMessage("Starting run %d / %d (%d bytes)", runNum, testvars.RunCount, f.Size())
-			// Create identifier for specific file size.
-			rootCidTopic := getRootCidTopic(fIndex)
 
-			switch t.nodetp {
-			case utils.Seed:
-				// Number of seeders to add the file
-				rate := float64(testvars.SeederRate) / 100
-				seeders := runenv.TestInstanceCount - (testvars.LeechCount + testvars.PassiveCount)
-				toSeed := int(math.Ceil(float64(seeders) * rate))
-
-				// If this is the first run for this file size.
-				// Only a rate of seeders add the file.
-				if isFirstRun && t.tpindex <= toSeed {
-					// Generating and adding file to IPFS
-					cid, err := generateAndAdd(ctx, runenv, ipfsNode, f)
-					if err != nil {
-						return err
-					}
-					runenv.RecordMessage("Published Added CID: %v", *cid)
-					// Inform other nodes of the root CID
-					if _, err = t.client.Publish(ctx, rootCidTopic, cid); err != nil {
-						return fmt.Errorf("Failed to get Redis Sync rootCidTopic %w", err)
-					}
-
-				}
-			case utils.Leech:
-				// If this is the first run for this file size
-				if isFirstRun {
-					// Get the root CID from a seed
-					rootCidCh := make(chan *cid.Cid, 1)
-					sctx, cancelRootCidSub := context.WithCancel(ctx)
-					if _, err := t.client.Subscribe(sctx, rootCidTopic, rootCidCh); err != nil {
-						cancelRootCidSub()
-						return fmt.Errorf("Failed to subscribe to rootCidTopic %w", err)
-					}
-					// Note: only need to get the root CID from one seed - it should be the
-					// same on all seeds (seed data is generated from repeatable random
-					// sequence or existing file)
-					rootCidPtr, ok := <-rootCidCh
-					if !ok {
-						cancelRootCidSub()
-						return fmt.Errorf("no root cid in %d seconds", testvars.Timeout/time.Second)
-					}
-
-					rootCid = *rootCidPtr
-					runenv.RecordMessage("Received rootCid: %v", rootCid)
-					cancelRootCidSub()
-				}
-			}
-
-			runenv.RecordMessage("Ready to start connecting...")
-			// Wait for all nodes to be ready to dial
-			err = signalAndWaitForAll("ready-to-connect-" + runID)
-			if err != nil {
-				return err
-			}
-
-			// dialed, err := ipfsNode.ConnectToPeers(ctx, runenv, addrInfos, maxConnections)
 			dialed, err := t.dialFn(ctx, ipfsNode.Node.PeerHost, t.nodetp, t.peerInfos, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
@@ -160,6 +139,22 @@ func GraphsyncTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			if err != nil {
 				return err
 			}
+
+			/// --- Report stats
+			err = ipfsNode.EmitMetrics(runenv, runNum, t.seq, t.grpseq, t.latency, t.bandwidth, int(f.Size()), t.nodetp, t.tpindex, timeToFetch, tcpFetch, leechFails, testvars.MaxConnectionRate)
+			if err != nil {
+				return err
+			}
+			runenv.RecordMessage("Finishing emitting metrics. Starting to clean...")
+
+			err = t.cleanupRun(ctx, runenv)
+			if err != nil {
+				return err
+			}
+		}
+		err = t.cleanupFile(ctx)
+		if err != nil {
+			return err
 		}
 	}
 

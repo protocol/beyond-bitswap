@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -15,8 +16,8 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/adlrocha/beyond-bitswap/testbed/utils"
-	"github.com/adlrocha/beyond-bitswap/testbed/utils/dialer"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils/dialer"
 
 	"github.com/testground/sdk-go/network"
 )
@@ -42,8 +43,6 @@ type TestVars struct {
 type TestData struct {
 	client              *sync.DefaultClient
 	nwClient            *network.Client
-	ipfsNode            *utils.IPFSNode
-	testFiles           []utils.TestFile
 	nConfig             *utils.NodeConfig
 	peerInfos           []dialer.PeerInfo
 	dialFn              dialer.Dialer
@@ -54,47 +53,63 @@ type TestData struct {
 	grpseq              int64
 	nodetp              utils.NodeType
 	tpindex             int
+	seedIndex           int64
 }
 
 func getEnvVars(runenv *runtime.RunEnv) *TestVars {
-	return &TestVars{
-		ExchangeInterface: runenv.StringParam("exchange_interface"),
-		Timeout:           time.Duration(runenv.IntParam("timeout_secs")) * time.Second,
-		RunTimeout:        time.Duration(runenv.IntParam("run_timeout_secs")) * time.Second,
-		LeechCount:        runenv.IntParam("leech_count"),
-		PassiveCount:      runenv.IntParam("passive_count"),
-		RequestStagger:    time.Duration(runenv.IntParam("request_stagger")) * time.Millisecond,
-		RunCount:          runenv.IntParam("run_count"),
-		MaxConnectionRate: runenv.IntParam("max_connection_rate"),
-		TCPEnabled:        runenv.BooleanParam("enable_tcp"),
-		SeederRate:        runenv.IntParam("seeder_rate"),
-		DHTEnabled:        runenv.BooleanParam("enable_dht"),
-		LlEnabled:         runenv.BooleanParam("long_lasting"),
-		Dialer:            runenv.StringParam("dialer"),
-		NumWaves:          runenv.IntParam("number_waves"),
+	tv := &TestVars{}
+	if runenv.IsParamSet("exchange_interface") {
+		tv.ExchangeInterface = runenv.StringParam("exchange_interface")
 	}
+	if runenv.IsParamSet("timeout_secs") {
+		tv.Timeout = time.Duration(runenv.IntParam("timeout_secs")) * time.Second
+	}
+	if runenv.IsParamSet("run_timeout_secs") {
+		tv.RunTimeout = time.Duration(runenv.IntParam("run_timeout_secs")) * time.Second
+	}
+	if runenv.IsParamSet("leech_count") {
+		tv.LeechCount = runenv.IntParam("leech_count")
+	}
+	if runenv.IsParamSet("passive_count") {
+		tv.PassiveCount = runenv.IntParam("passive_count")
+	}
+	if runenv.IsParamSet("request_stagger") {
+		tv.RequestStagger = time.Duration(runenv.IntParam("request_stagger")) * time.Millisecond
+	}
+	if runenv.IsParamSet("run_count") {
+		tv.RunCount = runenv.IntParam("run_count")
+	}
+	if runenv.IsParamSet("max_connection_rate") {
+		tv.MaxConnectionRate = runenv.IntParam("max_connection_rate")
+	}
+	if runenv.IsParamSet("enable_tcp") {
+		tv.TCPEnabled = runenv.BooleanParam("enable_tcp")
+	}
+	if runenv.IsParamSet("seeder_rate") {
+		tv.SeederRate = runenv.IntParam("seeder_rate")
+	}
+	if runenv.IsParamSet("enable_dht") {
+		tv.DHTEnabled = runenv.BooleanParam("enable_dht")
+	}
+	if runenv.IsParamSet("long_lasting") {
+		tv.LlEnabled = runenv.BooleanParam("long_lasting")
+	}
+	if runenv.IsParamSet("dialer") {
+		tv.Dialer = runenv.StringParam("dialer")
+	}
+	if runenv.IsParamSet("number_waves") {
+		tv.NumWaves = runenv.IntParam("number_waves")
+	}
+	return tv
 }
 
 func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars) (*TestData, error) {
 	client := sync.MustBoundClient(ctx, runenv)
 	nwClient := network.NewClient(client, runenv)
 
-	runenv.RecordMessage("Preparing exchange for node: %v", testvars.ExchangeInterface)
-	// Set exchange Interface
-	exch, err := utils.SetExchange(ctx, testvars.ExchangeInterface)
-	if err != nil {
-		return nil, err
-	}
 	nConfig, err := utils.GenerateAddrInfo(nwClient.MustGetDataNetworkIP().String())
 	if err != nil {
 		runenv.RecordMessage("Error generating node config")
-		return nil, err
-	}
-	// Create IPFS node
-	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, nConfig, exch, testvars.DHTEnabled)
-	// ipfsNode, err := utils.CreateIPFSNode(ctx)
-	if err != nil {
-		runenv.RecordFailure(err)
 		return nil, err
 	}
 
@@ -166,13 +181,6 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 		return nil, fmt.Errorf("Failed to set up network: %v", err)
 	}
 
-	// According to the input data get the file size or the files to add.
-	testFiles, err := utils.GetFileList(runenv)
-	if err != nil {
-		return nil, err
-	}
-	runenv.RecordMessage("Got file list: %v", testFiles)
-
 	// Signal that this node is in the given state, and wait for all peers to
 	// send the same signal
 	signalAndWaitForAll := func(state string) error {
@@ -180,30 +188,204 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 		return err
 	}
 
-	err = signalAndWaitForAll("file-list-ready")
+	return &TestData{client, nwClient,
+		nConfig, infos, dialFn,
+		latency, bandwidthMB, signalAndWaitForAll,
+		seq, grpseq, nodetp, tpindex, seedIndex}, nil
+}
+
+func (t *TestData) publishFile(ctx context.Context, fIndex int, cid *cid.Cid, runenv *runtime.RunEnv) error {
+	// Create identifier for specific file size.
+	rootCidTopic := getRootCidTopic(fIndex)
+
+	runenv.RecordMessage("Published Added CID: %v", *cid)
+	// Inform other nodes of the root CID
+	if _, err := t.client.Publish(ctx, rootCidTopic, cid); err != nil {
+		return fmt.Errorf("Failed to get Redis Sync rootCidTopic %w", err)
+	}
+	return nil
+}
+
+func (t *TestData) readFile(ctx context.Context, fIndex int, runenv *runtime.RunEnv, testvars *TestVars) (cid.Cid, error) {
+	// Create identifier for specific file size.
+	rootCidTopic := getRootCidTopic(fIndex)
+	// Get the root CID from a seed
+	rootCidCh := make(chan *cid.Cid, 1)
+	sctx, cancelRootCidSub := context.WithCancel(ctx)
+	defer cancelRootCidSub()
+	if _, err := t.client.Subscribe(sctx, rootCidTopic, rootCidCh); err != nil {
+		return cid.Undef, fmt.Errorf("Failed to subscribe to rootCidTopic %w", err)
+	}
+	// Note: only need to get the root CID from one seed - it should be the
+	// same on all seeds (seed data is generated from repeatable random
+	// sequence or existing file)
+	rootCidPtr, ok := <-rootCidCh
+	if !ok {
+		return cid.Undef, fmt.Errorf("no root cid in %d seconds", testvars.Timeout/time.Second)
+	}
+	rootCid := *rootCidPtr
+	runenv.RecordMessage("Received rootCid: %v", rootCid)
+	return rootCid, nil
+}
+
+func (t *TestData) runTCPServer(ctx context.Context, fIndex int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) error {
+	// TCP variables
+	tcpAddrTopic := getTCPAddrTopic(fIndex)
+	runenv.RecordMessage("Starting TCP server in seed")
+
+	// Start TCP server for file
+	tcpServer, err := utils.SpawnTCPServer(ctx, t.nwClient.MustGetDataNetworkIP().String(), f)
+	if err != nil {
+		return fmt.Errorf("Failed to start tcpServer in seed %w", err)
+	}
+	// Inform other nodes of the TCPServerAddr
+	runenv.RecordMessage("Publishing TCP address %v", tcpServer.Addr)
+	if _, err = t.client.Publish(ctx, tcpAddrTopic, tcpServer.Addr); err != nil {
+		return fmt.Errorf("Failed to get Redis Sync tcpAddr %w", err)
+	}
+	runenv.RecordMessage("Waiting to end finish TCP fetch")
+
+	// Wait for all nodes to be done with TCP Fetch
+	err = t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d", fIndex))
+	if err != nil {
+		return err
+	}
+
+	// At this point TCP interactions are finished.
+	runenv.RecordMessage("Closing TCP server")
+	tcpServer.Close()
+	return nil
+}
+
+func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runenv *runtime.RunEnv, testvars *TestVars) (int64, error) {
+	// TCP variables
+	tcpAddrTopic := getTCPAddrTopic(fIndex)
+	sctx, cancelTCPAddrSub := context.WithCancel(ctx)
+	defer cancelTCPAddrSub()
+	tcpAddrCh := make(chan *string, 1)
+	if _, err := t.client.Subscribe(sctx, tcpAddrTopic, tcpAddrCh); err != nil {
+		return 0, fmt.Errorf("Failed to subscribe to tcpServerTopic %w", err)
+	}
+	tcpAddrPtr, ok := <-tcpAddrCh
+
+	runenv.RecordMessage("Received tcp server %v", tcpAddrPtr)
+	if !ok {
+		return 0, fmt.Errorf("no tcp server addr received in %d seconds", testvars.Timeout/time.Second)
+	}
+	runenv.RecordMessage("Start fetching a TCP file from seed")
+	start := time.Now()
+	utils.FetchFileTCP(*tcpAddrPtr)
+	tcpFetch := time.Since(start).Nanoseconds()
+	runenv.RecordMessage("Fetched TCP file after %d (ns)", tcpFetch)
+
+	// Wait for all nodes to be done with TCP Fetch
+	return tcpFetch, t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d", fIndex))
+}
+
+type IPFSTestData struct {
+	*TestData
+	ipfsNode  *utils.IPFSNode
+	testFiles []utils.TestFile
+}
+
+func InitializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars) (*IPFSTestData, error) {
+	t, err := InitializeTest(ctx, runenv, testvars)
+	if err != nil {
+		return nil, err
+	}
+	// Create IPFS node
+	runenv.RecordMessage("Preparing exchange for node: %v", testvars.ExchangeInterface)
+	// Set exchange Interface
+	exch, err := utils.SetExchange(ctx, testvars.ExchangeInterface)
+	if err != nil {
+		return nil, err
+	}
+	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, t.nConfig, exch, testvars.DHTEnabled)
+	if err != nil {
+		runenv.RecordFailure(err)
+		return nil, err
+	}
+	// According to the input data get the file size or the files to add.
+	testFiles, err := utils.GetFileList(runenv)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("Got file list: %v", testFiles)
+
+	err = t.signalAndWaitForAll("file-list-ready")
 	if err != nil {
 		return nil, err
 	}
 
-	return &TestData{client, nwClient, ipfsNode, testFiles,
-		nConfig, infos, dialFn,
-		latency, bandwidthMB, signalAndWaitForAll,
-		seq, grpseq, nodetp, tpindex}, nil
+	return &IPFSTestData{
+		TestData:  t,
+		ipfsNode:  ipfsNode,
+		testFiles: testFiles,
+	}, nil
 }
 
-func (t *TestData) stillAlive(runenv *runtime.RunEnv, v *TestVars) {
+func (t *IPFSTestData) stillAlive(runenv *runtime.RunEnv, v *TestVars) {
 	// starting liveness process for long-lasting experiments.
 	if v.LlEnabled {
 		go func(n *utils.IPFSNode, runenv *runtime.RunEnv) {
 			for {
 				runenv.RecordMessage("I am still alive! Total In: %d - TotalOut: %d",
-					t.ipfsNode.Node.Reporter.GetBandwidthTotals().TotalIn,
-					t.ipfsNode.Node.Reporter.GetBandwidthTotals().TotalOut)
+					n.Node.Reporter.GetBandwidthTotals().TotalIn,
+					n.Node.Reporter.GetBandwidthTotals().TotalOut)
 				time.Sleep(15 * time.Second)
 			}
 		}(t.ipfsNode, runenv)
 	}
+}
 
+func (t *IPFSTestData) addPublishFile(ctx context.Context, fIndex int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) error {
+	rate := float64(testvars.SeederRate) / 100
+	seeders := runenv.TestInstanceCount - (testvars.LeechCount + testvars.PassiveCount)
+	toSeed := int(math.Ceil(float64(seeders) * rate))
+
+	// If this is the first run for this file size.
+	// Only a rate of seeders add the file.
+	if t.tpindex <= toSeed {
+		// Generating and adding file to IPFS
+		cid, err := generateAndAdd(ctx, runenv, t.ipfsNode, f)
+		if err != nil {
+			return err
+		}
+		return t.publishFile(ctx, fIndex, cid, runenv)
+	}
+	return nil
+}
+func (t *IPFSTestData) cleanupRun(ctx context.Context, runenv *runtime.RunEnv) error {
+	// Disconnect peers
+	for _, c := range t.ipfsNode.Node.PeerHost.Network().Conns() {
+		err := c.Close()
+		if err != nil {
+			return fmt.Errorf("Error disconnecting: %w", err)
+		}
+	}
+	runenv.RecordMessage("Closed Connections")
+
+	if t.nodetp == utils.Leech || t.nodetp == utils.Passive {
+		// Clearing datastore
+		// Also clean passive nodes so they don't store blocks from
+		// previous runs.
+		if err := t.ipfsNode.ClearDatastore(ctx, false); err != nil {
+			return fmt.Errorf("Error clearing datastore: %w", err)
+		}
+	}
+	return nil
+}
+
+func (t *IPFSTestData) cleanupFile(ctx context.Context) error {
+	if t.nodetp == utils.Seed {
+		// Between every file close the seed Node.
+		// ipfsNode.Close()
+		// runenv.RecordMessage("Closed Seed Node")
+		if err := t.ipfsNode.ClearDatastore(ctx, false); err != nil {
+			return fmt.Errorf("Error clearing datastore: %w", err)
+		}
+	}
+	return nil
 }
 
 func generateAndAdd(ctx context.Context, runenv *runtime.RunEnv, ipfsNode *utils.IPFSNode, f utils.TestFile) (*cid.Cid, error) {
