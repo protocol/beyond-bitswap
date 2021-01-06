@@ -83,6 +83,8 @@ Feel free to jump into the discussions around the project or to propose your own
 * [Demo of compression in libp2p](https://drive.google.com/file/d/1YcemfkS5ZNnH66-tTGmerNrgrsW-bbpD/view?usp=sharing): A demo of the exchange of files between two IPFS nodes with compression enabled in libp2p.
 
 ### Publications
+* [Our Bitswap nodes have become jumping inspectors](https://research.protocol.ai/blog/2021/our-bitswap-nodes-have-become-jumping-inspectors-updated/)
+* [Teaching Bitswap nodes to jump](https://research.protocol.ai/blog/2020/teaching-bitswap-nodes-to-jump/)
 * ["Two ears, one mouth": how to leverage bitswap chatter for faster transfers](https://research.protocol.ai/blog/2020/two-ears-one-mouth-how-to-leverage-bitswap-chatter-for-faster-transfers/)
 * [Honey, I shrunk our libp2p streams](https://research.protocol.ai/blog/2020/honey-i-shrunk-our-libp2p-streams/)
 * [Beyond Bitswap](https://adlrocha.substack.com/p/adlrocha-beyond-bitswap-i)
