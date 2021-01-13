@@ -33,6 +33,9 @@ There are also some larger ecosystem wide impacts to consider here, including:
 1. There's a lot of confusion around UnixFS CIDs not being derivable from SHA256 of a file, this approach may either tremendously help or cause even more confusion (especially as we move people from UnixFS to IPLD). An example [thread](https://discuss.ipfs.io/t/cid-concept-is-broken/9733) about this
 2. Storage overhead for multiple "views" on the same data and extra checking + advertising of the data
 3. Are there any deduplication use case issues we could run into here based on users not downloading data that was chunked as the data creator did it, but instead based on how they want to chunk it (or likely the default chunker)
+4. File identified using hash of the full content enables [validation of HTTP gateway responses](https://github.com/ipfs/in-web-browsers/issues/128) without running full IPFS stack, which allows for:
+   - user agents such as web browsers: display integrity indicator when HTTP response matched the CID from the request 
+   - IoT devices: downloading firmware updates over HTTPS without the need for trusting a gateway or a CA
 
 ## Evaluation Plan
 
