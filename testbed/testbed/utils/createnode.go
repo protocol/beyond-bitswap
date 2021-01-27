@@ -2,8 +2,6 @@ package utils
 
 import (
 	"context"
-	"io"
-	"strings"
 	"time"
 
 	bs "github.com/ipfs/go-bitswap"
@@ -14,18 +12,14 @@ import (
 	delayed "github.com/ipfs/go-datastore/delayed"
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
-	chunker "github.com/ipfs/go-ipfs-chunker"
 	delay "github.com/ipfs/go-ipfs-delay"
 	files "github.com/ipfs/go-ipfs-files"
 	nilrouting "github.com/ipfs/go-ipfs-routing/none"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
 	unixfile "github.com/ipfs/go-unixfs/file"
-	"github.com/ipfs/go-unixfs/importer/balanced"
 	"github.com/ipfs/go-unixfs/importer/helpers"
-	"github.com/ipfs/go-unixfs/importer/trickle"
 	core "github.com/libp2p/go-libp2p-core"
-	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
@@ -91,73 +85,24 @@ func CreateBitswapNode(ctx context.Context, h core.Host, bstore blockstore.Block
 	return &Node{bitswap, dserv}, nil
 }
 
-type AddSettings struct {
-	Layout    string
-	Chunker   string
-	RawLeaves bool
-	Hidden    bool
-	NoCopy    bool
-	HashFunc  string
-	MaxLinks  int
-}
-
-func (n *Node) Add(ctx context.Context, r io.Reader) (ipld.Node, error) {
+func (n *Node) Add(ctx context.Context, file TestFile) (ipld.Node, error) {
 	settings := AddSettings{
 		Layout:    "balanced",
 		Chunker:   "size-262144",
 		RawLeaves: false,
-		Hidden:    false,
 		NoCopy:    false,
 		HashFunc:  "sha2-256",
 		MaxLinks:  helpers.DefaultLinksPerBlock,
 	}
-	// for _, opt := range opts {
-	// 	err := opt(&settings)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-
-	prefix, err := merkledag.PrefixForCidVersion(1)
+	adder, err := NewDAGAdder(ctx, n.Dserv, settings)
 	if err != nil {
-		return nil, errors.Wrap(err, "unrecognized CID version")
+		return nil, err
 	}
-
-	hashFuncCode, ok := multihash.Names[strings.ToLower(settings.HashFunc)]
-	if !ok {
-		return nil, errors.Wrapf(err, "unrecognized hash function %q", settings.HashFunc)
-	}
-	prefix.MhType = hashFuncCode
-
-	dbp := helpers.DagBuilderParams{
-		Dagserv:    n.Dserv,
-		RawLeaves:  settings.RawLeaves,
-		Maxlinks:   settings.MaxLinks,
-		NoCopy:     settings.NoCopy,
-		CidBuilder: &prefix,
-	}
-
-	chnk, err := chunker.FromString(r, settings.Chunker)
+	fileNode, err := file.GenerateFile()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create chunker")
+		return nil, err
 	}
-
-	dbh, err := dbp.New(chnk)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create dag builder")
-	}
-
-	var nd ipld.Node
-	switch settings.Layout {
-	case "trickle":
-		nd, err = trickle.Layout(dbh)
-	case "balanced":
-		nd, err = balanced.Layout(dbh)
-	default:
-		return nil, errors.Errorf("unrecognized layout %q", settings.Layout)
-	}
-
-	return nd, err
+	return adder.Add(fileNode)
 }
 
 func (n *Node) FetchGraph(ctx context.Context, c cid.Cid) error {

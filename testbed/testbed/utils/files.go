@@ -12,9 +12,12 @@ import (
 	"time"
 
 	files "github.com/ipfs/go-ipfs-files"
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	"github.com/testground/sdk-go/runtime"
 )
+
+var log = logging.Logger("utils")
 
 // var randReader *rand.Rand
 

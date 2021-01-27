@@ -487,9 +487,8 @@ func getNodeSetSeq(ctx context.Context, client *sync.DefaultClient, addrInfo *pe
 	return client.Publish(ctx, topic, addrInfo)
 }
 
-func setupSeed(ctx context.Context, runenv *runtime.RunEnv, node *utils.Node, params TestPermutation, seedIndex int) (cid.Cid, error) {
-	tmpFile := utils.RandReader(int(params.File.Size()))
-	ipldNode, err := node.Add(ctx, tmpFile)
+func setupSeed(ctx context.Context, runenv *runtime.RunEnv, node *utils.Node, testFile utils.TestFile, seedIndex int) (cid.Cid, error) {
+	ipldNode, err := node.Add(ctx, testFile)
 	if err != nil {
 		return cid.Cid{}, err
 	}

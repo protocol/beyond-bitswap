@@ -109,7 +109,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			}
 			runenv.RecordMessage("Generating seed data of %d bytes", testParams.File.Size())
 
-			rootCid, err := setupSeed(ctx, runenv, bsnode, testParams, int(t.seedIndex))
+			rootCid, err := setupSeed(ctx, runenv, bsnode, testParams.File, int(t.seedIndex))
 			if err != nil {
 				return fmt.Errorf("Failed to set up seed: %w", err)
 			}
