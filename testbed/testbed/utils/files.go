@@ -27,6 +27,7 @@ type TestFile interface {
 // RandFile represents a randomly generated file
 type RandFile struct {
 	size int64
+	seed int64
 }
 
 // PathFile is a generated from file.
@@ -38,7 +39,7 @@ type PathFile struct {
 
 // GenerateFile generates new randomly generated file
 func (f *RandFile) GenerateFile() (files.Node, error) {
-	return files.NewReaderFile(RandReader(int(f.size))), nil
+	return files.NewReaderFile(SeededRandReader(int(f.size), f.seed)), nil
 }
 
 // Size returns size
@@ -138,8 +139,8 @@ func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
 		if err != nil {
 			return nil, err
 		}
-		for _, v := range fileSizes {
-			listFiles = append(listFiles, &RandFile{size: int64(v)})
+		for i, v := range fileSizes {
+			listFiles = append(listFiles, &RandFile{size: int64(v), seed: int64(i)})
 		}
 		return listFiles, nil
 	case "custom":

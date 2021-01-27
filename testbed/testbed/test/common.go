@@ -488,8 +488,7 @@ func getNodeSetSeq(ctx context.Context, client *sync.DefaultClient, addrInfo *pe
 }
 
 func setupSeed(ctx context.Context, runenv *runtime.RunEnv, node *utils.Node, params TestPermutation, seedIndex int) (cid.Cid, error) {
-	seed := int64(runenv.IntParam("seed"))
-	tmpFile := utils.SeededRandReader(int(params.File.Size()), seed)
+	tmpFile := utils.RandReader(int(params.File.Size()))
 	ipldNode, err := node.Add(ctx, tmpFile)
 	if err != nil {
 		return cid.Cid{}, err
