@@ -13,25 +13,22 @@ import (
 // SetupNetwork instructs the sidecar (if enabled) to setup the network for this
 // test case.
 func SetupNetwork(ctx context.Context, runenv *runtime.RunEnv,
-	nwClient *network.Client,
-	nodetp NodeType, tpindex int) (time.Duration, int, error) {
+	nwClient *network.Client, nodetp NodeType, tpindex int, baseLatency time.Duration,
+	bandwidth int, jitterPct int) error {
 
 	if !runenv.TestSidecar {
-		return 0, 0, nil
+		return nil
 	}
 
 	// Wait for the network to be initialized.
 	if err := nwClient.WaitNetworkInitialized(ctx); err != nil {
-		return 0, 0, err
+		return err
 	}
 
-	latency, err := getLatency(runenv, nodetp, tpindex)
+	latency, err := getLatency(runenv, nodetp, tpindex, baseLatency)
 	if err != nil {
-		return 0, 0, err
+		return err
 	}
-
-	jitterPct := runenv.IntParam("jitter_pct")
-	bandwidth := runenv.IntParam("bandwidth_mb")
 
 	cfg := &network.Config{
 		Network:       "default",
@@ -50,22 +47,17 @@ func SetupNetwork(ctx context.Context, runenv *runtime.RunEnv,
 
 	nwClient.ConfigureNetwork(ctx, cfg)
 
-	return latency, bandwidth, nil
+	return nil
 }
 
 // If there's a latency specific to the node type, overwrite the default latency
-func getLatency(runenv *runtime.RunEnv, nodetp NodeType, tpindex int) (time.Duration, error) {
-	latency := time.Duration(runenv.IntParam("latency_ms")) * time.Millisecond
-	var err error
+func getLatency(runenv *runtime.RunEnv, nodetp NodeType, tpindex int, baseLatency time.Duration) (time.Duration, error) {
 	if nodetp == Seed {
-		latency, err = getTypeLatency(runenv, "seed_latency_ms", tpindex, latency)
+		return getTypeLatency(runenv, "seed_latency_ms", tpindex, baseLatency)
 	} else if nodetp == Leech {
-		latency, err = getTypeLatency(runenv, "leech_latency_ms", tpindex, latency)
+		return getTypeLatency(runenv, "leech_latency_ms", tpindex, baseLatency)
 	}
-	if err != nil {
-		return 0, err
-	}
-	return latency, nil
+	return baseLatency, nil
 }
 
 // If the parameter is a comma-separated list, each value in the list
@@ -76,16 +68,16 @@ func getLatency(runenv *runtime.RunEnv, nodetp NodeType, tpindex int) (time.Dura
 // - the second seed has 200ms latency
 // - the third seed has 400ms latency
 // - any subsequent seeds have defaultLatency
-func getTypeLatency(runenv *runtime.RunEnv, param string, tpindex int, defaultLatency time.Duration) (time.Duration, error) {
+func getTypeLatency(runenv *runtime.RunEnv, param string, tpindex int, baseLatency time.Duration) (time.Duration, error) {
 	// No type specific latency set, just return the default
 	if !runenv.IsParamSet(param) {
-		return defaultLatency, nil
+		return baseLatency, nil
 	}
 
 	// Not a comma-separated list, interpret the value as an int and apply
 	// the same latency to all peers of this type
 	if !strings.Contains(runenv.StringParam(param), ",") {
-		return time.Duration(runenv.IntParam(param)) * time.Millisecond, nil
+		return baseLatency + time.Duration(runenv.IntParam(param)) * time.Millisecond, nil
 	}
 
 	// Comma separated list, the position in the list corresponds to the
@@ -95,10 +87,10 @@ func getTypeLatency(runenv *runtime.RunEnv, param string, tpindex int, defaultLa
 		return 0, err
 	}
 	if tpindex < len(latencies) {
-		return time.Duration(latencies[tpindex]) * time.Millisecond, nil
+		return baseLatency + time.Duration(latencies[tpindex]) * time.Millisecond, nil
 	}
 
 	// More peers of this type than entries in the list. Return the default
 	// latency for peers not covered by list entries
-	return defaultLatency, nil
+	return baseLatency, nil
 }

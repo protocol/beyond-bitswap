@@ -86,11 +86,16 @@ func dirSize(path string) (int64, error) {
 }
 
 // RandReader generates random data from seed.
-func RandReader(len int) io.Reader {
-	randReader := rand.New(rand.NewSource(time.Now().Unix()))
+func SeededRandReader(len int, seed int64) io.Reader {
+	randReader := rand.New(rand.NewSource(seed))
 	data := make([]byte, len)
 	randReader.Read(data)
 	return bytes.NewReader(data)
+}
+
+// RandReader generates random data randomly.
+func RandReader(len int) io.Reader {
+	return SeededRandReader(len, time.Now().Unix())
 }
 
 func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {

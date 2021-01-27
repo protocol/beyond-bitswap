@@ -22,6 +22,13 @@ import (
 	"github.com/testground/sdk-go/network"
 )
 
+type TestPermutation struct {
+	File utils.TestFile
+	Bandwidth int
+	Latency time.Duration
+	JitterPct int
+}
+
 // TestVars testing variables
 type TestVars struct {
 	ExchangeInterface string
@@ -38,6 +45,7 @@ type TestVars struct {
 	LlEnabled         bool
 	Dialer            string
 	NumWaves          int
+	Permutations      []TestPermutation
 }
 
 type TestData struct {
@@ -46,8 +54,6 @@ type TestData struct {
 	nConfig             *utils.NodeConfig
 	peerInfos           []dialer.PeerInfo
 	dialFn              dialer.Dialer
-	latency             time.Duration
-	bandwidth           int
 	signalAndWaitForAll func(state string) error
 	seq                 int64
 	grpseq              int64
@@ -56,7 +62,8 @@ type TestData struct {
 	seedIndex           int64
 }
 
-func getEnvVars(runenv *runtime.RunEnv) *TestVars {
+
+func getEnvVars(runenv *runtime.RunEnv) (*TestVars, error) {
 	tv := &TestVars{}
 	if runenv.IsParamSet("exchange_interface") {
 		tv.ExchangeInterface = runenv.StringParam("exchange_interface")
@@ -100,7 +107,37 @@ func getEnvVars(runenv *runtime.RunEnv) *TestVars {
 	if runenv.IsParamSet("number_waves") {
 		tv.NumWaves = runenv.IntParam("number_waves")
 	}
-	return tv
+
+	bandwidths, err := utils.ParseIntArray(runenv.StringParam("bandwidth_mb"))
+	if err != nil {
+		return nil, err
+	}
+	latencies, err := utils.ParseIntArray(runenv.StringParam("latency_ms"))
+	if err != nil {
+		return nil, err
+	}
+	jitters, err := utils.ParseIntArray(runenv.StringParam("jitter_pct"))
+	if err != nil {
+		return nil, err
+	}
+	testFiles, err := utils.GetFileList(runenv)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("Got file list: %v", testFiles)
+
+	for _, f := range testFiles {
+		for _, b := range bandwidths {
+			for _, l := range latencies {
+				latency := time.Duration(l)*time.Millisecond
+				for _, j := range jitters {
+					tv.Permutations = append(tv.Permutations, TestPermutation{File: f, Bandwidth: b, Latency: latency, JitterPct: j})
+				}
+			}
+		}
+	}
+
+	return tv, nil
 }
 
 func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars) (*TestData, error) {
@@ -175,12 +212,6 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 
 	/// --- Warm up
 
-	// Set up network (with traffic shaping)
-	latency, bandwidthMB, err := utils.SetupNetwork(ctx, runenv, nwClient, nodetp, tpindex)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to set up network: %v", err)
-	}
-
 	// Signal that this node is in the given state, and wait for all peers to
 	// send the same signal
 	signalAndWaitForAll := func(state string) error {
@@ -189,8 +220,7 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 	}
 
 	return &TestData{client, nwClient,
-		nConfig, infos, dialFn,
-		latency, bandwidthMB, signalAndWaitForAll,
+		nConfig, infos, dialFn, signalAndWaitForAll,
 		seq, grpseq, nodetp, tpindex, seedIndex}, nil
 }
 
@@ -285,7 +315,6 @@ func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runenv *runtime.
 type IPFSTestData struct {
 	*TestData
 	ipfsNode  *utils.IPFSNode
-	testFiles []utils.TestFile
 }
 
 func InitializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars) (*IPFSTestData, error) {
@@ -305,12 +334,6 @@ func InitializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *T
 		runenv.RecordFailure(err)
 		return nil, err
 	}
-	// According to the input data get the file size or the files to add.
-	testFiles, err := utils.GetFileList(runenv)
-	if err != nil {
-		return nil, err
-	}
-	runenv.RecordMessage("Got file list: %v", testFiles)
 
 	err = t.signalAndWaitForAll("file-list-ready")
 	if err != nil {
@@ -320,7 +343,6 @@ func InitializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *T
 	return &IPFSTestData{
 		TestData:  t,
 		ipfsNode:  ipfsNode,
-		testFiles: testFiles,
 	}, nil
 }
 
@@ -465,8 +487,9 @@ func getNodeSetSeq(ctx context.Context, client *sync.DefaultClient, addrInfo *pe
 	return client.Publish(ctx, topic, addrInfo)
 }
 
-func setupSeed(ctx context.Context, runenv *runtime.RunEnv, node *utils.Node, fileSize int, seedIndex int) (cid.Cid, error) {
-	tmpFile := utils.RandReader(fileSize)
+func setupSeed(ctx context.Context, runenv *runtime.RunEnv, node *utils.Node, params TestPermutation, seedIndex int) (cid.Cid, error) {
+	seed := int64(runenv.IntParam("seed"))
+	tmpFile := utils.SeededRandReader(int(params.File.Size()), seed)
 	ipldNode, err := node.Add(ctx, tmpFile)
 	if err != nil {
 		return cid.Cid{}, err
