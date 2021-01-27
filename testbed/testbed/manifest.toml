@@ -100,7 +100,6 @@ instances = { min = 2, max = 64, default = 2 }
   parallel_gen_mb = { type = "int", desc = "maximum allowed size of seed data to generate in parallel", unit = "Mib", default = 100 }
   max_connection_rate = { type = "int", desc = "max connection allowed per peer according to total nodes", unit = "%", default = 100 }
   libp2p_compressed = {type = "bool", desc = "flag to determine if to use compression at a libp2p level or not", default = false}
-  seed = { type = "int", desc = "randome seed to use to generate the same file across all seed nodes", default = 42}
 
 
 [[testcases]]
