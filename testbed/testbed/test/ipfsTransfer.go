@@ -31,13 +31,12 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	if err != nil {
 		return err
 	}
-	ipfsNode := t.ipfsNode
+	ipfsNode := t.node.(*utils.IPFSNode)
 	signalAndWaitForAll := t.signalAndWaitForAll
 
 	// Start still alive process if enabled
 	t.stillAlive(runenv, testvars)
 
-	var runNum int
 	var tcpFetch int64
 
 	// For each test permutation found in the test
@@ -90,7 +89,7 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 		runenv.RecordMessage("Starting IPFS Fetch...")
 
-		for runNum = 1; runNum < testvars.RunCount+1; runNum++ {
+		for runNum := 1; runNum < testvars.RunCount+1; runNum++ {
 			// Reset the timeout for each run
 			ctx, cancel := context.WithTimeout(ctx, testvars.RunTimeout)
 			defer cancel()
@@ -105,7 +104,7 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 			runenv.RecordMessage("Starting run %d / %d (%d bytes)", runNum, testvars.RunCount, testParams.File.Size())
 
-			dialed, err := t.dialFn(ctx, ipfsNode.Node.PeerHost, t.nodetp, t.peerInfos, testvars.MaxConnectionRate)
+			dialed, err := t.dialFn(ctx, ipfsNode.Host(), t.nodetp, t.peerInfos, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
 			}
@@ -119,7 +118,7 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 			/// --- Start test
 
-			var timeToFetch int64
+			var timeToFetch time.Duration
 			if t.nodetp == utils.Leech {
 				// For each wave
 				for waveNum := 0; waveNum < testvars.NumWaves; waveNum++ {
@@ -150,7 +149,7 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 								cancel()
 								return err
 							}
-							timeToFetch = time.Since(start).Nanoseconds()
+							timeToFetch = time.Since(start)
 							s, _ := rcvFile.Size()
 							runenv.RecordMessage("Leech fetch of %d complete (%d ns) for wave %d", s, timeToFetch, waveNum)
 						}
@@ -171,7 +170,7 @@ func IPFSTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			}
 
 			/// --- Report stats
-			err = ipfsNode.EmitMetrics(runenv, runNum, t.seq, t.grpseq, testParams.Latency, testParams.Bandwidth, int(testParams.File.Size()), t.nodetp, t.tpindex, timeToFetch, tcpFetch, leechFails, testvars.MaxConnectionRate)
+			err = t.emitMetrics(runenv, runNum, testParams, timeToFetch, tcpFetch, leechFails, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
 			}

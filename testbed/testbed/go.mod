@@ -31,7 +31,6 @@ require (
 	github.com/libp2p/go-libp2p v0.11.0
 	github.com/libp2p/go-libp2p-core v0.6.1
 	// github.com/libp2p/go-libp2p-gzip v0.0.0-00010101000000-000000000000
-	github.com/libp2p/go-libp2p-kad-dht v0.9.0
 	github.com/libp2p/go-mplex v0.1.3 // indirect
 	github.com/libp2p/go-sockaddr v0.1.0 // indirect
 	github.com/libp2p/go-yamux v1.3.8 // indirect

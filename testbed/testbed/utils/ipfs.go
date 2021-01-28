@@ -12,17 +12,18 @@ import (
 	"time"
 
 	bs "github.com/ipfs/go-bitswap"
+	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
+	files "github.com/ipfs/go-ipfs-files"
+	ipld "github.com/ipfs/go-ipld-format"
 
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	config "github.com/ipfs/go-ipfs-config"
 	"github.com/ipfs/go-metrics-interface"
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/jbenet/goprocess"
-	"github.com/libp2p/go-libp2p-kad-dht/providers"
 	ma "github.com/multiformats/go-multiaddr"
-	"github.com/testground/sdk-go/runtime"
 	"go.uber.org/fx"
 
 	"github.com/ipfs/go-ipfs/core"
@@ -33,6 +34,7 @@ import (
 	"github.com/ipfs/go-ipfs/core/node/libp2p"
 	"github.com/ipfs/go-ipfs/p2p" // This package is needed so that all the preloaded plugins are loaded automatically
 	"github.com/ipfs/go-ipfs/repo"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	dsync "github.com/ipfs/go-datastore/sync"
@@ -326,18 +328,10 @@ func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch Exc
 // ClearDatastore removes a block from the datastore.
 // TODO: This function may be inefficient with large blockstore. Used the option above.
 // This function may be cleaned in the future.
-func (n *IPFSNode) ClearDatastore(ctx context.Context, onlyProviders bool) error {
+func (n *IPFSNode) ClearDatastore(ctx context.Context) error {
 	ds := n.Node.Repo.Datastore()
-	// Empty prefix to receive all the keys
-	var query dsq.Query
 
-	if onlyProviders {
-		query = dsq.Query{Prefix: providers.ProvidersKeyPrefix}
-	} else {
-		query = dsq.Query{}
-	}
-
-	qr, err := ds.Query(query)
+	qr, err := ds.Query(dsq.Query{})
 	entries, _ := qr.Rest()
 	if err != nil {
 		return err
@@ -350,9 +344,7 @@ func (n *IPFSNode) ClearDatastore(ctx context.Context, onlyProviders bool) error
 }
 
 // EmitMetrics emits node's metrics for the run
-func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, grpseq int64,
-	latency time.Duration, bandwidthMB int, fileSize int, nodetp NodeType, tpindex int, timeToFetch int64, tcpFetch int64, leechFails int64,
-	maxConnectionRate int) error {
+func (n *IPFSNode) EmitMetrics(recorder MetricsRecorder) error {
 	// TODO: We ned a way of generalizing this for any exchange type
 	bsnode := n.Node.Exchange.(*bs.Bitswap)
 	stats, err := bsnode.Stat()
@@ -361,41 +353,25 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 		return fmt.Errorf("Error getting stats from Bitswap: %w", err)
 	}
 
-	latencyMS := latency.Milliseconds()
-	instance := runenv.TestInstanceCount
-	leechCount := runenv.IntParam("leech_count")
-	passiveCount := runenv.IntParam("passive_count")
-
-	id := fmt.Sprintf("topology:(%d-%d-%d)/maxConnectionRate:%d/latencyMS:%d/bandwidthMB:%d/run:%d/seq:%d/groupName:%s/groupSeq:%d/fileSize:%d/nodeType:%s/nodeTypeIndex:%d",
-		instance-leechCount-passiveCount, leechCount, passiveCount, maxConnectionRate,
-		latencyMS, bandwidthMB, runNum, seq, runenv.TestGroupID, grpseq, fileSize, nodetp, tpindex)
-
-	// Bitswap stats
-	if nodetp == Leech {
-		runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", id), float64(timeToFetch))
-		runenv.R().RecordPoint(fmt.Sprintf("%s/name:leech_fails", id), float64(leechFails))
-		runenv.R().RecordPoint(fmt.Sprintf("%s/name:tcp_fetch", id), float64(tcpFetch))
-		// runenv.R().RecordPoint(fmt.Sprintf("%s/name:num_dht", id), float64(stats.NumDHT))
-	}
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:msgs_rcvd", id), float64(stats.MessagesReceived))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:data_sent", id), float64(stats.DataSent))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:data_rcvd", id), float64(stats.DataReceived))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:block_data_rcvd", id), float64(stats.BlockDataReceived))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_data_rcvd", id), float64(stats.DupDataReceived))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_sent", id), float64(stats.BlocksSent))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:blks_rcvd", id), float64(stats.BlocksReceived))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:dup_blks_rcvd", id), float64(stats.DupBlksReceived))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:wants_rcvd", id), float64(stats.WantsRecvd))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:want_blocks_rcvd", id), float64(stats.WantBlocksRecvd))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:want_haves_rcvd", id), float64(stats.WantHavesRecvd))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:stream_data_sent", id), float64(stats.StreamDataSent))
+	recorder.Record("msgs_rcvd", float64(stats.MessagesReceived))
+	recorder.Record("data_sent", float64(stats.DataSent))
+	recorder.Record("data_rcvd", float64(stats.DataReceived))
+	recorder.Record("block_data_rcvd", float64(stats.BlockDataReceived))
+	recorder.Record("dup_data_rcvd", float64(stats.DupDataReceived))
+	recorder.Record("blks_sent", float64(stats.BlocksSent))
+	recorder.Record("blks_rcvd", float64(stats.BlocksReceived))
+	recorder.Record("dup_blks_rcvd", float64(stats.DupBlksReceived))
+	recorder.Record("wants_rcvd", float64(stats.WantsRecvd))
+	recorder.Record("want_blocks_rcvd", float64(stats.WantBlocksRecvd))
+	recorder.Record("want_haves_rcvd", float64(stats.WantHavesRecvd))
+	recorder.Record("stream_data_sent", float64(stats.StreamDataSent))
 
 	// IPFS Node Stats
 	bwTotal := n.Node.Reporter.GetBandwidthTotals()
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:total_in", id), float64(bwTotal.TotalIn))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:total_out", id), float64(bwTotal.TotalOut))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:rate_in", id), float64(bwTotal.RateIn))
-	runenv.R().RecordPoint(fmt.Sprintf("%s/name:rate_out", id), float64(bwTotal.RateOut))
+	recorder.Record("total_in", float64(bwTotal.TotalIn))
+	recorder.Record("total_out", float64(bwTotal.TotalOut))
+	recorder.Record("rate_in", float64(bwTotal.RateIn))
+	recorder.Record("rate_out", float64(bwTotal.RateOut))
 
 	// Restart all counters for the next test.
 	n.Node.Reporter.Reset()
@@ -410,3 +386,30 @@ func (n *IPFSNode) EmitMetrics(runenv *runtime.RunEnv, runNum int, seq int64, gr
 
 	return nil
 }
+
+func (n *IPFSNode) Add(ctx context.Context, tmpFile files.Node) (cid.Cid, error) {
+	path, err := n.API.Unixfs().Add(ctx, tmpFile)
+	if err != nil {
+		return cid.Undef, err
+	}
+	return path.Cid(), nil
+}
+
+func (n *IPFSNode) DAGService() ipld.DAGService {
+	return n.Node.DAG
+}
+
+func (n *IPFSNode) Host() host.Host {
+	return n.Node.PeerHost
+}
+
+func (n *IPFSNode) EmitKeepAlive(recorder MessageRecorder) error {
+
+	recorder.RecordMessage("I am still alive! Total In: %d - TotalOut: %d",
+		n.Node.Reporter.GetBandwidthTotals().TotalIn,
+		n.Node.Reporter.GetBandwidthTotals().TotalOut)
+
+	return nil
+}
+
+var _ Node = &IPFSNode{}
