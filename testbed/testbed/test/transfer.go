@@ -56,7 +56,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		return err
 	}
 
-	t := &IPFSTestData{baseT, bsnode}
+	t := &NodeTestData{baseT, bsnode}
 
 	// Signal that this node is in the given state, and wait for all peers to
 	// send the same signal
