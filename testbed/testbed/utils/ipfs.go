@@ -17,6 +17,7 @@ import (
 	dsq "github.com/ipfs/go-datastore/query"
 	files "github.com/ipfs/go-ipfs-files"
 	ipld "github.com/ipfs/go-ipld-format"
+	"github.com/ipfs/interface-go-ipfs-core/path"
 
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	config "github.com/ipfs/go-ipfs-config"
@@ -212,7 +213,6 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTen
 		// Set exchange option.
 		fx.Provide(exch),
 		// Provide graphsync
-		fx.Provide(Graphsync),
 		fx.Provide(node.Namesys(ipnsCacheSize)),
 		fx.Provide(node.Peering),
 		node.PeerWith(cfg.Peering.Peers...),
@@ -393,6 +393,11 @@ func (n *IPFSNode) Add(ctx context.Context, tmpFile files.Node) (cid.Cid, error)
 		return cid.Undef, err
 	}
 	return path.Cid(), nil
+}
+
+func (n *IPFSNode) Fetch(ctx context.Context, c cid.Cid, _ []peer.AddrInfo) (files.Node, error) {
+	fPath := path.IpfsPath(c)
+	return n.API.Unixfs().Get(ctx, fPath)
 }
 
 func (n *IPFSNode) DAGService() ipld.DAGService {

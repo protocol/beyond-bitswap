@@ -1,9 +1,9 @@
 [metadata]
-name    = "bitswap-transfer"
+name    = "transfer"
 
 [global]
 plan    = "testbed"
-case    = "bitswap-transfer"
+case    = "transfer"
 builder = "docker:go"
 runner  = "local:docker"
 
@@ -32,3 +32,4 @@ latency_ms= "100"
 bandwidth_mb= "100"
 enable_tcp= "false"
 enable_dht= "false"
+node_type = "bitswap"

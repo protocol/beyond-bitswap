@@ -8,9 +8,8 @@ by the following parts:
 * [Scripts](./scripts): Set of scripts to easily configure, run, and process your own test.
 
 ### Plans
-* [`ipfs-transfer`](./test/ipfsTransfer.go): Tests the exchange of files over a network of IPFS nodes.
-* [`bitswap-transfer`](./test/transfer.go): Tests the exchange of files over a network of Bitswap nodes.
-* [`graphsync-transfer`](./test/graphsyncTransfer.go): Tests the exchange of files beetween two IPFS nodes using Graphsync.
+* [`transfer`](./test/ipfsTransfer.go): Tests the exchange of files over a Libp2p/IPFS protocols. Supports full IPFS node transfer, raw Bitswap+Libp2p, and
+raw Graphsync + Libp2p
 * [`tcp-transfer`](./test/TCPtransfer.go): Tests the exchange of files using TCP between two nodes.
 
 ## Installation
@@ -48,8 +47,7 @@ Oct  9 06:45:09.887055  INFO    using home directory: /home/ubuntu/testground
 Oct  9 06:45:09.887113  INFO    no .env.toml found at /home/ubuntu/testground/.env.toml; running with defaults
 created symlink /home/ubuntu/testground/plans/testbed -> testbed/
 imported plans:
-testbed ipfs-transfer
-testbed bitswap-transfer
+testbed transfer
 ```
 * To check that the plans were imported successfully run the following:
 ```
@@ -111,7 +109,7 @@ You have several ways of running an experiment in the testbed. For all of these 
 $ ./single_run.sh
 Cleaning previous results...
 Starting test...
-Running test with (ipfs-transfer, 5, 15728640,31457280,47185920,57671680, 1, 10, 10, 100, 1, 150, random, ../extra/testDataset, false, 100, 2) (TESTCASE, INSTANCES, FILE_SIZE, RUN_COUNT, LATENCY, JITTER, PARALLEL, LEECH, BANDWIDTH, INPUT_DATA, DATA_DIR, TCP_ENABLED, MAX_CONNECTION_RATE, PASSIVE_COUNT)
+Running test with (transfer, 5, 15728640,31457280,47185920,57671680, 1, 10, 10, 100, 1, 150, random, ../extra/testDataset, false, 100, 2) (TESTCASE, INSTANCES, FILE_SIZE, RUN_COUNT, LATENCY, JITTER, PARALLEL, LEECH, BANDWIDTH, INPUT_DATA, DATA_DIR, TCP_ENABLED, MAX_CONNECTION_RATE, PASSIVE_COUNT)
 d081d14bed0c
 Finished test d081d14bed0c
 Oct  9 10:58:05.774013  INFO    using home directory: /home/adlrocha/testground

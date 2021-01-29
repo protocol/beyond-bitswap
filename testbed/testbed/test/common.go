@@ -316,35 +316,6 @@ type NodeTestData struct {
 	node utils.Node
 }
 
-func InitializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars) (*NodeTestData, error) {
-	t, err := InitializeTest(ctx, runenv, testvars)
-	if err != nil {
-		return nil, err
-	}
-	// Create IPFS node
-	runenv.RecordMessage("Preparing exchange for node: %v", testvars.ExchangeInterface)
-	// Set exchange Interface
-	exch, err := utils.SetExchange(ctx, testvars.ExchangeInterface)
-	if err != nil {
-		return nil, err
-	}
-	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, t.nConfig, exch, testvars.DHTEnabled)
-	if err != nil {
-		runenv.RecordFailure(err)
-		return nil, err
-	}
-
-	err = t.signalAndWaitForAll("file-list-ready")
-	if err != nil {
-		return nil, err
-	}
-
-	return &NodeTestData{
-		TestData: t,
-		node:     ipfsNode,
-	}, nil
-}
-
 func (t *NodeTestData) stillAlive(runenv *runtime.RunEnv, v *TestVars) {
 	// starting liveness process for long-lasting experiments.
 	if v.LlEnabled {
