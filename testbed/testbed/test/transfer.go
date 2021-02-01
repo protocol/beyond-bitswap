@@ -198,6 +198,10 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			return err
 		}
 	}
+	err = t.close()
+	if err != nil {
+		return err
+	}
 
 	runenv.RecordMessage("Ending testcase")
 	return nil
@@ -244,7 +248,6 @@ func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars
 	if err != nil {
 		return nil, err
 	}
-	defer h.Close()
 	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
 
 	// Use the same blockstore on all runs for the seed node
@@ -258,7 +261,7 @@ func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars
 		return nil, err
 	}
 
-	return &NodeTestData{baseT, bsnode}, nil
+	return &NodeTestData{baseT, bsnode, &h}, nil
 }
 
 func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
@@ -268,7 +271,6 @@ func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testva
 	if err != nil {
 		return nil, err
 	}
-	defer h.Close()
 	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
 
 	// Use the same blockstore on all runs for the seed node
@@ -282,7 +284,7 @@ func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testva
 		return nil, err
 	}
 
-	return &NodeTestData{baseT, bsnode}, nil
+	return &NodeTestData{baseT, bsnode, &h}, nil
 }
 
 func makeHost(ctx context.Context, baseT *TestData) (host.Host, error) {

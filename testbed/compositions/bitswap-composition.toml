@@ -1,6 +1,7 @@
 [metadata]
 name    = "transfer"
 
+
 [global]
 plan    = "testbed"
 case    = "transfer"
@@ -13,8 +14,10 @@ total_instances = 30
 id = "nodes"
 instances = { count = 30 }
 
-[groups.build]
-skip_runtime_image = "true"
+    [groups.build]
+
+
+
 
 [groups.run]
 [groups.run.test_params]

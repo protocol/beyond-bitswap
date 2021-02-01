@@ -14,6 +14,7 @@ import (
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
@@ -314,6 +315,7 @@ func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runenv *runtime.
 type NodeTestData struct {
 	*TestData
 	node utils.Node
+	host *host.Host
 }
 
 func (t *NodeTestData) stillAlive(runenv *runtime.RunEnv, v *TestVars) {
@@ -382,6 +384,13 @@ func (t *NodeTestData) cleanupFile(ctx context.Context) error {
 	return nil
 }
 
+func (t *NodeTestData) close() error {
+	if t.host != nil {
+		return nil
+	}
+	return (*t.host).Close()
+}
+
 func (t *NodeTestData) emitMetrics(runenv *runtime.RunEnv, runNum int,
 	permutation TestPermutation, timeToFetch time.Duration, tcpFetch int64, leechFails int64,
 	maxConnectionRate int) error {
@@ -397,7 +406,6 @@ func (t *NodeTestData) emitMetrics(runenv *runtime.RunEnv, runNum int,
 }
 
 func generateAndAdd(ctx context.Context, runenv *runtime.RunEnv, node utils.Node, f utils.TestFile) (*cid.Cid, error) {
-	runenv.RecordMessage("Generating the new file in seeder")
 	// Generate the file
 	inputData := runenv.StringParam("input_data")
 	runenv.RecordMessage("Starting to generate file for inputData: %s and file %v", inputData, f)
@@ -405,7 +413,7 @@ func generateAndAdd(ctx context.Context, runenv *runtime.RunEnv, node utils.Node
 	if err != nil {
 		return nil, err
 	}
-	// runenv.RecordMessage("Adding the file to IPFS", tmpFile)
+
 	// Add file to the IPFS network
 	start := time.Now()
 	cid, err := node.Add(ctx, tmpFile)
