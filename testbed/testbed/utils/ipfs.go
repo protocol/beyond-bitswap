@@ -395,7 +395,7 @@ func (n *IPFSNode) Add(ctx context.Context, tmpFile files.Node) (cid.Cid, error)
 	return path.Cid(), nil
 }
 
-func (n *IPFSNode) Fetch(ctx context.Context, c cid.Cid, _ []peer.AddrInfo) (files.Node, error) {
+func (n *IPFSNode) Fetch(ctx context.Context, c cid.Cid, _ []PeerInfo) (files.Node, error) {
 	fPath := path.IpfsPath(c)
 	return n.API.Unixfs().Get(ctx, fPath)
 }

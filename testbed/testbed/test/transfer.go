@@ -9,7 +9,6 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
@@ -47,11 +46,6 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	t.stillAlive(runenv, testvars)
 
 	var tcpFetch int64
-
-	var addrInfos []peer.AddrInfo
-	for _, peerInfo := range t.peerInfos {
-		addrInfos = append(addrInfos, peerInfo.Addr)
-	}
 
 	// For each test permutation found in the test
 	for pIndex, testParams := range testvars.Permutations {
@@ -151,7 +145,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 						ctxFetch, cancel := context.WithTimeout(ctx, testvars.RunTimeout/2)
 						// Pin Add also traverse the whole DAG
 						// err := ipfsNode.API.Pin().Add(ctxFetch, fPath)
-						rcvFile, err := ipfsNode.Fetch(ctxFetch, rootCid, addrInfos)
+						rcvFile, err := ipfsNode.Fetch(ctxFetch, rootCid, t.peerInfos)
 						if err != nil {
 							runenv.RecordMessage("Error fetching data from IPFS: %w", err)
 							leechFails++

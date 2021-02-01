@@ -20,7 +20,6 @@ import (
 	unixfile "github.com/ipfs/go-unixfs/file"
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
@@ -129,7 +128,7 @@ func (n *BitswapNode) EmitMetrics(recorder MetricsRecorder) error {
 	return err
 }
 
-func (n *BitswapNode) Fetch(ctx context.Context, c cid.Cid, _ []peer.AddrInfo) (files.Node, error) {
+func (n *BitswapNode) Fetch(ctx context.Context, c cid.Cid, _ []PeerInfo) (files.Node, error) {
 	err := merkledag.FetchGraph(ctx, c, n.dserv)
 	if err != nil {
 		return nil, err

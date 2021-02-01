@@ -81,8 +81,17 @@ func (n *GraphsyncNode) EmitMetrics(recorder MetricsRecorder) error {
 	return nil
 }
 
-func (n *GraphsyncNode) Fetch(ctx context.Context, c cid.Cid, peers []peer.AddrInfo) (files.Node, error) {
-	p := peers[0].ID
+func (n *GraphsyncNode) Fetch(ctx context.Context, c cid.Cid, peers []PeerInfo) (files.Node, error) {
+	var seedIndex int
+	for seedIndex = 0; seedIndex < len(peers); seedIndex++ {
+		if peers[seedIndex].Nodetp == Seed && peers[seedIndex].Addr.ID != n.h.ID() {
+			break
+		}
+	}
+	if seedIndex == len(peers) {
+		return nil, errors.New("no suitable seed found")
+	}
+	p := peers[seedIndex].Addr.ID
 	resps, errs := n.gs.Request(ctx, p, cidlink.Link{Cid: c}, selectAll)
 	for range resps {
 	}

@@ -53,7 +53,7 @@ type TestData struct {
 	client              *sync.DefaultClient
 	nwClient            *network.Client
 	nConfig             *utils.NodeConfig
-	peerInfos           []dialer.PeerInfo
+	peerInfos           []utils.PeerInfo
 	dialFn              dialer.Dialer
 	signalAndWaitForAll func(state string) error
 	seq                 int64
@@ -163,9 +163,9 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 		return nil, err
 	}
 
-	peerInfos := sync.NewTopic("peerInfos", &dialer.PeerInfo{})
+	peerInfos := sync.NewTopic("peerInfos", &utils.PeerInfo{})
 	// Publish peer info for dialing
-	_, err = client.Publish(ctx, peerInfos, &dialer.PeerInfo{Addr: *nConfig.AddrInfo, Nodetp: nodetp})
+	_, err = client.Publish(ctx, peerInfos, &utils.PeerInfo{Addr: *nConfig.AddrInfo, Nodetp: nodetp})
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 	runenv.RecordMessage("Seed index %v for: %v", &nConfig.AddrInfo.ID, seedIndex)
 
 	// Get addresses of all peers
-	peerCh := make(chan *dialer.PeerInfo)
+	peerCh := make(chan *utils.PeerInfo)
 	sctx, cancelSub := context.WithCancel(ctx)
 	if _, err := client.Subscribe(sctx, peerInfos, peerCh); err != nil {
 		cancelSub()
