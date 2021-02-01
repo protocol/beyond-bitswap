@@ -36,4 +36,4 @@ bandwidth_mb= "100,10,1"
 enable_tcp= "false"
 enable_dht= "false"
 node_type = "graphsync"
-long_lasting = true
+long_lasting = "true"
