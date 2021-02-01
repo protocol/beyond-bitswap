@@ -45,6 +45,7 @@ func CreateGraphsyncNode(ctx context.Context, h host.Host, bstore blockstore.Blo
 	n := &GraphsyncNode{gs, bstore, dserv, h, 0, 0}
 	gs.RegisterBlockSentListener(n.onDataSent)
 	gs.RegisterIncomingBlockHook(n.onDataReceived)
+	gs.RegisterIncomingRequestHook(n.onIncomingRequestHook)
 	return n, nil
 }
 
@@ -125,6 +126,10 @@ func (n *GraphsyncNode) onDataSent(p peer.ID, request graphsync.RequestData, blo
 
 func (n *GraphsyncNode) onDataReceived(p peer.ID, request graphsync.ResponseData, block graphsync.BlockData, ha graphsync.IncomingBlockHookActions) {
 	n.totalReceived += block.BlockSizeOnWire()
+}
+
+func (n *GraphsyncNode) onIncomingRequestHook(p peer.ID, request graphsync.RequestData, ha graphsync.IncomingRequestHookActions) {
+	ha.ValidateRequest()
 }
 
 var _ Node = &GraphsyncNode{}
