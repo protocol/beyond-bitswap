@@ -39,7 +39,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		return fmt.Errorf("unsupported node type: %s", nodeType)
 	}
 	t, err := nodeInitializer(ctx, runenv, testvars, baseT)
-	ipfsNode := t.node
+	transferNode := t.node
 	signalAndWaitForAll := t.signalAndWaitForAll
 
 	// Start still alive process if enabled
@@ -112,7 +112,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 			runenv.RecordMessage("Starting run %d / %d (%d bytes)", runNum, testvars.RunCount, testParams.File.Size())
 
-			dialed, err := t.dialFn(ctx, ipfsNode.Host(), t.nodetp, t.peerInfos, testvars.MaxConnectionRate)
+			dialed, err := t.dialFn(ctx, transferNode.Host(), t.nodetp, t.peerInfos, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
 			}
@@ -145,9 +145,9 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 						ctxFetch, cancel := context.WithTimeout(ctx, testvars.RunTimeout/2)
 						// Pin Add also traverse the whole DAG
 						// err := ipfsNode.API.Pin().Add(ctxFetch, fPath)
-						rcvFile, err := ipfsNode.Fetch(ctxFetch, rootCid, t.peerInfos)
+						rcvFile, err := transferNode.Fetch(ctxFetch, rootCid, t.peerInfos)
 						if err != nil {
-							runenv.RecordMessage("Error fetching data from IPFS: %w", err)
+							runenv.RecordMessage("Error fetching data: %w", err)
 							leechFails++
 						} else {
 							err = files.WriteTo(rcvFile, "/tmp/"+strconv.Itoa(t.tpindex)+time.Now().String())
