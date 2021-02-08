@@ -391,11 +391,11 @@ func (t *NodeTestData) close() error {
 	return (*t.host).Close()
 }
 
-func (t *NodeTestData) emitMetrics(runenv *runtime.RunEnv, runNum int,
+func (t *NodeTestData) emitMetrics(runenv *runtime.RunEnv, runNum int, transport string,
 	permutation TestPermutation, timeToFetch time.Duration, tcpFetch int64, leechFails int64,
 	maxConnectionRate int) error {
 
-	recorder := newMetricsRecorder(runenv, runNum, t.seq, t.grpseq, permutation.Latency, permutation.Bandwidth, int(permutation.File.Size()), t.nodetp, t.tpindex, maxConnectionRate)
+	recorder := newMetricsRecorder(runenv, runNum, t.seq, t.grpseq, transport, permutation.Latency, permutation.Bandwidth, int(permutation.File.Size()), t.nodetp, t.tpindex, maxConnectionRate)
 	if t.nodetp == utils.Leech {
 		recorder.Record("time_to_fetch", float64(timeToFetch))
 		recorder.Record("leech_fails", float64(leechFails))
@@ -564,7 +564,7 @@ type metricsRecorder struct {
 }
 
 func newMetricsRecorder(runenv *runtime.RunEnv, runNum int, seq int64, grpseq int64,
-	latency time.Duration, bandwidthMB int, fileSize int, nodetp utils.NodeType, tpindex int,
+	transport string, latency time.Duration, bandwidthMB int, fileSize int, nodetp utils.NodeType, tpindex int,
 	maxConnectionRate int) utils.MetricsRecorder {
 
 	latencyMS := latency.Milliseconds()
@@ -572,8 +572,8 @@ func newMetricsRecorder(runenv *runtime.RunEnv, runNum int, seq int64, grpseq in
 	leechCount := runenv.IntParam("leech_count")
 	passiveCount := runenv.IntParam("passive_count")
 
-	id := fmt.Sprintf("topology:(%d-%d-%d)/maxConnectionRate:%d/latencyMS:%d/bandwidthMB:%d/run:%d/seq:%d/groupName:%s/groupSeq:%d/fileSize:%d/nodeType:%s/nodeTypeIndex:%d",
-		instance-leechCount-passiveCount, leechCount, passiveCount, maxConnectionRate,
+	id := fmt.Sprintf("topology:(%d-%d-%d)/transport:%s/maxConnectionRate:%d/latencyMS:%d/bandwidthMB:%d/run:%d/seq:%d/groupName:%s/groupSeq:%d/fileSize:%d/nodeType:%s/nodeTypeIndex:%d",
+		instance-leechCount-passiveCount, leechCount, passiveCount, transport, maxConnectionRate,
 		latencyMS, bandwidthMB, runNum, seq, runenv.TestGroupID, grpseq, fileSize, nodetp, tpindex)
 
 	return &metricsRecorder{runenv, id}

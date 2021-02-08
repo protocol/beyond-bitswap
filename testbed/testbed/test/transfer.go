@@ -176,7 +176,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			}
 
 			/// --- Report stats
-			err = t.emitMetrics(runenv, runNum, testParams, timeToFetch, tcpFetch, leechFails, testvars.MaxConnectionRate)
+			err = t.emitMetrics(runenv, runNum, nodeType, testParams, timeToFetch, tcpFetch, leechFails, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
 			}
