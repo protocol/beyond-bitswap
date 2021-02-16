@@ -32,9 +32,10 @@ type GraphsyncNode struct {
 	h             host.Host
 	totalSent     uint64
 	totalReceived uint64
+	numSeeds int
 }
 
-func CreateGraphsyncNode(ctx context.Context, h host.Host, bstore blockstore.Blockstore) (*GraphsyncNode, error) {
+func CreateGraphsyncNode(ctx context.Context, h host.Host, bstore blockstore.Blockstore, numSeeds int) (*GraphsyncNode, error) {
 	net := network.NewFromLibp2pHost(h)
 	bserv := blockservice.New(bstore, offline.Exchange(bstore))
 	dserv := merkledag.NewDAGService(bserv)
@@ -42,7 +43,7 @@ func CreateGraphsyncNode(ctx context.Context, h host.Host, bstore blockstore.Blo
 		storeutil.LoaderForBlockstore(bstore),
 		storeutil.StorerForBlockstore(bstore),
 	)
-	n := &GraphsyncNode{gs, bstore, dserv, h, 0, 0}
+	n := &GraphsyncNode{gs, bstore, dserv, h, 0, 0, numSeeds}
 	gs.RegisterBlockSentListener(n.onDataSent)
 	gs.RegisterIncomingBlockHook(n.onDataReceived)
 	gs.RegisterIncomingRequestHook(n.onIncomingRequestHook)
@@ -82,13 +83,29 @@ func (n *GraphsyncNode) EmitMetrics(recorder MetricsRecorder) error {
 }
 
 func (n *GraphsyncNode) Fetch(ctx context.Context, c cid.Cid, peers []PeerInfo) (files.Node, error) {
-	var seedIndex int
-	for seedIndex = 0; seedIndex < len(peers); seedIndex++ {
-		if peers[seedIndex].Nodetp == Seed && peers[seedIndex].Addr.ID != n.h.ID() {
+	leechIndex := 0
+	for i := 0; i < len(peers); i++ {
+		if peers[i].Addr.ID == n.h.ID() {
 			break
 		}
+		if peers[i].Nodetp == Leech {
+			leechIndex++
+		}
 	}
-	if seedIndex == len(peers) {
+
+	targetSeed := leechIndex % n.numSeeds
+	seedCount := 0
+	var seedIndex = 0
+	for ; seedIndex < len(peers); seedIndex++ {
+		if peers[seedIndex].Nodetp == Seed && peers[seedIndex].Addr.ID != n.h.ID() {
+			if seedCount == targetSeed {
+				break
+			}
+			seedCount++
+		}
+	}
+
+	if seedCount == len(peers) {
 		return nil, errors.New("no suitable seed found")
 	}
 	p := peers[seedIndex].Addr.ID

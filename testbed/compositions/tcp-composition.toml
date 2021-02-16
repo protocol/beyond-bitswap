@@ -1,10 +1,10 @@
 [metadata]
-name    = "transfer"
+name    = "tcp-transfer"
 
 
 [global]
 plan    = "testbed"
-case    = "transfer"
+case    = "tcp-transfer"
 builder = "docker:go"
 runner  = "local:docker"
 
@@ -35,5 +35,5 @@ latency_ms= "100,10"
 bandwidth_mb= "100,50"
 enable_tcp= "false"
 enable_dht= "false"
-node_type = "graphsync"
+node_type = "ipfs"
 long_lasting = "true"

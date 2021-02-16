@@ -258,9 +258,9 @@ func (t *TestData) readFile(ctx context.Context, fIndex int, runenv *runtime.Run
 	return rootCid, nil
 }
 
-func (t *TestData) runTCPServer(ctx context.Context, fIndex int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) error {
+func (t *TestData) runTCPServer(ctx context.Context, fIndex int, runNum int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) error {
 	// TCP variables
-	tcpAddrTopic := getTCPAddrTopic(fIndex)
+	tcpAddrTopic := getTCPAddrTopic(fIndex,  runNum)
 	runenv.RecordMessage("Starting TCP server in seed")
 
 	// Start TCP server for file
@@ -276,7 +276,7 @@ func (t *TestData) runTCPServer(ctx context.Context, fIndex int, f utils.TestFil
 	runenv.RecordMessage("Waiting to end finish TCP fetch")
 
 	// Wait for all nodes to be done with TCP Fetch
-	err = t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d", fIndex))
+	err = t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d-%d", fIndex, runNum))
 	if err != nil {
 		return err
 	}
@@ -287,13 +287,11 @@ func (t *TestData) runTCPServer(ctx context.Context, fIndex int, f utils.TestFil
 	return nil
 }
 
-func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runenv *runtime.RunEnv, testvars *TestVars) (int64, error) {
+func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runNum int, runenv *runtime.RunEnv, testvars *TestVars) (int64, error) {
 	// TCP variables
-	tcpAddrTopic := getTCPAddrTopic(fIndex)
-	sctx, cancelTCPAddrSub := context.WithCancel(ctx)
-	defer cancelTCPAddrSub()
+	tcpAddrTopic := getTCPAddrTopic(fIndex,  runNum)
 	tcpAddrCh := make(chan *string, 1)
-	if _, err := t.client.Subscribe(sctx, tcpAddrTopic, tcpAddrCh); err != nil {
+	if _, err := t.client.Subscribe(ctx, tcpAddrTopic, tcpAddrCh); err != nil {
 		return 0, fmt.Errorf("Failed to subscribe to tcpServerTopic %w", err)
 	}
 	tcpAddrPtr, ok := <-tcpAddrCh
@@ -309,7 +307,7 @@ func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runenv *runtime.
 	runenv.RecordMessage("Fetched TCP file after %d (ns)", tcpFetch)
 
 	// Wait for all nodes to be done with TCP Fetch
-	return tcpFetch, t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d", fIndex))
+	return tcpFetch, t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d-%d", fIndex, runNum))
 }
 
 type NodeTestData struct {
@@ -554,8 +552,8 @@ func getRootCidTopic(id int) *sync.Topic {
 	return sync.NewTopic(fmt.Sprintf("root-cid-%d", id), &cid.Cid{})
 }
 
-func getTCPAddrTopic(id int) *sync.Topic {
-	return sync.NewTopic(fmt.Sprintf("tcp-addr-%d", id), "")
+func getTCPAddrTopic(id int, run int) *sync.Topic {
+	return sync.NewTopic(fmt.Sprintf("tcp-addr-%d-%d", id, run), "")
 }
 
 type metricsRecorder struct {

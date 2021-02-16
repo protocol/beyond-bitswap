@@ -86,16 +86,16 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			runenv.RecordMessage("Running TCP test...")
 			switch t.nodetp {
 			case utils.Seed:
-				err = t.runTCPServer(ctx, pIndex, testParams.File, runenv, testvars)
+				err = t.runTCPServer(ctx, pIndex, 0, testParams.File, runenv, testvars)
 			case utils.Leech:
-				tcpFetch, err = t.runTCPFetch(ctx, pIndex, runenv, testvars)
+				tcpFetch, err = t.runTCPFetch(ctx, pIndex, 0,  runenv, testvars)
 			}
 			if err != nil {
 				return err
 			}
 		}
 
-		runenv.RecordMessage("Starting IPFS Fetch...")
+		runenv.RecordMessage("Starting %s Fetch...", nodeType)
 
 		for runNum := 1; runNum < testvars.RunCount+1; runNum++ {
 			// Reset the timeout for each run
@@ -273,7 +273,8 @@ func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testva
 		return nil, err
 	}
 	// Create a new bitswap node from the blockstore
-	bsnode, err := utils.CreateGraphsyncNode(ctx, h, bstore)
+	numSeeds := runenv.TestInstanceCount - (testvars.LeechCount + testvars.PassiveCount)
+	bsnode, err := utils.CreateGraphsyncNode(ctx, h, bstore, numSeeds)
 	if err != nil {
 		return nil, err
 	}
