@@ -13,7 +13,10 @@ import (
 // IPFSTransfer data from S seeds to L leeches
 func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Test Parameters
-	testvars := getEnvVars(runenv)
+	testvars, err := getEnvVars(runenv)
+	if err != nil {
+		return err
+	}
 
 	/// --- Set up
 	ctx, cancel := context.WithTimeout(context.Background(), testvars.Timeout)
@@ -27,13 +30,6 @@ func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// send the same signal
 	signalAndWaitForAll := t.signalAndWaitForAll
 
-	// According to the input data get the file size or the files to add.
-	testFiles, err := utils.GetFileList(runenv)
-	if err != nil {
-		return err
-	}
-	runenv.RecordMessage("Got file list: %v", testFiles)
-
 	err = signalAndWaitForAll("file-list-ready")
 	if err != nil {
 		return err
@@ -42,20 +38,40 @@ func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	var tcpFetch int64
 
 	// For each file found in the test
-	for fIndex, f := range testFiles {
+	for pIndex, testParams := range testvars.Permutations {
+		// Set up network (with traffic shaping)
+		if err := utils.SetupNetwork(ctx, runenv, t.nwClient, t.nodetp, t.tpindex, testParams.Latency,
+			testParams.Bandwidth, testParams.JitterPct); err != nil {
+			return fmt.Errorf("Failed to set up network: %v", err)
+		}
 
-		err = signalAndWaitForAll(fmt.Sprintf("transfer-start-%d", fIndex))
+		err = signalAndWaitForAll(fmt.Sprintf("transfer-start-%d", pIndex))
 		if err != nil {
 			return err
 		}
 
-		switch t.nodetp {
-		case utils.Seed:
-			err = t.runTCPServer(ctx, fIndex, f, runenv, testvars)
-		case utils.Leech:
-			tcpFetch, err = t.runTCPFetch(ctx, fIndex, runenv, testvars)
-			runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", t.nodetp), float64(tcpFetch))
+		runenv.RecordMessage("Starting TCP Fetch...")
+
+		for runNum := 1; runNum < testvars.RunCount+1; runNum++ {
+
+			switch t.nodetp {
+			case utils.Seed:
+				err = t.runTCPServer(ctx, pIndex, runNum, testParams.File, runenv, testvars)
+				if err != nil {
+					return err
+				}
+			case utils.Leech:
+				tcpFetch, err = t.runTCPFetch(ctx, pIndex, runNum, runenv, testvars)
+				if err != nil {
+					return err
+				}
+				recorder := newMetricsRecorder(runenv, runNum, t.seq, t.grpseq, "tcp", testParams.Latency,
+					testParams.Bandwidth, int(testParams.File.Size()), t.nodetp, t.tpindex, 1)
+				recorder.Record("time_to_fetch", float64(tcpFetch))
+			}
 		}
+
+		err = signalAndWaitForAll(fmt.Sprintf("transfer-end-%d", pIndex))
 		if err != nil {
 			return err
 		}

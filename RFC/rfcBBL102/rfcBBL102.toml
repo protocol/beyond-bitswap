@@ -4,7 +4,7 @@ author  = "@adlrocha"
 
 [global]
 plan    = "testbed"
-case    = "ipfs-transfer"
+case    = "transfer"
 builder = "docker:go"
 runner  = "local:docker"
 

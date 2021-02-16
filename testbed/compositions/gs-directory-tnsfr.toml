@@ -1,0 +1,37 @@
+[metadata]
+name    = "graphsync-directory-transfer"
+
+[global]
+plan    = "testbed"
+case    = "sparse"
+builder = "docker:go"
+runner  = "local:docker"
+
+total_instances = 30
+
+[[groups]]
+id = "nodes"
+instances = { count = 30 }
+
+[groups.build]
+skip_runtime_image = "true"
+dependencies = [
+    { module = "github.com/ipfs/go-bitswap", target="github.com/adlrocha/go-bitswap", version = "6f5c6dc5e81bb7a49c73d20aa3d9004747164928"}
+]
+
+[groups.run]
+[groups.run.test_params]
+input_data = "files"
+data_dir = "../extra/test-datasets"
+run_timeout_secs = "900"
+timeout_secs = "2000"
+run_count = "3"
+leech_count= "15"
+passive_count = "10"
+max_connection_rate = "100"
+# input_data = "random"
+# file_size = "10000000,30000000,50000000"
+latency_ms= "100"
+bandwidth_mb= "100"
+enable_tcp= "false"
+enable_dht= "false"

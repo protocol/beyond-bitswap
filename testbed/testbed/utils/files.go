@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,9 +11,11 @@ import (
 	"time"
 
 	files "github.com/ipfs/go-ipfs-files"
-	"github.com/ipfs/interface-go-ipfs-core/path"
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/testground/sdk-go/runtime"
 )
+
+var log = logging.Logger("utils")
 
 // var randReader *rand.Rand
 
@@ -27,6 +28,7 @@ type TestFile interface {
 // RandFile represents a randomly generated file
 type RandFile struct {
 	size int64
+	seed int64
 }
 
 // PathFile is a generated from file.
@@ -38,7 +40,7 @@ type PathFile struct {
 
 // GenerateFile generates new randomly generated file
 func (f *RandFile) GenerateFile() (files.Node, error) {
-	return files.NewReaderFile(RandReader(int(f.size))), nil
+	return files.NewReaderFile(SeededRandReader(int(f.size), f.seed)), nil
 }
 
 // Size returns size
@@ -86,11 +88,16 @@ func dirSize(path string) (int64, error) {
 }
 
 // RandReader generates random data from seed.
-func RandReader(len int) io.Reader {
-	randReader := rand.New(rand.NewSource(time.Now().Unix()))
+func SeededRandReader(len int, seed int64) io.Reader {
+	randReader := rand.New(rand.NewSource(seed))
 	data := make([]byte, len)
 	randReader.Read(data)
 	return bytes.NewReader(data)
+}
+
+// RandReader generates random data randomly.
+func RandReader(len int) io.Reader {
+	return SeededRandReader(len, time.Now().Unix())
 }
 
 func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
@@ -133,8 +140,8 @@ func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
 		if err != nil {
 			return nil, err
 		}
-		for _, v := range fileSizes {
-			listFiles = append(listFiles, &RandFile{size: int64(v)})
+		for i, v := range fileSizes {
+			listFiles = append(listFiles, &RandFile{size: int64(v), seed: int64(i)})
 		}
 		return listFiles, nil
 	case "custom":
@@ -142,27 +149,6 @@ func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
 	default:
 		return nil, fmt.Errorf("Inputdata type not implemented")
 	}
-}
-
-func (n *IPFSNode) GenerateFile(ctx context.Context, runenv *runtime.RunEnv, f TestFile) (files.Node, error) {
-	inputData := runenv.StringParam("input_data")
-	runenv.RecordMessage("Starting to generate file for inputData: %s and file %v", inputData, f)
-	tmpFile, err := f.GenerateFile()
-	if err != nil {
-		return nil, err
-	}
-	return tmpFile, nil
-}
-
-func (n *IPFSNode) Add(ctx context.Context, runenv *runtime.RunEnv, tmpFile files.Node) (path.Resolved, error) {
-	start := time.Now()
-	cid, err := n.API.Unixfs().Add(ctx, tmpFile)
-	end := time.Since(start).Milliseconds()
-	if err != nil {
-		runenv.RecordMessage("Error adding file to network: %w", err)
-	}
-	runenv.RecordMessage("Added to network %v in %d (ms)", cid, end)
-	return cid, err
 }
 
 func getUnixfsNode(path string) (files.Node, error) {

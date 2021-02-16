@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -35,7 +34,7 @@ func SpawnTCPServer(ctx context.Context, ip string, tmpFile TestFile) (*TCPServe
 		fmt.Println("Error listetning: ", err)
 		return nil, err
 	}
-	//Spawn a new goroutine whenever a lient connects
+	//Spawn a new goroutine whenever a client connects
 	s := &TCPServer{
 		quit:     make(chan interface{}),
 		listener: listener,
@@ -46,7 +45,6 @@ func SpawnTCPServer(ctx context.Context, ip string, tmpFile TestFile) (*TCPServe
 	go s.Start()
 	return s, nil
 }
-
 // Start listening for conections.
 func (s *TCPServer) Start() {
 	// Start listening routine

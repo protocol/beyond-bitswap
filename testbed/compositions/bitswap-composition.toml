@@ -1,0 +1,39 @@
+[metadata]
+name    = "transfer"
+
+
+[global]
+plan    = "testbed"
+case    = "transfer"
+builder = "docker:go"
+runner  = "local:docker"
+
+total_instances = 2
+
+[[groups]]
+id = "nodes"
+instances = { count = 2 }
+
+    [groups.build]
+
+
+
+
+[groups.run]
+[groups.run.test_params]
+input_data = "files"
+data_dir = "../extra/test-datasets"
+run_timeout_secs = "3000"
+timeout_secs = "12000"
+run_count = "4"
+leech_count= "1"
+passive_count = "0"
+max_connection_rate = "100"
+# input_data = "random"
+# file_size = "10000000,30000000,50000000"
+latency_ms= "100,10"
+bandwidth_mb= "100,50"
+enable_tcp= "false"
+enable_dht= "false"
+node_type = "bitswap"
+long_lasting = "true"

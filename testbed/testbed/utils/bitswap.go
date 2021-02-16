@@ -2,8 +2,6 @@ package utils
 
 import (
 	"context"
-	"io"
-	"strings"
 	"time"
 
 	bs "github.com/ipfs/go-bitswap"
@@ -14,18 +12,14 @@ import (
 	delayed "github.com/ipfs/go-datastore/delayed"
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
-	chunker "github.com/ipfs/go-ipfs-chunker"
 	delay "github.com/ipfs/go-ipfs-delay"
 	files "github.com/ipfs/go-ipfs-files"
 	nilrouting "github.com/ipfs/go-ipfs-routing/none"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
 	unixfile "github.com/ipfs/go-unixfs/file"
-	"github.com/ipfs/go-unixfs/importer/balanced"
 	"github.com/ipfs/go-unixfs/importer/helpers"
-	"github.com/ipfs/go-unixfs/importer/trickle"
-	core "github.com/libp2p/go-libp2p-core"
-	"github.com/multiformats/go-multihash"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
@@ -47,13 +41,15 @@ func (nt NodeType) String() string {
 
 // Adapted from the netflix/p2plab repo under an Apache-2 license.
 // Original source code located at https://github.com/Netflix/p2plab/blob/master/peer/peer.go
-type Node struct {
-	Bitswap *bs.Bitswap
-	Dserv   ipld.DAGService
+type BitswapNode struct {
+	bitswap    *bs.Bitswap
+	blockStore blockstore.Blockstore
+	dserv      ipld.DAGService
+	h          host.Host
 }
 
-func (n *Node) Close() error {
-	return n.Bitswap.Close()
+func (n *BitswapNode) Close() error {
+	return n.bitswap.Close()
 }
 
 func CreateBlockstore(ctx context.Context, bstoreDelay time.Duration) (blockstore.Blockstore, error) {
@@ -79,7 +75,7 @@ func ClearBlockstore(ctx context.Context, bstore blockstore.Blockstore) error {
 	return g.Wait()
 }
 
-func CreateBitswapNode(ctx context.Context, h core.Host, bstore blockstore.Blockstore) (*Node, error) {
+func CreateBitswapNode(ctx context.Context, h host.Host, bstore blockstore.Blockstore) (*BitswapNode, error) {
 	routing, err := nilrouting.ConstructNilRouting(ctx, nil, nil, nil)
 	if err != nil {
 		return nil, err
@@ -88,88 +84,83 @@ func CreateBitswapNode(ctx context.Context, h core.Host, bstore blockstore.Block
 	bitswap := bs.New(ctx, net, bstore).(*bs.Bitswap)
 	bserv := blockservice.New(bstore, bitswap)
 	dserv := merkledag.NewDAGService(bserv)
-	return &Node{bitswap, dserv}, nil
+	return &BitswapNode{bitswap, bstore, dserv, h}, nil
 }
 
-type AddSettings struct {
-	Layout    string
-	Chunker   string
-	RawLeaves bool
-	Hidden    bool
-	NoCopy    bool
-	HashFunc  string
-	MaxLinks  int
-}
-
-func (n *Node) Add(ctx context.Context, r io.Reader) (ipld.Node, error) {
+func (n *BitswapNode) Add(ctx context.Context, fileNode files.Node) (cid.Cid, error) {
 	settings := AddSettings{
 		Layout:    "balanced",
 		Chunker:   "size-262144",
 		RawLeaves: false,
-		Hidden:    false,
 		NoCopy:    false,
 		HashFunc:  "sha2-256",
 		MaxLinks:  helpers.DefaultLinksPerBlock,
 	}
-	// for _, opt := range opts {
-	// 	err := opt(&settings)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-
-	prefix, err := merkledag.PrefixForCidVersion(1)
+	adder, err := NewDAGAdder(ctx, n.dserv, settings)
 	if err != nil {
-		return nil, errors.Wrap(err, "unrecognized CID version")
+		return cid.Undef, err
 	}
-
-	hashFuncCode, ok := multihash.Names[strings.ToLower(settings.HashFunc)]
-	if !ok {
-		return nil, errors.Wrapf(err, "unrecognized hash function %q", settings.HashFunc)
-	}
-	prefix.MhType = hashFuncCode
-
-	dbp := helpers.DagBuilderParams{
-		Dagserv:    n.Dserv,
-		RawLeaves:  settings.RawLeaves,
-		Maxlinks:   settings.MaxLinks,
-		NoCopy:     settings.NoCopy,
-		CidBuilder: &prefix,
-	}
-
-	chnk, err := chunker.FromString(r, settings.Chunker)
+	ipldNode, err := adder.Add(fileNode)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create chunker")
+		return cid.Undef, err
 	}
-
-	dbh, err := dbp.New(chnk)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create dag builder")
-	}
-
-	var nd ipld.Node
-	switch settings.Layout {
-	case "trickle":
-		nd, err = trickle.Layout(dbh)
-	case "balanced":
-		nd, err = balanced.Layout(dbh)
-	default:
-		return nil, errors.Errorf("unrecognized layout %q", settings.Layout)
-	}
-
-	return nd, err
+	return ipldNode.Cid(), nil
 }
 
-func (n *Node) FetchGraph(ctx context.Context, c cid.Cid) error {
-	ng := merkledag.NewSession(ctx, n.Dserv)
-	return Walk(ctx, c, ng)
+func (n *BitswapNode) ClearDatastore(ctx context.Context) error {
+	return ClearBlockstore(ctx, n.blockStore)
 }
 
-func (n *Node) Get(ctx context.Context, c cid.Cid) (files.Node, error) {
-	nd, err := n.Dserv.Get(ctx, c)
+func (n *BitswapNode) EmitMetrics(recorder MetricsRecorder) error {
+	stats, err := n.bitswap.Stat()
+
+	if err != nil {
+		return err
+	}
+	recorder.Record("msgs_rcvd", float64(stats.MessagesReceived))
+	recorder.Record("data_sent", float64(stats.DataSent))
+	recorder.Record("data_rcvd", float64(stats.DataReceived))
+	recorder.Record("block_data_rcvd", float64(stats.BlockDataReceived))
+	recorder.Record("dup_data_rcvd", float64(stats.DupDataReceived))
+	recorder.Record("blks_sent", float64(stats.BlocksSent))
+	recorder.Record("blks_rcvd", float64(stats.BlocksReceived))
+	recorder.Record("dup_blks_rcvd", float64(stats.DupBlksReceived))
+	return err
+}
+
+func (n *BitswapNode) Fetch(ctx context.Context, c cid.Cid, _ []PeerInfo) (files.Node, error) {
+	err := merkledag.FetchGraph(ctx, c, n.dserv)
+	if err != nil {
+		return nil, err
+	}
+	nd, err := n.dserv.Get(ctx, c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get file %q", c)
 	}
 
-	return unixfile.NewUnixfsFile(ctx, n.Dserv, nd)
+	return unixfile.NewUnixfsFile(ctx, n.dserv, nd)
 }
+
+func (n *BitswapNode) DAGService() ipld.DAGService {
+	return n.dserv
+}
+
+func (n *BitswapNode) Host() host.Host {
+	return n.h
+}
+
+func (n *BitswapNode) EmitKeepAlive(recorder MessageRecorder) error {
+	stats, err := n.bitswap.Stat()
+
+	if err != nil {
+		return err
+	}
+
+	recorder.RecordMessage("I am still alive! Total In: %d - TotalOut: %d",
+		stats.DataReceived,
+		stats.DataSent)
+
+	return nil
+}
+
+var _ Node = &BitswapNode{}

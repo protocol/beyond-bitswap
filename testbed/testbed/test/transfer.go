@@ -3,124 +3,73 @@ package test
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
-	"github.com/ipfs/go-cid"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
-
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
-	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
-
+	"github.com/ipfs/go-cid"
+	files "github.com/ipfs/go-ipfs-files"
 	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
 )
 
 // Transfer data from S seeds to L leeches
 func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Test Parameters
-	testvars := getEnvVars(runenv)
-	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
-	fileSizes, err := utils.ParseIntArray(runenv.StringParam("file_size"))
+	testvars, err := getEnvVars(runenv)
 	if err != nil {
 		return err
 	}
+	nodeType := runenv.StringParam("node_type")
 
 	/// --- Set up
 	ctx, cancel := context.WithTimeout(context.Background(), testvars.Timeout)
 	defer cancel()
-	t, err := InitializeTest(ctx, runenv, testvars)
+	baseT, err := InitializeTest(ctx, runenv, testvars)
 	if err != nil {
 		return err
 	}
-	// Create libp2p node
-	privKey, err := crypto.UnmarshalPrivateKey(t.nConfig.PrivKey)
-	if err != nil {
-		return err
+	nodeInitializer, ok := supportedNodes[nodeType]
+	if !ok {
+		return fmt.Errorf("unsupported node type: %s", nodeType)
 	}
-
-	h, err := libp2p.New(ctx, libp2p.Identity(privKey), libp2p.ListenAddrs(t.nConfig.AddrInfo.Addrs...))
-	if err != nil {
-		return err
-	}
-	defer h.Close()
-	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
-
-	// Use the same blockstore on all runs for the seed node
-	var bstore blockstore.Blockstore
-	var bsnode *utils.Node
-	if t.nodetp == utils.Seed {
-		bstore, err = utils.CreateBlockstore(ctx, bstoreDelay)
-		if err != nil {
-			return err
-		}
-		// Create a new bitswap node from the blockstore
-		bsnode, err = utils.CreateBitswapNode(ctx, h, bstore)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Signal that this node is in the given state, and wait for all peers to
-	// send the same signal
+	t, err := nodeInitializer(ctx, runenv, testvars, baseT)
+	transferNode := t.node
 	signalAndWaitForAll := t.signalAndWaitForAll
 
-	// For each file size
-	for sizeIndex, fileSize := range fileSizes {
-		// If the total amount of seed data to be generated is greater than
-		// parallelGenMax, generate seed data in series
-		// genSeedSerial := seedCount > 2 || fileSize*seedCount > parallelGenMax
-		genSeedSerial := true
+	// Start still alive process if enabled
+	t.stillAlive(runenv, testvars)
 
-		// Run the test runCount times
+	var tcpFetch int64
+
+	// For each test permutation found in the test
+	for pIndex, testParams := range testvars.Permutations {
+		// Set up network (with traffic shaping)
+		if err := utils.SetupNetwork(ctx, runenv, t.nwClient, t.nodetp, t.tpindex, testParams.Latency,
+			testParams.Bandwidth, testParams.JitterPct); err != nil {
+			return fmt.Errorf("Failed to set up network: %v", err)
+		}
+
+		// Accounts for every file that couldn't be found.
+		var leechFails int64
 		var rootCid cid.Cid
 
 		// Wait for all nodes to be ready to start the run
-		err = signalAndWaitForAll(fmt.Sprintf("start-file-%d", sizeIndex))
+		err = signalAndWaitForAll(fmt.Sprintf("start-file-%d", pIndex))
 		if err != nil {
 			return err
 		}
 
 		switch t.nodetp {
 		case utils.Seed:
-			seedGenerated := sync.State(fmt.Sprintf("seed-generated-%d", sizeIndex))
-			var start time.Time
-			if genSeedSerial {
-				// Each seed generates the seed data in series, to avoid
-				// overloading a single machine hosting multiple instances
-				if t.seedIndex > 0 {
-					// Wait for the seeds with an index lower than this one
-					// to generate their seed data
-					doneCh := t.client.MustBarrier(ctx, seedGenerated, int(t.seedIndex)).C
-					if err = <-doneCh; err != nil {
-						return err
-					}
-				}
-
-				// Generate a file of the given size and add it to the datastore
-				start = time.Now()
-			}
-			runenv.RecordMessage("Generating seed data of %d bytes", fileSize)
-
-			rootCid, err := setupSeed(ctx, runenv, bsnode, fileSize, int(t.seedIndex))
-			if err != nil {
-				return fmt.Errorf("Failed to set up seed: %w", err)
-			}
-
-			if genSeedSerial {
-				runenv.RecordMessage("Done generating seed data of %d bytes (%s)", fileSize, time.Since(start))
-
-				// Signal we've completed generating the seed data
-				_, err = t.client.SignalEntry(ctx, seedGenerated)
-				if err != nil {
-					return fmt.Errorf("Failed to signal seed generated: %w", err)
-				}
-			}
-			err = t.publishFile(ctx, sizeIndex, &rootCid, runenv)
+			err = t.addPublishFile(ctx, pIndex, testParams.File, runenv, testvars)
 		case utils.Leech:
-			rootCid, err = t.readFile(ctx, sizeIndex, runenv, testvars)
+			rootCid, err = t.readFile(ctx, pIndex, runenv, testvars)
 		}
 		if err != nil {
 			return err
@@ -128,17 +77,32 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 		runenv.RecordMessage("File injest complete...")
 		// Wait for all nodes to be ready to dial
-		err = signalAndWaitForAll(fmt.Sprintf("injest-complete-%d", sizeIndex))
+		err = signalAndWaitForAll(fmt.Sprintf("injest-complete-%d", pIndex))
 		if err != nil {
 			return err
 		}
+
+		if testvars.TCPEnabled {
+			runenv.RecordMessage("Running TCP test...")
+			switch t.nodetp {
+			case utils.Seed:
+				err = t.runTCPServer(ctx, pIndex, 0, testParams.File, runenv, testvars)
+			case utils.Leech:
+				tcpFetch, err = t.runTCPFetch(ctx, pIndex, 0,  runenv, testvars)
+			}
+			if err != nil {
+				return err
+			}
+		}
+
+		runenv.RecordMessage("Starting %s Fetch...", nodeType)
 
 		for runNum := 1; runNum < testvars.RunCount+1; runNum++ {
 			// Reset the timeout for each run
 			ctx, cancel := context.WithTimeout(ctx, testvars.RunTimeout)
 			defer cancel()
 
-			runID := fmt.Sprintf("%d-%d", sizeIndex, runNum)
+			runID := fmt.Sprintf("%d-%d", pIndex, runNum)
 
 			// Wait for all nodes to be ready to start the run
 			err = signalAndWaitForAll("start-run-" + runID)
@@ -146,34 +110,13 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 				return err
 			}
 
-			runenv.RecordMessage("Starting run %d / %d (%d bytes)", runNum, testvars.RunCount, fileSize)
+			runenv.RecordMessage("Starting run %d / %d (%d bytes)", runNum, testvars.RunCount, testParams.File.Size())
 
-			if t.nodetp == utils.Leech {
-				// For leeches, create a new blockstore on each run
-				bstore, err = utils.CreateBlockstore(ctx, bstoreDelay)
-				if err != nil {
-					return err
-				}
-
-				// Create a new bitswap node from the blockstore
-				bsnode, err = utils.CreateBitswapNode(ctx, h, bstore)
-				if err != nil {
-					return err
-				}
-			}
-
-			// Wait for all nodes to be ready to dial
-			err = signalAndWaitForAll("ready-to-connect-" + runID)
+			dialed, err := t.dialFn(ctx, transferNode.Host(), t.nodetp, t.peerInfos, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
 			}
-
-			// Dial all peers
-			dialed, err := t.dialFn(ctx, h, t.nodetp, t.peerInfos, testvars.MaxConnectionRate)
-			if err != nil {
-				return err
-			}
-			runenv.RecordMessage("Dialed %d other nodes", len(dialed))
+			runenv.RecordMessage("%s Dialed %d other nodes:", t.nodetp.String(), len(dialed))
 
 			// Wait for all nodes to be connected
 			err = signalAndWaitForAll("connect-complete-" + runID)
@@ -185,19 +128,45 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 			var timeToFetch time.Duration
 			if t.nodetp == utils.Leech {
-				// Stagger the start of the first request from each leech
-				// Note: seq starts from 1 (not 0)
-				startDelay := time.Duration(t.seq-1) * testvars.RequestStagger
-				time.Sleep(startDelay)
+				// For each wave
+				for waveNum := 0; waveNum < testvars.NumWaves; waveNum++ {
+					// Only leecheers for that wave entitled to leech.
+					if (t.tpindex % testvars.NumWaves) == waveNum {
+						runenv.RecordMessage("Starting wave %d", waveNum)
+						// Stagger the start of the first request from each leech
+						// Note: seq starts from 1 (not 0)
+						startDelay := time.Duration(t.seq-1) * testvars.RequestStagger
 
-				runenv.RecordMessage("Leech fetching data after %s delay", startDelay)
-				start := time.Now()
-				err := bsnode.FetchGraph(ctx, rootCid)
-				timeToFetch = time.Since(start)
-				if err != nil {
-					return fmt.Errorf("Error fetching data through Bitswap: %w", err)
+						runenv.RecordMessage("Starting to leech %d / %d (%d bytes)", runNum, testvars.RunCount, testParams.File.Size())
+						runenv.RecordMessage("Leech fetching data after %s delay", startDelay)
+						start := time.Now()
+						// TODO: Here we may be able to define requesting pattern. ipfs.DAG()
+						// Right now using a path.
+						ctxFetch, cancel := context.WithTimeout(ctx, testvars.RunTimeout/2)
+						// Pin Add also traverse the whole DAG
+						// err := ipfsNode.API.Pin().Add(ctxFetch, fPath)
+						rcvFile, err := transferNode.Fetch(ctxFetch, rootCid, t.peerInfos)
+						if err != nil {
+							runenv.RecordMessage("Error fetching data: %w", err)
+							leechFails++
+						} else {
+							err = files.WriteTo(rcvFile, "/tmp/"+strconv.Itoa(t.tpindex)+time.Now().String())
+							if err != nil {
+								cancel()
+								return err
+							}
+							timeToFetch = time.Since(start)
+							s, _ := rcvFile.Size()
+							runenv.RecordMessage("Leech fetch of %d complete (%d ns) for wave %d", s, timeToFetch, waveNum)
+						}
+						cancel()
+					}
+					if waveNum < testvars.NumWaves-1 {
+						runenv.RecordMessage("Waiting 5 seconds between waves for wave %d", waveNum)
+						time.Sleep(5 * time.Second)
+					}
+					_, err = t.client.SignalAndWait(ctx, sync.State(fmt.Sprintf("leech-wave-%d", waveNum)), testvars.LeechCount)
 				}
-				runenv.RecordMessage("Leech fetch complete (%s)", timeToFetch)
 			}
 
 			// Wait for all leeches to have downloaded the data from seeds
@@ -207,45 +176,118 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			}
 
 			/// --- Report stats
-			err = emitMetrics(runenv, bsnode, runNum, t.seq, t.grpseq, t.latency, t.bandwidth, fileSize, t.nodetp, t.tpindex, timeToFetch)
+			err = t.emitMetrics(runenv, runNum, nodeType, testParams, timeToFetch, tcpFetch, leechFails, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
 			}
+			runenv.RecordMessage("Finishing emitting metrics. Starting to clean...")
 
-			// Shut down bitswap
-			err = bsnode.Close()
+			err = t.cleanupRun(ctx, runenv)
 			if err != nil {
-				return fmt.Errorf("Error closing Bitswap: %w", err)
-			}
-
-			// Disconnect peers
-			for _, c := range h.Network().Conns() {
-				err := c.Close()
-				if err != nil {
-					return fmt.Errorf("Error disconnecting: %w", err)
-				}
-			}
-
-			if t.nodetp == utils.Leech {
-				// Free up memory by clearing the leech blockstore at the end of each run.
-				// Note that although we create a new blockstore for the leech at the
-				// start of the run, explicitly cleaning up the blockstore from the
-				// previous run allows it to be GCed.
-				if err := utils.ClearBlockstore(ctx, bstore); err != nil {
-					return fmt.Errorf("Error clearing blockstore: %w", err)
-				}
+				return err
 			}
 		}
-		if t.nodetp == utils.Seed {
-			// Free up memory by clearing the seed blockstore at the end of each
-			// set of tests over the current file size.
-			if err := utils.ClearBlockstore(ctx, bstore); err != nil {
-				return fmt.Errorf("Error clearing blockstore: %w", err)
-			}
+		err = t.cleanupFile(ctx)
+		if err != nil {
+			return err
 		}
 	}
+	err = t.close()
+	if err != nil {
+		return err
+	}
 
-	/// --- Ending the test
-
+	runenv.RecordMessage("Ending testcase")
 	return nil
+}
+
+type nodeInitializer func(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error)
+
+var supportedNodes = map[string]nodeInitializer{
+	"ipfs":      initializeIPFSTest,
+	"bitswap":   initializeBitswapTest,
+	"graphsync": initializeGraphsyncTest,
+}
+
+func initializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
+
+	// Create IPFS node
+	runenv.RecordMessage("Preparing exchange for node: %v", testvars.ExchangeInterface)
+	// Set exchange Interface
+	exch, err := utils.SetExchange(ctx, testvars.ExchangeInterface)
+	if err != nil {
+		return nil, err
+	}
+	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, baseT.nConfig, exch, testvars.DHTEnabled)
+	if err != nil {
+		runenv.RecordFailure(err)
+		return nil, err
+	}
+
+	err = baseT.signalAndWaitForAll("file-list-ready")
+	if err != nil {
+		return nil, err
+	}
+
+	return &NodeTestData{
+		TestData: baseT,
+		node:     ipfsNode,
+	}, nil
+}
+
+func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
+
+	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
+	h, err := makeHost(ctx, baseT)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
+
+	// Use the same blockstore on all runs for the seed node
+	bstore, err := utils.CreateBlockstore(ctx, bstoreDelay)
+	if err != nil {
+		return nil, err
+	}
+	// Create a new bitswap node from the blockstore
+	bsnode, err := utils.CreateBitswapNode(ctx, h, bstore)
+	if err != nil {
+		return nil, err
+	}
+
+	return &NodeTestData{baseT, bsnode, &h}, nil
+}
+
+func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
+
+	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
+	h, err := makeHost(ctx, baseT)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
+
+	// Use the same blockstore on all runs for the seed node
+	bstore, err := utils.CreateBlockstore(ctx, bstoreDelay)
+	if err != nil {
+		return nil, err
+	}
+	// Create a new bitswap node from the blockstore
+	numSeeds := runenv.TestInstanceCount - (testvars.LeechCount + testvars.PassiveCount)
+	bsnode, err := utils.CreateGraphsyncNode(ctx, h, bstore, numSeeds)
+	if err != nil {
+		return nil, err
+	}
+
+	return &NodeTestData{baseT, bsnode, &h}, nil
+}
+
+func makeHost(ctx context.Context, baseT *TestData) (host.Host, error) {
+	// Create libp2p node
+	privKey, err := crypto.UnmarshalPrivateKey(baseT.nConfig.PrivKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return libp2p.New(ctx, libp2p.Identity(privKey), libp2p.ListenAddrs(baseT.nConfig.AddrInfo.Addrs...))
 }
