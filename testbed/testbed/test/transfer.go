@@ -224,7 +224,7 @@ func initializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *T
 	if err != nil {
 		return nil, err
 	}
-	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, baseT.nConfig, exch, testvars.DHTEnabled)
+	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, baseT.nConfig, exch, testvars.DHTEnabled, testvars.ProvidingEnabled)
 	if err != nil {
 		runenv.RecordFailure(err)
 		return nil, err
