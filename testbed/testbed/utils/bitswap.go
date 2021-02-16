@@ -19,7 +19,7 @@ import (
 	"github.com/ipfs/go-merkledag"
 	unixfile "github.com/ipfs/go-unixfs/file"
 	"github.com/ipfs/go-unixfs/importer/helpers"
-	core "github.com/libp2p/go-libp2p-core"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
@@ -41,13 +41,15 @@ func (nt NodeType) String() string {
 
 // Adapted from the netflix/p2plab repo under an Apache-2 license.
 // Original source code located at https://github.com/Netflix/p2plab/blob/master/peer/peer.go
-type Node struct {
-	Bitswap *bs.Bitswap
-	Dserv   ipld.DAGService
+type BitswapNode struct {
+	bitswap    *bs.Bitswap
+	blockStore blockstore.Blockstore
+	dserv      ipld.DAGService
+	h          host.Host
 }
 
-func (n *Node) Close() error {
-	return n.Bitswap.Close()
+func (n *BitswapNode) Close() error {
+	return n.bitswap.Close()
 }
 
 func CreateBlockstore(ctx context.Context, bstoreDelay time.Duration) (blockstore.Blockstore, error) {
@@ -73,7 +75,7 @@ func ClearBlockstore(ctx context.Context, bstore blockstore.Blockstore) error {
 	return g.Wait()
 }
 
-func CreateBitswapNode(ctx context.Context, h core.Host, bstore blockstore.Blockstore) (*Node, error) {
+func CreateBitswapNode(ctx context.Context, h host.Host, bstore blockstore.Blockstore) (*BitswapNode, error) {
 	routing, err := nilrouting.ConstructNilRouting(ctx, nil, nil, nil)
 	if err != nil {
 		return nil, err
@@ -82,10 +84,10 @@ func CreateBitswapNode(ctx context.Context, h core.Host, bstore blockstore.Block
 	bitswap := bs.New(ctx, net, bstore).(*bs.Bitswap)
 	bserv := blockservice.New(bstore, bitswap)
 	dserv := merkledag.NewDAGService(bserv)
-	return &Node{bitswap, dserv}, nil
+	return &BitswapNode{bitswap, bstore, dserv, h}, nil
 }
 
-func (n *Node) Add(ctx context.Context, file TestFile) (ipld.Node, error) {
+func (n *BitswapNode) Add(ctx context.Context, fileNode files.Node) (cid.Cid, error) {
 	settings := AddSettings{
 		Layout:    "balanced",
 		Chunker:   "size-262144",
@@ -94,27 +96,71 @@ func (n *Node) Add(ctx context.Context, file TestFile) (ipld.Node, error) {
 		HashFunc:  "sha2-256",
 		MaxLinks:  helpers.DefaultLinksPerBlock,
 	}
-	adder, err := NewDAGAdder(ctx, n.Dserv, settings)
+	adder, err := NewDAGAdder(ctx, n.dserv, settings)
+	if err != nil {
+		return cid.Undef, err
+	}
+	ipldNode, err := adder.Add(fileNode)
+	if err != nil {
+		return cid.Undef, err
+	}
+	return ipldNode.Cid(), nil
+}
+
+func (n *BitswapNode) ClearDatastore(ctx context.Context) error {
+	return ClearBlockstore(ctx, n.blockStore)
+}
+
+func (n *BitswapNode) EmitMetrics(recorder MetricsRecorder) error {
+	stats, err := n.bitswap.Stat()
+
+	if err != nil {
+		return err
+	}
+	recorder.Record("msgs_rcvd", float64(stats.MessagesReceived))
+	recorder.Record("data_sent", float64(stats.DataSent))
+	recorder.Record("data_rcvd", float64(stats.DataReceived))
+	recorder.Record("block_data_rcvd", float64(stats.BlockDataReceived))
+	recorder.Record("dup_data_rcvd", float64(stats.DupDataReceived))
+	recorder.Record("blks_sent", float64(stats.BlocksSent))
+	recorder.Record("blks_rcvd", float64(stats.BlocksReceived))
+	recorder.Record("dup_blks_rcvd", float64(stats.DupBlksReceived))
+	return err
+}
+
+func (n *BitswapNode) Fetch(ctx context.Context, c cid.Cid, _ []PeerInfo) (files.Node, error) {
+	err := merkledag.FetchGraph(ctx, c, n.dserv)
 	if err != nil {
 		return nil, err
 	}
-	fileNode, err := file.GenerateFile()
-	if err != nil {
-		return nil, err
-	}
-	return adder.Add(fileNode)
-}
-
-func (n *Node) FetchGraph(ctx context.Context, c cid.Cid) error {
-	ng := merkledag.NewSession(ctx, n.Dserv)
-	return Walk(ctx, c, ng)
-}
-
-func (n *Node) Get(ctx context.Context, c cid.Cid) (files.Node, error) {
-	nd, err := n.Dserv.Get(ctx, c)
+	nd, err := n.dserv.Get(ctx, c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get file %q", c)
 	}
 
-	return unixfile.NewUnixfsFile(ctx, n.Dserv, nd)
+	return unixfile.NewUnixfsFile(ctx, n.dserv, nd)
 }
+
+func (n *BitswapNode) DAGService() ipld.DAGService {
+	return n.dserv
+}
+
+func (n *BitswapNode) Host() host.Host {
+	return n.h
+}
+
+func (n *BitswapNode) EmitKeepAlive(recorder MessageRecorder) error {
+	stats, err := n.bitswap.Stat()
+
+	if err != nil {
+		return err
+	}
+
+	recorder.RecordMessage("I am still alive! Total In: %d - TotalOut: %d",
+		stats.DataReceived,
+		stats.DataSent)
+
+	return nil
+}
+
+var _ Node = &BitswapNode{}

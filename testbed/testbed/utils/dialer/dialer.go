@@ -12,15 +12,9 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// PeerInfo provides all the neccessary information to dial a peer
-type PeerInfo struct {
-	Addr   peer.AddrInfo
-	Nodetp utils.NodeType
-}
-
 // PeerInfosFromChan collects peer information from a channel of peer information
-func PeerInfosFromChan(peerCh chan *PeerInfo, count int) ([]PeerInfo, error) {
-	var ais []PeerInfo
+func PeerInfosFromChan(peerCh chan *utils.PeerInfo, count int) ([]utils.PeerInfo, error) {
+	var ais []utils.PeerInfo
 	for i := 1; i <= count; i++ {
 		ai, ok := <-peerCh
 		if !ok {
@@ -32,10 +26,10 @@ func PeerInfosFromChan(peerCh chan *PeerInfo, count int) ([]PeerInfo, error) {
 }
 
 // Dialer is a function that dials other peers, following a specified pattern
-type Dialer func(ctx context.Context, self core.Host, selfType utils.NodeType, ais []PeerInfo, maxConnectionRate int) ([]peer.AddrInfo, error)
+type Dialer func(ctx context.Context, self core.Host, selfType utils.NodeType, ais []utils.PeerInfo, maxConnectionRate int) ([]peer.AddrInfo, error)
 
 // SparseDial connects to a set of peers in the experiment, but only those with the correct node type
-func SparseDial(ctx context.Context, self core.Host, selfType utils.NodeType, ais []PeerInfo, maxConnectionRate int) ([]peer.AddrInfo, error) {
+func SparseDial(ctx context.Context, self core.Host, selfType utils.NodeType, ais []utils.PeerInfo, maxConnectionRate int) ([]peer.AddrInfo, error) {
 	// Grab list of other peers that are available for this Run
 	var toDial []peer.AddrInfo
 	for _, inf := range ais {
@@ -86,7 +80,7 @@ func SparseDial(ctx context.Context, self core.Host, selfType utils.NodeType, ai
 }
 
 // DialOtherPeers connects to a set of peers in the experiment, dialing all of them
-func DialOtherPeers(ctx context.Context, self core.Host, selfType utils.NodeType, ais []PeerInfo, maxConnectionRate int) ([]peer.AddrInfo, error) {
+func DialOtherPeers(ctx context.Context, self core.Host, selfType utils.NodeType, ais []utils.PeerInfo, maxConnectionRate int) ([]peer.AddrInfo, error) {
 	// Grab list of other peers that are available for this Run
 	var toDial []peer.AddrInfo
 	for _, inf := range ais {

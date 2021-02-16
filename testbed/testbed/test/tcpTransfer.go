@@ -50,13 +50,28 @@ func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			return err
 		}
 
-		switch t.nodetp {
-		case utils.Seed:
-			err = t.runTCPServer(ctx, pIndex, testParams.File, runenv, testvars)
-		case utils.Leech:
-			tcpFetch, err = t.runTCPFetch(ctx, pIndex, runenv, testvars)
-			runenv.R().RecordPoint(fmt.Sprintf("%s/name:time_to_fetch", t.nodetp), float64(tcpFetch))
+		runenv.RecordMessage("Starting TCP Fetch...")
+
+		for runNum := 1; runNum < testvars.RunCount+1; runNum++ {
+
+			switch t.nodetp {
+			case utils.Seed:
+				err = t.runTCPServer(ctx, pIndex, runNum, testParams.File, runenv, testvars)
+				if err != nil {
+					return err
+				}
+			case utils.Leech:
+				tcpFetch, err = t.runTCPFetch(ctx, pIndex, runNum, runenv, testvars)
+				if err != nil {
+					return err
+				}
+				recorder := newMetricsRecorder(runenv, runNum, t.seq, t.grpseq, "tcp", testParams.Latency,
+					testParams.Bandwidth, int(testParams.File.Size()), t.nodetp, t.tpindex, 1)
+				recorder.Record("time_to_fetch", float64(tcpFetch))
+			}
 		}
+
+		err = signalAndWaitForAll(fmt.Sprintf("transfer-end-%d", pIndex))
 		if err != nil {
 			return err
 		}

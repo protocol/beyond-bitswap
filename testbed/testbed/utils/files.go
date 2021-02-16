@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,7 +12,6 @@ import (
 
 	files "github.com/ipfs/go-ipfs-files"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/ipfs/interface-go-ipfs-core/path"
 	"github.com/testground/sdk-go/runtime"
 )
 
@@ -151,27 +149,6 @@ func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
 	default:
 		return nil, fmt.Errorf("Inputdata type not implemented")
 	}
-}
-
-func (n *IPFSNode) GenerateFile(ctx context.Context, runenv *runtime.RunEnv, f TestFile) (files.Node, error) {
-	inputData := runenv.StringParam("input_data")
-	runenv.RecordMessage("Starting to generate file for inputData: %s and file %v", inputData, f)
-	tmpFile, err := f.GenerateFile()
-	if err != nil {
-		return nil, err
-	}
-	return tmpFile, nil
-}
-
-func (n *IPFSNode) Add(ctx context.Context, runenv *runtime.RunEnv, tmpFile files.Node) (path.Resolved, error) {
-	start := time.Now()
-	cid, err := n.API.Unixfs().Add(ctx, tmpFile)
-	end := time.Since(start).Milliseconds()
-	if err != nil {
-		runenv.RecordMessage("Error adding file to network: %w", err)
-	}
-	runenv.RecordMessage("Added to network %v in %d (ms)", cid, end)
-	return cid, err
 }
 
 func getUnixfsNode(path string) (files.Node, error) {

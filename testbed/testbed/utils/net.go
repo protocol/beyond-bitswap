@@ -45,9 +45,7 @@ func SetupNetwork(ctx context.Context, runenv *runtime.RunEnv,
 
 	runenv.RecordMessage("%s %d has %s latency (%d%% jitter) and %dMB bandwidth", nodetp, tpindex, latency, jitterPct, bandwidth)
 
-	nwClient.ConfigureNetwork(ctx, cfg)
-
-	return nil
+	return nwClient.ConfigureNetwork(ctx, cfg)
 }
 
 // If there's a latency specific to the node type, overwrite the default latency
