@@ -14,7 +14,7 @@ total_instances = 2
 id = "nodes"
 instances = { count = 2 }
 
-    [groups.build]
+[groups.build]
 
 
 
@@ -35,5 +35,5 @@ latency_ms= "100,10"
 bandwidth_mb= "100,50"
 enable_tcp= "false"
 enable_dht= "false"
-node_type = "bitswap"
+node_type = "graphsync"
 long_lasting = "true"

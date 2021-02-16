@@ -14,6 +14,7 @@ import (
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
@@ -52,7 +53,7 @@ type TestData struct {
 	client              *sync.DefaultClient
 	nwClient            *network.Client
 	nConfig             *utils.NodeConfig
-	peerInfos           []dialer.PeerInfo
+	peerInfos           []utils.PeerInfo
 	dialFn              dialer.Dialer
 	signalAndWaitForAll func(state string) error
 	seq                 int64
@@ -162,9 +163,9 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 		return nil, err
 	}
 
-	peerInfos := sync.NewTopic("peerInfos", &dialer.PeerInfo{})
+	peerInfos := sync.NewTopic("peerInfos", &utils.PeerInfo{})
 	// Publish peer info for dialing
-	_, err = client.Publish(ctx, peerInfos, &dialer.PeerInfo{Addr: *nConfig.AddrInfo, Nodetp: nodetp})
+	_, err = client.Publish(ctx, peerInfos, &utils.PeerInfo{Addr: *nConfig.AddrInfo, Nodetp: nodetp})
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +196,7 @@ func InitializeTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestV
 	runenv.RecordMessage("Seed index %v for: %v", &nConfig.AddrInfo.ID, seedIndex)
 
 	// Get addresses of all peers
-	peerCh := make(chan *dialer.PeerInfo)
+	peerCh := make(chan *utils.PeerInfo)
 	sctx, cancelSub := context.WithCancel(ctx)
 	if _, err := client.Subscribe(sctx, peerInfos, peerCh); err != nil {
 		cancelSub()
@@ -257,9 +258,9 @@ func (t *TestData) readFile(ctx context.Context, fIndex int, runenv *runtime.Run
 	return rootCid, nil
 }
 
-func (t *TestData) runTCPServer(ctx context.Context, fIndex int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) error {
+func (t *TestData) runTCPServer(ctx context.Context, fIndex int, runNum int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) error {
 	// TCP variables
-	tcpAddrTopic := getTCPAddrTopic(fIndex)
+	tcpAddrTopic := getTCPAddrTopic(fIndex,  runNum)
 	runenv.RecordMessage("Starting TCP server in seed")
 
 	// Start TCP server for file
@@ -275,7 +276,7 @@ func (t *TestData) runTCPServer(ctx context.Context, fIndex int, f utils.TestFil
 	runenv.RecordMessage("Waiting to end finish TCP fetch")
 
 	// Wait for all nodes to be done with TCP Fetch
-	err = t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d", fIndex))
+	err = t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d-%d", fIndex, runNum))
 	if err != nil {
 		return err
 	}
@@ -286,13 +287,11 @@ func (t *TestData) runTCPServer(ctx context.Context, fIndex int, f utils.TestFil
 	return nil
 }
 
-func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runenv *runtime.RunEnv, testvars *TestVars) (int64, error) {
+func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runNum int, runenv *runtime.RunEnv, testvars *TestVars) (int64, error) {
 	// TCP variables
-	tcpAddrTopic := getTCPAddrTopic(fIndex)
-	sctx, cancelTCPAddrSub := context.WithCancel(ctx)
-	defer cancelTCPAddrSub()
+	tcpAddrTopic := getTCPAddrTopic(fIndex,  runNum)
 	tcpAddrCh := make(chan *string, 1)
-	if _, err := t.client.Subscribe(sctx, tcpAddrTopic, tcpAddrCh); err != nil {
+	if _, err := t.client.Subscribe(ctx, tcpAddrTopic, tcpAddrCh); err != nil {
 		return 0, fmt.Errorf("Failed to subscribe to tcpServerTopic %w", err)
 	}
 	tcpAddrPtr, ok := <-tcpAddrCh
@@ -308,41 +307,13 @@ func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runenv *runtime.
 	runenv.RecordMessage("Fetched TCP file after %d (ns)", tcpFetch)
 
 	// Wait for all nodes to be done with TCP Fetch
-	return tcpFetch, t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d", fIndex))
+	return tcpFetch, t.signalAndWaitForAll(fmt.Sprintf("tcp-fetch-%d-%d", fIndex, runNum))
 }
 
 type NodeTestData struct {
 	*TestData
 	node utils.Node
-}
-
-func InitializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars) (*NodeTestData, error) {
-	t, err := InitializeTest(ctx, runenv, testvars)
-	if err != nil {
-		return nil, err
-	}
-	// Create IPFS node
-	runenv.RecordMessage("Preparing exchange for node: %v", testvars.ExchangeInterface)
-	// Set exchange Interface
-	exch, err := utils.SetExchange(ctx, testvars.ExchangeInterface)
-	if err != nil {
-		return nil, err
-	}
-	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, t.nConfig, exch, testvars.DHTEnabled)
-	if err != nil {
-		runenv.RecordFailure(err)
-		return nil, err
-	}
-
-	err = t.signalAndWaitForAll("file-list-ready")
-	if err != nil {
-		return nil, err
-	}
-
-	return &NodeTestData{
-		TestData: t,
-		node:     ipfsNode,
-	}, nil
+	host *host.Host
 }
 
 func (t *NodeTestData) stillAlive(runenv *runtime.RunEnv, v *TestVars) {
@@ -411,11 +382,18 @@ func (t *NodeTestData) cleanupFile(ctx context.Context) error {
 	return nil
 }
 
-func (t *NodeTestData) emitMetrics(runenv *runtime.RunEnv, runNum int,
+func (t *NodeTestData) close() error {
+	if t.host != nil {
+		return nil
+	}
+	return (*t.host).Close()
+}
+
+func (t *NodeTestData) emitMetrics(runenv *runtime.RunEnv, runNum int, transport string,
 	permutation TestPermutation, timeToFetch time.Duration, tcpFetch int64, leechFails int64,
 	maxConnectionRate int) error {
 
-	recorder := newMetricsRecorder(runenv, runNum, t.seq, t.grpseq, permutation.Latency, permutation.Bandwidth, int(permutation.File.Size()), t.nodetp, t.tpindex, maxConnectionRate)
+	recorder := newMetricsRecorder(runenv, runNum, t.seq, t.grpseq, transport, permutation.Latency, permutation.Bandwidth, int(permutation.File.Size()), t.nodetp, t.tpindex, maxConnectionRate)
 	if t.nodetp == utils.Leech {
 		recorder.Record("time_to_fetch", float64(timeToFetch))
 		recorder.Record("leech_fails", float64(leechFails))
@@ -426,7 +404,6 @@ func (t *NodeTestData) emitMetrics(runenv *runtime.RunEnv, runNum int,
 }
 
 func generateAndAdd(ctx context.Context, runenv *runtime.RunEnv, node utils.Node, f utils.TestFile) (*cid.Cid, error) {
-	runenv.RecordMessage("Generating the new file in seeder")
 	// Generate the file
 	inputData := runenv.StringParam("input_data")
 	runenv.RecordMessage("Starting to generate file for inputData: %s and file %v", inputData, f)
@@ -434,7 +411,7 @@ func generateAndAdd(ctx context.Context, runenv *runtime.RunEnv, node utils.Node
 	if err != nil {
 		return nil, err
 	}
-	// runenv.RecordMessage("Adding the file to IPFS", tmpFile)
+
 	// Add file to the IPFS network
 	start := time.Now()
 	cid, err := node.Add(ctx, tmpFile)
@@ -575,8 +552,8 @@ func getRootCidTopic(id int) *sync.Topic {
 	return sync.NewTopic(fmt.Sprintf("root-cid-%d", id), &cid.Cid{})
 }
 
-func getTCPAddrTopic(id int) *sync.Topic {
-	return sync.NewTopic(fmt.Sprintf("tcp-addr-%d", id), "")
+func getTCPAddrTopic(id int, run int) *sync.Topic {
+	return sync.NewTopic(fmt.Sprintf("tcp-addr-%d-%d", id, run), "")
 }
 
 type metricsRecorder struct {
@@ -585,7 +562,7 @@ type metricsRecorder struct {
 }
 
 func newMetricsRecorder(runenv *runtime.RunEnv, runNum int, seq int64, grpseq int64,
-	latency time.Duration, bandwidthMB int, fileSize int, nodetp utils.NodeType, tpindex int,
+	transport string, latency time.Duration, bandwidthMB int, fileSize int, nodetp utils.NodeType, tpindex int,
 	maxConnectionRate int) utils.MetricsRecorder {
 
 	latencyMS := latency.Milliseconds()
@@ -593,8 +570,8 @@ func newMetricsRecorder(runenv *runtime.RunEnv, runNum int, seq int64, grpseq in
 	leechCount := runenv.IntParam("leech_count")
 	passiveCount := runenv.IntParam("passive_count")
 
-	id := fmt.Sprintf("topology:(%d-%d-%d)/maxConnectionRate:%d/latencyMS:%d/bandwidthMB:%d/run:%d/seq:%d/groupName:%s/groupSeq:%d/fileSize:%d/nodeType:%s/nodeTypeIndex:%d",
-		instance-leechCount-passiveCount, leechCount, passiveCount, maxConnectionRate,
+	id := fmt.Sprintf("topology:(%d-%d-%d)/transport:%s/maxConnectionRate:%d/latencyMS:%d/bandwidthMB:%d/run:%d/seq:%d/groupName:%s/groupSeq:%d/fileSize:%d/nodeType:%s/nodeTypeIndex:%d",
+		instance-leechCount-passiveCount, leechCount, passiveCount, transport, maxConnectionRate,
 		latencyMS, bandwidthMB, runNum, seq, runenv.TestGroupID, grpseq, fileSize, nodetp, tpindex)
 
 	return &metricsRecorder{runenv, id}

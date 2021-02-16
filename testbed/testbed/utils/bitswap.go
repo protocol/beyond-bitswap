@@ -128,12 +128,11 @@ func (n *BitswapNode) EmitMetrics(recorder MetricsRecorder) error {
 	return err
 }
 
-func (n *BitswapNode) FetchGraph(ctx context.Context, c cid.Cid) error {
-	ng := merkledag.NewSession(ctx, n.dserv)
-	return Walk(ctx, c, ng)
-}
-
-func (n *BitswapNode) Get(ctx context.Context, c cid.Cid) (files.Node, error) {
+func (n *BitswapNode) Fetch(ctx context.Context, c cid.Cid, _ []PeerInfo) (files.Node, error) {
+	err := merkledag.FetchGraph(ctx, c, n.dserv)
+	if err != nil {
+		return nil, err
+	}
 	nd, err := n.dserv.Get(ctx, c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get file %q", c)
