@@ -16,6 +16,7 @@ import (
 	"github.com/ipfs/go-datastore"
 	files "github.com/ipfs/go-ipfs-files"
 	ipld "github.com/ipfs/go-ipld-format"
+	"github.com/ipfs/go-merkledag"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
@@ -338,7 +339,7 @@ func (n *IPFSNode) ClearDatastore(ctx context.Context) error {
 	//}
 	//for _, r := range entries {
 	//	ds.Delete(datastore.NewKey(r.Key))
-		//ds.Sync(datastore.NewKey(r.Key))
+	//ds.Sync(datastore.NewKey(r.Key))
 	//}
 	return nil
 }
@@ -396,6 +397,10 @@ func (n *IPFSNode) Add(ctx context.Context, tmpFile files.Node) (cid.Cid, error)
 }
 
 func (n *IPFSNode) Fetch(ctx context.Context, c cid.Cid, _ []PeerInfo) (files.Node, error) {
+	err := merkledag.FetchGraph(ctx, c, n.API.DAG())
+	if err != nil {
+		return nil, err
+	}
 	fPath := path.IpfsPath(c)
 	return n.API.Unixfs().Get(ctx, fPath)
 }
