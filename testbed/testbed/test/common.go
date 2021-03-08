@@ -260,7 +260,7 @@ func (t *TestData) readFile(ctx context.Context, fIndex int, runenv *runtime.Run
 
 func (t *TestData) runTCPServer(ctx context.Context, fIndex int, runNum int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) error {
 	// TCP variables
-	tcpAddrTopic := getTCPAddrTopic(fIndex,  runNum)
+	tcpAddrTopic := getTCPAddrTopic(fIndex, runNum)
 	runenv.RecordMessage("Starting TCP server in seed")
 
 	// Start TCP server for file
@@ -289,7 +289,7 @@ func (t *TestData) runTCPServer(ctx context.Context, fIndex int, runNum int, f u
 
 func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runNum int, runenv *runtime.RunEnv, testvars *TestVars) (int64, error) {
 	// TCP variables
-	tcpAddrTopic := getTCPAddrTopic(fIndex,  runNum)
+	tcpAddrTopic := getTCPAddrTopic(fIndex, runNum)
 	tcpAddrCh := make(chan *string, 1)
 	if _, err := t.client.Subscribe(ctx, tcpAddrTopic, tcpAddrCh); err != nil {
 		return 0, fmt.Errorf("Failed to subscribe to tcpServerTopic %w", err)
@@ -383,7 +383,7 @@ func (t *NodeTestData) cleanupFile(ctx context.Context) error {
 }
 
 func (t *NodeTestData) close() error {
-	if t.host != nil {
+	if t.host == nil {
 		return nil
 	}
 	return (*t.host).Close()

@@ -4,6 +4,7 @@ import utils
 class Layout:
     def __init__(self):
         self.testcase = widgets.Text(description="Testcase")
+        self.protocol = widgets.Text(description="Protocol")
         self.input_data = widgets.Text(description="Input Data Type")
         self.file_size = widgets.Text(description="File Size")
         self.data_dir = widgets.Text(description="Files Directory")
@@ -35,14 +36,16 @@ class Layout:
         self.grid[2, 0] = self.file_size
         self.grid[3, 0] = self.data_dir
         self.grid[4, 0] = self.run_count
+        self.grid[5, 0] = self.bandwidth_mb
+        self.grid[6, 0] = self.protocol
+        self.grid[7, 0] = self.runButton
+
         self.grid[0, 1] = self.n_nodes
         self.grid[1, 1] = self.n_leechers
         self.grid[2, 1] = self.n_passive
         self.grid[3, 1] = self.churn_rate
         self.grid[4, 1] = self.isDocker
-        self.grid[5, 0] = self.bandwidth_mb
         self.grid[5, 1] = self.latency_ms
-        self.grid[6, 0] = self.runButton
         self.grid[6, 1] = self.jitter_pct
         self.grid[7, 1] = self.tcpEnabled
 
