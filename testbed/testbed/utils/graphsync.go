@@ -32,7 +32,7 @@ type GraphsyncNode struct {
 	h             host.Host
 	totalSent     uint64
 	totalReceived uint64
-	numSeeds int
+	numSeeds      int
 }
 
 func CreateGraphsyncNode(ctx context.Context, h host.Host, bstore blockstore.Blockstore, numSeeds int) (*GraphsyncNode, error) {
@@ -72,7 +72,7 @@ func (n *GraphsyncNode) Add(ctx context.Context, fileNode files.Node) (cid.Cid, 
 	return ipldNode.Cid(), nil
 }
 
-func (n *GraphsyncNode) ClearDatastore(ctx context.Context) error {
+func (n *GraphsyncNode) ClearDatastore(ctx context.Context, rootCid cid.Cid) error {
 	return ClearBlockstore(ctx, n.blockStore)
 }
 

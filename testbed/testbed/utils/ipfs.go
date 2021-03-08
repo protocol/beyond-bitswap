@@ -16,6 +16,7 @@ import (
 	"github.com/ipfs/go-datastore"
 	files "github.com/ipfs/go-ipfs-files"
 	ipld "github.com/ipfs/go-ipld-format"
+	"github.com/ipfs/go-merkledag"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
@@ -327,20 +328,26 @@ func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch Exc
 // ClearDatastore removes a block from the datastore.
 // TODO: This function may be inefficient with large blockstore. Used the option above.
 // This function may be cleaned in the future.
-func (n *IPFSNode) ClearDatastore(ctx context.Context) error {
-	// TODO: This causes the subsequent test to hang. Probably due to a deadlock.
-	//ds := n.Node.Repo.Datastore()
-	//
-	//qr, err := ds.Query(dsq.Query{})
-	//entries, _ := qr.Rest()
-	//if err != nil {
-	//	return err
-	//}
-	//for _, r := range entries {
-	//	ds.Delete(datastore.NewKey(r.Key))
-		//ds.Sync(datastore.NewKey(r.Key))
-	//}
-	return nil
+func (n *IPFSNode) ClearDatastore(ctx context.Context, rootCid cid.Cid) error {
+	_, pinned, err := n.API.Pin().IsPinned(ctx, path.IpfsPath(rootCid))
+	if err != nil {
+		return err
+	}
+	if pinned {
+		err := n.API.Pin().Rm(ctx, path.IpfsPath(rootCid))
+		if err != nil {
+			return err
+		}
+	}
+	var ng ipld.NodeGetter = merkledag.NewSession(ctx, n.Node.DAG)
+	toDelete := cid.NewSet()
+	err = merkledag.Walk(ctx, merkledag.GetLinksDirect(ng), rootCid, toDelete.Visit, merkledag.Concurrent())
+	if err != nil {
+		return err
+	}
+	return toDelete.ForEach(func(c cid.Cid) error {
+		return n.API.Block().Rm(ctx, path.IpfsPath(c))
+	})
 }
 
 // EmitMetrics emits node's metrics for the run

@@ -67,7 +67,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 		switch t.nodetp {
 		case utils.Seed:
-			err = t.addPublishFile(ctx, pIndex, testParams.File, runenv, testvars)
+			rootCid, err = t.addPublishFile(ctx, pIndex, testParams.File, runenv, testvars)
 		case utils.Leech:
 			rootCid, err = t.readFile(ctx, pIndex, runenv, testvars)
 		}
@@ -88,7 +88,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			case utils.Seed:
 				err = t.runTCPServer(ctx, pIndex, 0, testParams.File, runenv, testvars)
 			case utils.Leech:
-				tcpFetch, err = t.runTCPFetch(ctx, pIndex, 0,  runenv, testvars)
+				tcpFetch, err = t.runTCPFetch(ctx, pIndex, 0, runenv, testvars)
 			}
 			if err != nil {
 				return err
@@ -150,6 +150,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 							runenv.RecordMessage("Error fetching data: %w", err)
 							leechFails++
 						} else {
+							runenv.RecordMessage("Fetch complete, proceeding")
 							err = files.WriteTo(rcvFile, "/tmp/"+strconv.Itoa(t.tpindex)+time.Now().String())
 							if err != nil {
 								cancel()
@@ -182,12 +183,12 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			}
 			runenv.RecordMessage("Finishing emitting metrics. Starting to clean...")
 
-			err = t.cleanupRun(ctx, runenv)
+			err = t.cleanupRun(ctx, rootCid, runenv)
 			if err != nil {
 				return err
 			}
 		}
-		err = t.cleanupFile(ctx)
+		err = t.cleanupFile(ctx, rootCid)
 		if err != nil {
 			return err
 		}

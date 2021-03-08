@@ -107,7 +107,7 @@ func (n *BitswapNode) Add(ctx context.Context, fileNode files.Node) (cid.Cid, er
 	return ipldNode.Cid(), nil
 }
 
-func (n *BitswapNode) ClearDatastore(ctx context.Context) error {
+func (n *BitswapNode) ClearDatastore(ctx context.Context, _ cid.Cid) error {
 	return ClearBlockstore(ctx, n.blockStore)
 }
 

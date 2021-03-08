@@ -260,7 +260,7 @@ func (t *TestData) readFile(ctx context.Context, fIndex int, runenv *runtime.Run
 
 func (t *TestData) runTCPServer(ctx context.Context, fIndex int, runNum int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) error {
 	// TCP variables
-	tcpAddrTopic := getTCPAddrTopic(fIndex,  runNum)
+	tcpAddrTopic := getTCPAddrTopic(fIndex, runNum)
 	runenv.RecordMessage("Starting TCP server in seed")
 
 	// Start TCP server for file
@@ -289,7 +289,7 @@ func (t *TestData) runTCPServer(ctx context.Context, fIndex int, runNum int, f u
 
 func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runNum int, runenv *runtime.RunEnv, testvars *TestVars) (int64, error) {
 	// TCP variables
-	tcpAddrTopic := getTCPAddrTopic(fIndex,  runNum)
+	tcpAddrTopic := getTCPAddrTopic(fIndex, runNum)
 	tcpAddrCh := make(chan *string, 1)
 	if _, err := t.client.Subscribe(ctx, tcpAddrTopic, tcpAddrCh); err != nil {
 		return 0, fmt.Errorf("Failed to subscribe to tcpServerTopic %w", err)
@@ -328,7 +328,7 @@ func (t *NodeTestData) stillAlive(runenv *runtime.RunEnv, v *TestVars) {
 	}
 }
 
-func (t *NodeTestData) addPublishFile(ctx context.Context, fIndex int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) error {
+func (t *NodeTestData) addPublishFile(ctx context.Context, fIndex int, f utils.TestFile, runenv *runtime.RunEnv, testvars *TestVars) (cid.Cid, error) {
 	rate := float64(testvars.SeederRate) / 100
 	seeders := runenv.TestInstanceCount - (testvars.LeechCount + testvars.PassiveCount)
 	toSeed := int(math.Ceil(float64(seeders) * rate))
@@ -337,19 +337,19 @@ func (t *NodeTestData) addPublishFile(ctx context.Context, fIndex int, f utils.T
 	// Only a rate of seeders add the file.
 	if t.tpindex <= toSeed {
 		// Generating and adding file to IPFS
-		cid, err := generateAndAdd(ctx, runenv, t.node, f)
+		c, err := generateAndAdd(ctx, runenv, t.node, f)
 		if err != nil {
-			return err
+			return cid.Undef, err
 		}
-		err = fractionalDAG(ctx, runenv, int(t.seedIndex), *cid, t.node.DAGService())
+		err = fractionalDAG(ctx, runenv, int(t.seedIndex), *c, t.node.DAGService())
 		if err != nil {
-			return err
+			return cid.Undef, err
 		}
-		return t.publishFile(ctx, fIndex, cid, runenv)
+		return *c, t.publishFile(ctx, fIndex, c, runenv)
 	}
-	return nil
+	return cid.Undef, nil
 }
-func (t *NodeTestData) cleanupRun(ctx context.Context, runenv *runtime.RunEnv) error {
+func (t *NodeTestData) cleanupRun(ctx context.Context, rootCid cid.Cid, runenv *runtime.RunEnv) error {
 	// Disconnect peers
 	for _, c := range t.node.Host().Network().Conns() {
 		err := c.Close()
@@ -363,19 +363,19 @@ func (t *NodeTestData) cleanupRun(ctx context.Context, runenv *runtime.RunEnv) e
 		// Clearing datastore
 		// Also clean passive nodes so they don't store blocks from
 		// previous runs.
-		if err := t.node.ClearDatastore(ctx); err != nil {
+		if err := t.node.ClearDatastore(ctx, rootCid); err != nil {
 			return fmt.Errorf("Error clearing datastore: %w", err)
 		}
 	}
 	return nil
 }
 
-func (t *NodeTestData) cleanupFile(ctx context.Context) error {
+func (t *NodeTestData) cleanupFile(ctx context.Context, rootCid cid.Cid) error {
 	if t.nodetp == utils.Seed {
 		// Between every file close the seed Node.
 		// ipfsNode.Close()
 		// runenv.RecordMessage("Closed Seed Node")
-		if err := t.node.ClearDatastore(ctx); err != nil {
+		if err := t.node.ClearDatastore(ctx, rootCid); err != nil {
 			return fmt.Errorf("Error clearing datastore: %w", err)
 		}
 	}
@@ -383,7 +383,7 @@ func (t *NodeTestData) cleanupFile(ctx context.Context) error {
 }
 
 func (t *NodeTestData) close() error {
-	if t.host != nil {
+	if t.host == nil {
 		return nil
 	}
 	return (*t.host).Close()
