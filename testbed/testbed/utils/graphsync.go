@@ -2,6 +2,8 @@ package utils
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
@@ -109,9 +111,13 @@ func (n *GraphsyncNode) Fetch(ctx context.Context, c cid.Cid, peers []PeerInfo) 
 		return nil, errors.New("no suitable seed found")
 	}
 	p := peers[seedIndex].Addr.ID
+
+	start := time.Now()
 	resps, errs := n.gs.Request(ctx, p, cidlink.Link{Cid: c}, selectAll)
 	for range resps {
 	}
+	fmt.Println("TIME SINCE START: ", time.Since(start))
+
 	var lastError error
 	for err := range errs {
 		if err != nil {
