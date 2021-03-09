@@ -211,7 +211,8 @@ var supportedNodes = map[string]nodeInitializer{
 	"graphsync":  initializeGraphsyncTest,
 	"libp2pHTTP": initializeLibp2pHTTPTest,
 	"rawLibp2p":  initializeRawLibp2pTest,
-	"http":       initializeHTTPTest,
+	//TODO FIX HTTP
+	//"http":       initializeHTTPTest,
 }
 
 func initializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
