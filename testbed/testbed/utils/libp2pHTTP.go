@@ -106,9 +106,6 @@ func (l *Libp2pHTTPNode) Host() host.Host {
 }
 
 func (l *Libp2pHTTPNode) ClearDatastore(ctx context.Context, rootCid cid.Cid) error {
-	if l.svr != nil {
-		return l.svr.Shutdown(ctx)
-	}
 
 	return nil
 }

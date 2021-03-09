@@ -211,6 +211,7 @@ var supportedNodes = map[string]nodeInitializer{
 	"graphsync":  initializeGraphsyncTest,
 	"libp2pHTTP": initializeLibp2pHTTPTest,
 	"rawLibp2p":  initializeRawLibp2pTest,
+	"http":       initializeHTTPTest,
 }
 
 func initializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
@@ -317,6 +318,37 @@ func initializeLibp2pHTTPTest(ctx context.Context, runenv *runtime.RunEnv, testv
 	}, nil
 }
 
+func initializeHTTPTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
+	if runenv.TestInstanceCount != 2 {
+		return nil, errors.New("http transfer ONLY supports two instances for now")
+	}
+
+	if testvars.LeechCount != 1 {
+		return nil, errors.New("http transfer ONLY supports 1 Leecher for now")
+	}
+
+	if testvars.PassiveCount != 0 {
+		return nil, errors.New("http transfer does NOT support passive peers")
+	}
+
+	h, err := makeHost(ctx, baseT)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
+
+	httpN, err := utils.CreateHTTPNode(ctx, h, baseT.nodetp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &NodeTestData{
+		TestData: baseT,
+		node:     httpN,
+		host:     &h,
+	}, nil
+}
+
 func initializeRawLibp2pTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
 	if runenv.TestInstanceCount != 2 {
 		return nil, errors.New("libp2p transfer ONLY supports two instances for now")
@@ -336,14 +368,14 @@ func initializeRawLibp2pTest(ctx context.Context, runenv *runtime.RunEnv, testva
 	}
 	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
 
-	libp2pHttpN, err := utils.CreateRawLibp2pNode(ctx, h, baseT.nodetp)
+	rawLibp2pN, err := utils.CreateRawLibp2pNode(ctx, h, baseT.nodetp)
 	if err != nil {
 		return nil, err
 	}
 
 	return &NodeTestData{
 		TestData: baseT,
-		node:     libp2pHttpN,
+		node:     rawLibp2pN,
 		host:     &h,
 	}, nil
 }
