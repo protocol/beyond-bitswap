@@ -72,6 +72,7 @@ def process_layout_config(layout):
         " -tp bandwidth_mb=" + str(layout.bandwidth_mb.value) + \
         " -tp latency_ms=" + str(layout.latency_ms.value) + \
         " -tp jitter_pct=" + str(layout.jitter_pct.value) + \
+        " -tp node_type=" + layout.protocol.value + \
         " -tp enable_tcp=" + tcpFlag
 
     return cmd
