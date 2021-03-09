@@ -32,6 +32,8 @@ require (
 	github.com/jbenet/goprocess v0.1.4
 	github.com/libp2p/go-libp2p v0.11.0
 	github.com/libp2p/go-libp2p-core v0.6.1
+	github.com/libp2p/go-libp2p-gostream v0.2.1
+	github.com/libp2p/go-libp2p-http v0.1.5
 	// github.com/libp2p/go-libp2p-gzip v0.0.0-00010101000000-000000000000
 	github.com/libp2p/go-mplex v0.1.3 // indirect
 	github.com/libp2p/go-sockaddr v0.1.0 // indirect

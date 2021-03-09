@@ -1,10 +1,10 @@
 [metadata]
-name    = "tcp-transfer"
+name    = "transfer"
 
 
 [global]
 plan    = "testbed"
-case    = "tcp-transfer"
+case    = "transfer"
 builder = "docker:go"
 runner  = "local:docker"
 
@@ -16,24 +16,21 @@ instances = { count = 2 }
 
 [groups.build]
 
-
-
-
 [groups.run]
 [groups.run.test_params]
-input_data = "files"
-data_dir = "../extra/test-datasets"
+input_data = "random"
+file_size = "4000000000"
 run_timeout_secs = "3000"
 timeout_secs = "12000"
-run_count = "4"
+run_count = "1"
 leech_count= "1"
 passive_count = "0"
 max_connection_rate = "100"
 # input_data = "random"
 # file_size = "10000000,30000000,50000000"
-latency_ms= "100,10"
-bandwidth_mb= "100,50"
+latency_ms= "0"
+bandwidth_mb= "0"
 enable_tcp= "false"
 enable_dht= "false"
-node_type = "ipfs"
+node_type = "libp2pHTTP"
 long_lasting = "true"

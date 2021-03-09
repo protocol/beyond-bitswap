@@ -131,7 +131,7 @@ func getEnvVars(runenv *runtime.RunEnv) (*TestVars, error) {
 			for _, l := range latencies {
 				latency := time.Duration(l) * time.Millisecond
 				for _, j := range jitters {
-					tv.Permutations = append(tv.Permutations, TestPermutation{File: f, Bandwidth: b, Latency: latency, JitterPct: j})
+					tv.Permutations = append(tv.Permutations, TestPermutation{File: f, Bandwidth: int(b), Latency: latency, JitterPct: int(j)})
 				}
 			}
 		}
