@@ -11,10 +11,9 @@ import (
 	"sync"
 
 	files "github.com/ipfs/go-ipfs-files"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/testground/sdk-go/runtime"
 )
-
-//Define the size of how big the chunks of data will be send each time
-const BUFFERSIZE = 1024
 
 // TCPServer structure
 type TCPServer struct {
@@ -45,6 +44,7 @@ func SpawnTCPServer(ctx context.Context, ip string, tmpFile TestFile) (*TCPServe
 	go s.Start()
 	return s, nil
 }
+
 // Start listening for conections.
 func (s *TCPServer) Start() {
 	// Start listening routine
@@ -109,45 +109,43 @@ func (s *TCPServer) sendFileToClient(connection net.Conn) {
 		}
 		f = files.NewMultiFileReader(d, false)
 	}
+
 	size := s.file.Size()
 	// The first write is to notify the size.
 	fileSize := fillString(strconv.FormatInt(size, 10), 10)
 	fmt.Println("Sending file of: ", size)
 	connection.Write([]byte(fileSize))
+
 	// Sending the file.
-	written, err := io.Copy(connection, f)
+	buf := make([]byte, network.MessageSizeMax)
+	written, err := io.CopyBuffer(connection, f, buf)
 	if err != nil {
 		log.Fatal(err)
 	}
+	connection.Close()
+
 	fmt.Println("Bytes sent from server", written)
 	return
 }
 
 // FetchFileTCP fetchs the file server in an address by a TCP server.
-func FetchFileTCP(addr string) {
-	connection, err := net.Dial("tcp", addr)
-	if err != nil {
-		panic(err)
-	}
-	defer connection.Close()
-
+func FetchFileTCP(connection net.Conn, runEnv *runtime.RunEnv) {
+	// read file size
 	bufferFileSize := make([]byte, 10)
-	connection.Read(bufferFileSize)
+	if _, err := connection.Read(bufferFileSize); err != nil {
+		runEnv.RecordFailure(err)
+		return
+	}
 	fileSize, _ := strconv.ParseInt(strings.Trim(string(bufferFileSize), ":"), 10, 64)
 
-	var receivedBytes int64
-
-	for receivedBytes <= fileSize {
-		written, err := io.CopyN(ioutil.Discard, io.LimitReader(connection, BUFFERSIZE), BUFFERSIZE)
-		if err != nil {
-			if err == io.EOF {
-				receivedBytes += written
-				fmt.Println("Finished fetch..", receivedBytes, fileSize)
-			} else {
-				fmt.Println("Failed sending file:", err)
-			}
-			return
-		}
-		receivedBytes += written
+	// Read from connection
+	buf := make([]byte, network.MessageSizeMax)
+	w, err := io.CopyBuffer(ioutil.Discard, connection, buf)
+	if err != nil {
+		runEnv.RecordFailure(err)
+		return
+	}
+	if w != fileSize {
+		runEnv.RecordFailure(fmt.Errorf("expcted:%d, got: %d bytes", fileSize, w))
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -306,8 +307,16 @@ func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runNum int, rune
 		return 0, fmt.Errorf("no tcp server addr received in %d seconds", testvars.Timeout/time.Second)
 	}
 	runenv.RecordMessage("Start fetching a TCP file from seed")
+	// open a connection
+	connection, err := net.Dial("tcp", *tcpAddrPtr)
+	if err != nil {
+		runenv.RecordFailure(err)
+		return 0, err
+	}
+	defer connection.Close()
+
 	start := time.Now()
-	utils.FetchFileTCP(*tcpAddrPtr)
+	utils.FetchFileTCP(connection, runenv)
 	tcpFetch := time.Since(start).Nanoseconds()
 	runenv.RecordMessage("Fetched TCP file after %d (ns)", tcpFetch)
 
