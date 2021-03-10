@@ -4,12 +4,13 @@ go 1.14
 
 require (
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
-	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect
+	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/hannahhoward/all-selector v0.2.0
 	github.com/ipfs/go-bitswap v0.2.20
 	github.com/ipfs/go-blockservice v0.1.3
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-datastore v0.4.5
+	github.com/ipfs/go-ds-badger2 v0.1.0
 	github.com/ipfs/go-filestore v1.0.0 // indirect
 	github.com/ipfs/go-graphsync v0.4.3
 	github.com/ipfs/go-ipfs v0.7.0
