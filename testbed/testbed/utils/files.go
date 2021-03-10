@@ -40,7 +40,22 @@ type PathFile struct {
 
 // GenerateFile generates new randomly generated file
 func (f *RandFile) GenerateFile() (files.Node, error) {
-	return files.NewReaderFile(SeededRandReader(int(f.size), f.seed)), nil
+	r := SeededRandReader(int(f.size), f.seed)
+
+	path := fmt.Sprintf("/tmp-%d", rand.Uint64())
+	tf, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := io.Copy(tf, r); err != nil {
+		return nil, err
+	}
+	if err := tf.Close(); err != nil {
+		return nil, err
+	}
+
+	return getUnixfsNode(path)
 }
 
 // Size returns size

@@ -10,6 +10,6 @@ source ../testbed/scripts/exec.sh
 
 
 echo "[*] Running Composition"
-run_composition ./$1.toml
+run_composition ./$1
 # Plot in pdf
 python3 ../testbed/scripts/pdf_composition.py $1
