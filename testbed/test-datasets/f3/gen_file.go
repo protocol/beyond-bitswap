@@ -9,7 +9,6 @@ import (
 
 // Script to create files of upto 5GB.
 // Feel free to extend.
-
 func main() {
 	writeToDisk(SeededRandReader(1e9), "1G")
 	writeToDisk(SeededRandReader(2e9), "2G")
@@ -34,6 +33,8 @@ func writeToDisk(r io.Reader, fileName string) {
 func SeededRandReader(len uint64) io.Reader {
 	randReader := rand.New(rand.NewSource(int64(len)))
 	data := make([]byte, len)
-	randReader.Read(data)
+	if _, err := randReader.Read(data); err != nil {
+		panic(err)
+	}
 	return bytes.NewReader(data)
 }
