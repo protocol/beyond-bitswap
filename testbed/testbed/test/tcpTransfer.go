@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
@@ -35,7 +36,7 @@ func TCPTransfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		return err
 	}
 
-	var tcpFetch int64
+	var tcpFetch time.Duration
 
 	// For each file found in the test
 	for pIndex, testParams := range testvars.Permutations {

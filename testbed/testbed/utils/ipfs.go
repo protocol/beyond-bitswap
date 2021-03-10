@@ -408,6 +408,11 @@ func (n *IPFSNode) Add(ctx context.Context, tmpFile files.Node) (cid.Cid, error)
 }
 
 func (n *IPFSNode) Fetch(ctx context.Context, c cid.Cid, _ []PeerInfo) (files.Node, error) {
+	err := merkledag.FetchGraph(ctx, c, n.Node.DAG)
+	if err != nil {
+		return nil, err
+	}
+
 	fPath := path.IpfsPath(c)
 	return n.API.Unixfs().Get(ctx, fPath)
 }
