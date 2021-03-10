@@ -47,6 +47,7 @@ type TestVars struct {
 	Dialer            string
 	NumWaves          int
 	Permutations      []TestPermutation
+	DiskStore         bool
 }
 
 type TestData struct {
@@ -106,6 +107,10 @@ func getEnvVars(runenv *runtime.RunEnv) (*TestVars, error) {
 	}
 	if runenv.IsParamSet("number_waves") {
 		tv.NumWaves = runenv.IntParam("number_waves")
+	}
+
+	if runenv.IsParamSet("disk_store") {
+		tv.DiskStore = runenv.BooleanParam("disk_store")
 	}
 
 	bandwidths, err := utils.ParseIntArray(runenv.StringParam("bandwidth_mb"))

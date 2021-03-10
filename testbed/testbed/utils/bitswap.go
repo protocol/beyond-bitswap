@@ -2,6 +2,8 @@ package utils
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"time"
 
 	bs "github.com/ipfs/go-bitswap"
@@ -11,6 +13,7 @@ import (
 	ds "github.com/ipfs/go-datastore"
 	delayed "github.com/ipfs/go-datastore/delayed"
 	ds_sync "github.com/ipfs/go-datastore/sync"
+	badgerds "github.com/ipfs/go-ds-badger2"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	delay "github.com/ipfs/go-ipfs-delay"
 	files "github.com/ipfs/go-ipfs-files"
@@ -22,6 +25,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
+
+	dgbadger "github.com/dgraph-io/badger/v2"
 )
 
 type NodeType int
@@ -52,12 +57,42 @@ func (n *BitswapNode) Close() error {
 	return n.bitswap.Close()
 }
 
-func CreateBlockstore(ctx context.Context, bstoreDelay time.Duration) (blockstore.Blockstore, error) {
-	bsdelay := delay.Fixed(bstoreDelay)
-	dstore := ds_sync.MutexWrap(delayed.New(ds.NewMapDatastore(), bsdelay))
+func CreateBlockstore(ctx context.Context, dStore ds.Batching) (blockstore.Blockstore, error) {
 	return blockstore.CachedBlockstore(ctx,
-		blockstore.NewBlockstore(ds_sync.MutexWrap(dstore)),
+		blockstore.NewBlockstore(dStore),
 		blockstore.DefaultCacheOpts())
+}
+
+// CreateDatastore creates a data store to use for the transfer.
+// If diskStore=false, it returns an in-memory store that uses the given delay for each read/write.
+// If diskStore=true, it returns a Badger data store and ignores the bsdelay param.
+func CreateDatastore(diskStore bool, bsdelay time.Duration) (ds.Batching, error) {
+	if !diskStore {
+		dstore := ds_sync.MutexWrap(delayed.New(ds.NewMapDatastore(), delay.Fixed(bsdelay)))
+		return dstore, nil
+	}
+
+	// create temporary directory for badger datastore
+	path := filepath.Join(os.TempDir(), "datastore")
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return nil, err
+		}
+	} else if err != nil {
+		return nil, err
+	}
+
+	// create disk based badger datastore
+	defopts := badgerds.DefaultOptions
+
+	defopts.Options = dgbadger.DefaultOptions("").WithTruncate(true).
+		WithValueThreshold(1 << 10)
+	datastore, err := badgerds.NewDatastore(path, &defopts)
+	if err != nil {
+		return nil, err
+	}
+
+	return datastore, nil
 }
 
 func ClearBlockstore(ctx context.Context, bstore blockstore.Blockstore) error {

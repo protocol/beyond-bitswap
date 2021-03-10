@@ -38,7 +38,8 @@ func (r *RawLibp2pNode) Add(ctx context.Context, file files.Node) (cid.Cid, erro
 
 	// set up handler to send file
 	r.h.SetStreamHandler(protocol.ID(c.String()), func(s network.Stream) {
-		if _, err := io.Copy(s, f); err != nil {
+		buf := make([]byte, network.MessageSizeMax)
+		if _, err := io.CopyBuffer(s, f, buf); err != nil {
 			s.Reset()
 		}
 		s.Close()

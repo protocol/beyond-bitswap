@@ -242,8 +242,6 @@ func initializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *T
 }
 
 func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
-
-	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
 	h, err := makeHost(ctx, baseT)
 	if err != nil {
 		return nil, err
@@ -251,7 +249,14 @@ func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars
 	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
 
 	// Use the same blockstore on all runs for the seed node
-	bstore, err := utils.CreateBlockstore(ctx, bstoreDelay)
+	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
+
+	dStore, err := utils.CreateDatastore(testvars.DiskStore, bstoreDelay)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("created data store %T with params disk_store=%b", dStore, testvars.DiskStore)
+	bstore, err := utils.CreateBlockstore(ctx, dStore)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +271,6 @@ func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars
 
 func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
 
-	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
 	h, err := makeHost(ctx, baseT)
 	if err != nil {
 		return nil, err
@@ -274,10 +278,17 @@ func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testva
 	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
 
 	// Use the same blockstore on all runs for the seed node
-	bstore, err := utils.CreateBlockstore(ctx, bstoreDelay)
+	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
+	dStore, err := utils.CreateDatastore(testvars.DiskStore, bstoreDelay)
 	if err != nil {
 		return nil, err
 	}
+	runenv.RecordMessage("created data store %T with params disk_store=%v", dStore, testvars.DiskStore)
+	bstore, err := utils.CreateBlockstore(ctx, dStore)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create a new bitswap node from the blockstore
 	numSeeds := runenv.TestInstanceCount - (testvars.LeechCount + testvars.PassiveCount)
 	bsnode, err := utils.CreateGraphsyncNode(ctx, h, bstore, numSeeds)

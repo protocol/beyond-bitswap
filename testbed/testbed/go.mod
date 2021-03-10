@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
+	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect
 	github.com/hannahhoward/all-selector v0.2.0
 	github.com/ipfs/go-bitswap v0.2.20
 	github.com/ipfs/go-blockservice v0.1.3
@@ -33,7 +34,7 @@ require (
 	github.com/libp2p/go-libp2p v0.11.0
 	github.com/libp2p/go-libp2p-core v0.6.1
 	github.com/libp2p/go-libp2p-gostream v0.2.1
-	github.com/libp2p/go-libp2p-http v0.1.5
+	github.com/libp2p/go-libp2p-http v0.1.6-0.20210310045043-5508c68db693
 	// github.com/libp2p/go-libp2p-gzip v0.0.0-00010101000000-000000000000
 	github.com/libp2p/go-mplex v0.1.3 // indirect
 	github.com/libp2p/go-sockaddr v0.1.0 // indirect

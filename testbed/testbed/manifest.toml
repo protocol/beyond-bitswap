@@ -51,7 +51,7 @@ instances = { min = 2, max = 64, default = 2 }
   leech_count = { type = "int", desc = "number of leech nodes", unit = "peers", default = 1 }
   passive_count = { type = "int", desc = "number of passive nodes (neither leech nor seed)", unit = "peers", default = 0 }
   timeout_secs = { type = "int", desc = "timeout", unit = "seconds", default = 400000 }#TODO: Decrease to 300 if not debugging. Bear this in mind while making long tests.
-  bstore_delay_ms = { type = "int", desc = "blockstore get / put delay", unit = "milliseconds", default = 5 }
+  bstore_delay_ms = { type = "int", desc = "blockstore get / put delay (Only applicable for in-memory stores)", unit = "milliseconds", default = 5 }
   request_stagger = { type = "int", desc = "time between each leech's first request", unit = "ms", default = 0}
   file_size = { type = "int", desc = "file size", unit = "bytes", default = 4194304 }
   latency_ms = { type = "int", desc = "latency", unit = "ms", default = 5 }
@@ -65,6 +65,8 @@ instances = { min = 2, max = 64, default = 2 }
   enable_dht = { type="bool", desc="Enable DHT in IPFS nodes", default=false }
   long_lasting = {type="bool", desc="Enable to retrieve feedback from running nodes in long-lasting experiments", default=false}
   dialer = { type="string", desc="network topology between nodes", default="default"}
+  disk_store = { type="bool", desc="Enable Badger Data Store instead of an in-memory store", default=false}
+
 
 [[testcases]]
 name = "tcp-transfer"
