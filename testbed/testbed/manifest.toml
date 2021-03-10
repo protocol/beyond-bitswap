@@ -42,7 +42,7 @@ name = "transfer"
 instances = { min = 2, max = 64, default = 2 }
 
   [testcases.params]
-  node_type = { type="string", desc="type of node (ipfs, bitswap, graphsync, libp2pHTTP, rawLibp2p, http)", default="ipfs" }
+  node_type = { type="string", desc="type of node (ipfs, bitswap, graphsync, libp2pHTTP, rawLibp2p)", default="ipfs" }
   input_data = { type="string", desc="input data to be used in the test (files, random, custom)", default="random"}
   data_dir = { type="string", desc="directory with data is located", default="../extra/test-datasets"}
   exchange_interface = { type="string", desc="exchange interface to use in IPFS node", default="bitswap"}
