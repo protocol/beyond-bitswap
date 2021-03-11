@@ -3,3 +3,6 @@ my-datasets/
 datasets/
 results/
 .idea
+testbed/.DS_Store
+testbed/compositions/.DS_Store
+testbed/test-datasets/*

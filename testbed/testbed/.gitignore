@@ -3,3 +3,5 @@ scripts/results
 scripts/saved
 scripts/inputData
 scripts/__pycache__
+.DS_Store
+../test-datasets/*

@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -147,7 +148,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 						// err := ipfsNode.API.Pin().Add(ctxFetch, fPath)
 						rcvFile, err := transferNode.Fetch(ctxFetch, rootCid, t.peerInfos)
 						if err != nil {
-							runenv.RecordMessage("Error fetching data: %w", err)
+							runenv.RecordMessage("Error fetching data: %v", err)
 							leechFails++
 						} else {
 							runenv.RecordMessage("Fetch complete, proceeding")
@@ -205,9 +206,13 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 type nodeInitializer func(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error)
 
 var supportedNodes = map[string]nodeInitializer{
-	"ipfs":      initializeIPFSTest,
-	"bitswap":   initializeBitswapTest,
-	"graphsync": initializeGraphsyncTest,
+	"ipfs":       initializeIPFSTest,
+	"bitswap":    initializeBitswapTest,
+	"graphsync":  initializeGraphsyncTest,
+	"libp2pHTTP": initializeLibp2pHTTPTest,
+	"rawLibp2p":  initializeRawLibp2pTest,
+	//TODO FIX HTTP
+	//"http":       initializeHTTPTest,
 }
 
 func initializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
@@ -237,8 +242,6 @@ func initializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *T
 }
 
 func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
-
-	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
 	h, err := makeHost(ctx, baseT)
 	if err != nil {
 		return nil, err
@@ -246,7 +249,14 @@ func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars
 	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
 
 	// Use the same blockstore on all runs for the seed node
-	bstore, err := utils.CreateBlockstore(ctx, bstoreDelay)
+	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
+
+	dStore, err := utils.CreateDatastore(testvars.DiskStore, bstoreDelay)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("created data store %T with params disk_store=%b", dStore, testvars.DiskStore)
+	bstore, err := utils.CreateBlockstore(ctx, dStore)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +271,6 @@ func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars
 
 func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
 
-	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
 	h, err := makeHost(ctx, baseT)
 	if err != nil {
 		return nil, err
@@ -269,10 +278,17 @@ func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testva
 	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
 
 	// Use the same blockstore on all runs for the seed node
-	bstore, err := utils.CreateBlockstore(ctx, bstoreDelay)
+	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
+	dStore, err := utils.CreateDatastore(testvars.DiskStore, bstoreDelay)
 	if err != nil {
 		return nil, err
 	}
+	runenv.RecordMessage("created data store %T with params disk_store=%v", dStore, testvars.DiskStore)
+	bstore, err := utils.CreateBlockstore(ctx, dStore)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create a new bitswap node from the blockstore
 	numSeeds := runenv.TestInstanceCount - (testvars.LeechCount + testvars.PassiveCount)
 	bsnode, err := utils.CreateGraphsyncNode(ctx, h, bstore, numSeeds)
@@ -281,6 +297,99 @@ func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testva
 	}
 
 	return &NodeTestData{baseT, bsnode, &h}, nil
+}
+
+func initializeLibp2pHTTPTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
+	if runenv.TestInstanceCount != 2 {
+		return nil, errors.New("libp2p HTTP transfer ONLY supports two instances for now")
+	}
+
+	if testvars.LeechCount != 1 {
+		return nil, errors.New("libp2p HTTP transfer ONLY supports 1 Leecher for now")
+	}
+
+	if testvars.PassiveCount != 0 {
+		return nil, errors.New("libp2p HTTP transfer does NOT support passive peers")
+	}
+
+	h, err := makeHost(ctx, baseT)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
+
+	libp2pHttpN, err := utils.CreateLibp2pHTTPNode(ctx, h, baseT.nodetp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &NodeTestData{
+		TestData: baseT,
+		node:     libp2pHttpN,
+		host:     &h,
+	}, nil
+}
+
+func initializeHTTPTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
+	if runenv.TestInstanceCount != 2 {
+		return nil, errors.New("http transfer ONLY supports two instances for now")
+	}
+
+	if testvars.LeechCount != 1 {
+		return nil, errors.New("http transfer ONLY supports 1 Leecher for now")
+	}
+
+	if testvars.PassiveCount != 0 {
+		return nil, errors.New("http transfer does NOT support passive peers")
+	}
+
+	h, err := makeHost(ctx, baseT)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
+
+	httpN, err := utils.CreateHTTPNode(ctx, h, baseT.nodetp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &NodeTestData{
+		TestData: baseT,
+		node:     httpN,
+		host:     &h,
+	}, nil
+}
+
+func initializeRawLibp2pTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
+	if runenv.TestInstanceCount != 2 {
+		return nil, errors.New("libp2p transfer ONLY supports two instances for now")
+	}
+
+	if testvars.LeechCount != 1 {
+		return nil, errors.New("libp2p transfer ONLY supports 1 Leecher for now")
+	}
+
+	if testvars.PassiveCount != 0 {
+		return nil, errors.New("libp2P transfer does NOT support passive peers")
+	}
+
+	h, err := makeHost(ctx, baseT)
+	if err != nil {
+		return nil, err
+	}
+	runenv.RecordMessage("I am %s with addrs: %v", h.ID(), h.Addrs())
+
+	rawLibp2pN, err := utils.CreateRawLibp2pNode(ctx, h, baseT.nodetp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &NodeTestData{
+		TestData: baseT,
+		node:     rawLibp2pN,
+		host:     &h,
+	}, nil
 }
 
 func makeHost(ctx context.Context, baseT *TestData) (host.Host, error) {

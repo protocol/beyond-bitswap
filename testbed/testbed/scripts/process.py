@@ -61,6 +61,51 @@ def groupBy(agg, metric):
         res[item[metric]].append(item)
     return res
 
+def plot_latency_no_comparision(byLatency, byBandwidth, byFileSize):
+
+    plt.figure()
+
+    p1, p2 = len(byLatency), len(byBandwidth)
+    pindex = 1
+    x = []
+    y = {}
+    tc = {}
+    for l in byLatency:
+
+        for b in byBandwidth:
+            ax =plt.subplot(p1, p2, pindex)
+            ax.set_title("latency: "+l + " bandwidth: " + b)
+            ax.set_xlabel('File Size (MB)')
+            ax.set_ylabel('time_to_fetch (ms)')
+
+            for f in byFileSize:
+
+                x.append(int(f)/1e6)
+
+                y[f] = []
+                for i in byFileSize[f]:
+                    if i["latencyMS"] == l and i["bandwidthMB"] == b and \
+                            i["nodeType"]=="Leech":
+                        if i["name"] == "time_to_fetch":
+                            y[f].append(i["value"])
+
+                avg = []
+                for i in y:
+                    scaled_y = [i/1e6 for i in y[i]]
+                    ax.scatter([int(i)/1e6]*len(y[i]), scaled_y, marker="+")
+                    avg.append(sum(scaled_y)/len(scaled_y))
+
+
+            #print(y)
+            ax.plot(x, avg, label="Protocol fetch")
+
+            ax.legend()
+
+            pindex+=1
+            x = []
+            y = {}
+            tc = {}
+
 def plot_latency(byLatency, byBandwidth, byFileSize):
 
     plt.figure()
@@ -104,7 +149,7 @@ def plot_latency(byLatency, byBandwidth, byFileSize):
                     avg_tc.append(sum(scaled_tc)/len(scaled_tc))
 
             #print(y)
-            ax.plot(x, avg, label="Bitswap fetch")
+            ax.plot(x, avg, label="Protocol fetch")
             ax.plot(x, avg_tc, label="TCP fetch")
 
             ax.legend()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -47,6 +48,7 @@ type TestVars struct {
 	Dialer            string
 	NumWaves          int
 	Permutations      []TestPermutation
+	DiskStore         bool
 }
 
 type TestData struct {
@@ -108,6 +110,10 @@ func getEnvVars(runenv *runtime.RunEnv) (*TestVars, error) {
 		tv.NumWaves = runenv.IntParam("number_waves")
 	}
 
+	if runenv.IsParamSet("disk_store") {
+		tv.DiskStore = runenv.BooleanParam("disk_store")
+	}
+
 	bandwidths, err := utils.ParseIntArray(runenv.StringParam("bandwidth_mb"))
 	if err != nil {
 		return nil, err
@@ -131,7 +137,7 @@ func getEnvVars(runenv *runtime.RunEnv) (*TestVars, error) {
 			for _, l := range latencies {
 				latency := time.Duration(l) * time.Millisecond
 				for _, j := range jitters {
-					tv.Permutations = append(tv.Permutations, TestPermutation{File: f, Bandwidth: b, Latency: latency, JitterPct: j})
+					tv.Permutations = append(tv.Permutations, TestPermutation{File: f, Bandwidth: int(b), Latency: latency, JitterPct: int(j)})
 				}
 			}
 		}
@@ -301,8 +307,16 @@ func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runNum int, rune
 		return 0, fmt.Errorf("no tcp server addr received in %d seconds", testvars.Timeout/time.Second)
 	}
 	runenv.RecordMessage("Start fetching a TCP file from seed")
+	// open a connection
+	connection, err := net.Dial("tcp", *tcpAddrPtr)
+	if err != nil {
+		runenv.RecordFailure(err)
+		return 0, err
+	}
+	defer connection.Close()
+
 	start := time.Now()
-	utils.FetchFileTCP(*tcpAddrPtr)
+	utils.FetchFileTCP(connection, runenv)
 	tcpFetch := time.Since(start).Nanoseconds()
 	runenv.RecordMessage("Fetched TCP file after %d (ns)", tcpFetch)
 
