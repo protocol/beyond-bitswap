@@ -15,10 +15,9 @@ id = "nodes"
 instances = { count = 2 }
 
 [groups.build]
-skip_runtime_image = "true"
-dependencies = [
-    { module = "github.com/ipfs/go-ipfs", target="github.com/ipfs/go-ipfs", version = "02cbfda8a07d7cc48bae2dfa904cfbd1e47a068e"}
-]
+
+
+
 
 [groups.run]
 [groups.run.test_params]
@@ -32,8 +31,8 @@ passive_count = "0"
 max_connection_rate = "100"
 # input_data = "random"
 # file_size = "10000000,30000000,50000000"
-latency_ms= "100,10"
-bandwidth_mb= "100,50"
+latency_ms= "10"
+bandwidth_mb= "100"
 enable_tcp= "false"
 enable_dht= "false"
 node_type = "ipfs"
