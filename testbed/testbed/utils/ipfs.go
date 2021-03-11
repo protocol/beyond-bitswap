@@ -120,7 +120,7 @@ func baseProcess(lc fx.Lifecycle) goprocess.Process {
 }
 
 // setConfig manually injects dependencies for the IPFS nodes.
-func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTenabled bool) fx.Option {
+func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTenabled bool, providingEnabled bool) fx.Option {
 
 	// Create new Datastore
 	// TODO: This is in memory we should have some other external DataStore for big files.
@@ -184,6 +184,11 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTen
 	ipnsCacheSize := cfg.Ipns.ResolveCacheSize
 	enableRelay := cfg.Swarm.Transports.Network.Relay.WithDefault(!cfg.Swarm.DisableRelay) //nolint
 
+	providingOptions := node.OfflineProviders(cfg.Experimental.StrategicProviding, cfg.Reprovider.Strategy, cfg.Reprovider.Interval)
+	if providingEnabled {
+		providingOptions = node.OnlineProviders(cfg.Experimental.StrategicProviding, cfg.Reprovider.Strategy, cfg.Reprovider.Interval)
+	}
+
 	// Inject all dependencies for the node.
 	// Many of the default dependencies being used. If you want to manually set any of them
 	// follow: https://github.com/ipfs/go-ipfs/blob/master/core/node/groups.go
@@ -246,7 +251,7 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTen
 		// connmgr,		// Set connection manager
 		// ps,			// Sets pubsub router
 		// disc,		// Sets discovery service
-		node.OnlineProviders(cfg.Experimental.StrategicProviding, cfg.Reprovider.Strategy, cfg.Reprovider.Interval),
+		providingOptions,
 
 		// Core configuration
 		node.Core,
@@ -254,7 +259,7 @@ func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTen
 }
 
 // CreateIPFSNodeWithConfig constructs and returns an IpfsNode using the given cfg.
-func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTEnabled bool) (*IPFSNode, error) {
+func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTEnabled bool, providingEnabled bool) (*IPFSNode, error) {
 	// save this context as the "lifetime" ctx.
 	lctx := ctx
 
@@ -268,7 +273,7 @@ func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch Exc
 
 	app := fx.New(
 		// Inject dependencies in the node.
-		setConfig(ctx, nConfig, exch, DHTEnabled),
+		setConfig(ctx, nConfig, exch, DHTEnabled, providingEnabled),
 
 		fx.NopLogger,
 		fx.Extract(n),

@@ -63,6 +63,7 @@ instances = { min = 2, max = 64, default = 2 }
   number_waves = { type = "int", desc = "Number of waves of leechers", unit = "%", default = 1 }
   enable_tcp = { type="bool", desc="Enable TCP comparison", default=false }
   enable_dht = { type="bool", desc="Enable DHT in IPFS nodes", default=false }
+  enable_providing = { type="bool" desc="Enable the providing system", default=false }
   long_lasting = {type="bool", desc="Enable to retrieve feedback from running nodes in long-lasting experiments", default=false}
   dialer = { type="string", desc="network topology between nodes", default="default"}
   disk_store = { type="bool", desc="Enable Badger Data Store instead of an in-memory store", default=false}
