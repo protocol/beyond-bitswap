@@ -11,7 +11,6 @@ require (
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-datastore v0.4.5
 	github.com/ipfs/go-ds-badger2 v0.1.0
-	github.com/ipfs/go-filestore v0.0.3 // indirect
 	github.com/ipfs/go-graphsync v0.7.0
 	github.com/ipfs/go-ipfs v0.8.0
 	github.com/ipfs/go-ipfs-blockstore v0.1.4
@@ -43,5 +42,4 @@ require (
 	github.com/testground/sdk-go v0.2.6-0.20201016180515-1e40e1b0ec3a
 	go.uber.org/fx v1.13.1
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
-	golang.org/x/text v0.3.3 // indirect
 )
