@@ -19,7 +19,6 @@ import (
 	"github.com/ipfs/go-merkledag"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	config "github.com/ipfs/go-ipfs-config"
 	"github.com/ipfs/go-metrics-interface"
 	icore "github.com/ipfs/interface-go-ipfs-core"
@@ -28,17 +27,13 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ipfs/go-ipfs/core"
-	"github.com/ipfs/go-ipfs/core/bootstrap"
 	"github.com/ipfs/go-ipfs/core/coreapi"
 	"github.com/ipfs/go-ipfs/core/node"
-	"github.com/ipfs/go-ipfs/core/node/helpers"
-	"github.com/ipfs/go-ipfs/core/node/libp2p"
-	"github.com/ipfs/go-ipfs/p2p" // This package is needed so that all the preloaded plugins are loaded automatically
+	"github.com/ipfs/go-ipfs/core/node/libp2p" // This package is needed so that all the preloaded plugins are loaded automatically
 	"github.com/ipfs/go-ipfs/repo"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	dsync "github.com/ipfs/go-datastore/sync"
 	ci "github.com/libp2p/go-libp2p-core/crypto"
 )
 
@@ -120,148 +115,40 @@ func baseProcess(lc fx.Lifecycle) goprocess.Process {
 }
 
 // setConfig manually injects dependencies for the IPFS nodes.
-func setConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTenabled bool, providingEnabled bool) fx.Option {
-
-	// Create new Datastore
-	// TODO: This is in memory we should have some other external DataStore for big files.
-	d := datastore.NewMapDatastore()
+func setConfig(ctx context.Context, nConfig *NodeConfig, DHTenabled bool, providingEnabled bool, d datastore.Batching) *node.BuildCfg {
+	buildCfg := &node.BuildCfg{}
 	// Initialize config.
-	cfg := &config.Config{}
-
-	// Use defaultBootstrap
-	cfg.Bootstrap = config.DefaultBootstrapAddresses
+	cfg, _ := config.InitWithIdentity(config.Identity{PeerID: nConfig.AddrInfo.ID.Pretty(), PrivKey: base64.StdEncoding.EncodeToString(nConfig.PrivKey)})
 
 	//Allow the node to start in any available port. We do not use default ones.
 	cfg.Addresses.Swarm = nConfig.Addrs
 
-	cfg.Identity.PeerID = nConfig.AddrInfo.ID.Pretty()
-	cfg.Identity.PrivKey = base64.StdEncoding.EncodeToString(nConfig.PrivKey)
+	if !providingEnabled {
+		cfg.Experimental.StrategicProviding = true
+	}
+	cfg.Discovery.MDNS.Enabled = false
 
+	// enable strateging providing to essentially disable all
 	// Repo structure that encapsulate the config and datastore for dependency injection.
-	buildRepo := &repo.Mock{
-		D: dsync.MutexWrap(d),
+	buildCfg.Repo = &repo.Mock{
+		D: d,
 		C: *cfg,
 	}
-	repoOption := fx.Provide(func(lc fx.Lifecycle) repo.Repo {
-		lc.Append(fx.Hook{
-			OnStop: func(ctx context.Context) error {
-				return buildRepo.Close()
-			},
-		})
-		return buildRepo
-	})
 
-	// Enable metrics in the node.
-	metricsCtx := fx.Provide(func() helpers.MetricsCtx {
-		return helpers.MetricsCtx(ctx)
-	})
-
-	// Use DefaultHostOptions
-	hostOption := fx.Provide(func() libp2p.HostOption {
-		return libp2p.DefaultHostOption
-	})
-
-	dhtOption := libp2p.NilRouterOption
+	buildCfg.Routing = libp2p.NilRouterOption
 	if DHTenabled {
-		dhtOption = libp2p.DHTOption // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
+		buildCfg.Routing = libp2p.DHTOption // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
 		//dhtOption = libp2p.DHTClientOption, // This option sets the node to be a client DHT node (only fetching records)
 	}
 
-	// Use libp2p.DHTOption. Could also use DHTClientOption.
-	routingOption := fx.Provide(func() libp2p.RoutingOption {
-		// return libp2p.DHTClientOption
-		//TODO: Reminder. DHTRouter disabled.
-		return dhtOption
-	})
-
-	// Return repo datastore
-	repoDS := func(repo repo.Repo) datastore.Datastore {
-		return d
-	}
-
-	// Assign some defualt values.
-	var repubPeriod, recordLifetime time.Duration
-	ipnsCacheSize := cfg.Ipns.ResolveCacheSize
-	enableRelay := cfg.Swarm.Transports.Network.Relay.WithDefault(!cfg.Swarm.DisableRelay) //nolint
-
-	providingOptions := node.OfflineProviders(cfg.Experimental.StrategicProviding, cfg.Reprovider.Strategy, cfg.Reprovider.Interval)
-	if providingEnabled {
-		providingOptions = node.OnlineProviders(cfg.Experimental.StrategicProviding, cfg.Reprovider.Strategy, cfg.Reprovider.Interval)
-	}
-
-	// Inject all dependencies for the node.
-	// Many of the default dependencies being used. If you want to manually set any of them
-	// follow: https://github.com/ipfs/go-ipfs/blob/master/core/node/groups.go
-	return fx.Options(
-		// RepoConfigurations
-		repoOption,
-		hostOption,
-		routingOption,
-		metricsCtx,
-
-		// Setting baseProcess
-		fx.Provide(baseProcess),
-
-		// Storage configuration
-		fx.Provide(repoDS),
-		fx.Provide(node.BaseBlockstoreCtor(blockstore.DefaultCacheOpts(),
-			false, cfg.Datastore.HashOnRead)),
-		fx.Provide(node.GcBlockstoreCtor),
-
-		// Identity dependencies
-		node.Identity(cfg),
-
-		//IPNS dependencies
-		node.IPNS,
-
-		// Network dependencies
-		// Set exchange option.
-		fx.Provide(exch),
-		// Provide graphsync
-		fx.Provide(node.Namesys(ipnsCacheSize)),
-		fx.Provide(node.Peering),
-		node.PeerWith(cfg.Peering.Peers...),
-
-		fx.Invoke(node.IpnsRepublisher(repubPeriod, recordLifetime)),
-
-		fx.Provide(p2p.New),
-
-		// Libp2p dependencies
-		node.BaseLibP2P,
-		fx.Provide(libp2p.AddrFilters(cfg.Swarm.AddrFilters)),
-		fx.Provide(libp2p.AddrsFactory(cfg.Addresses.Announce, cfg.Addresses.NoAnnounce)),
-		fx.Provide(libp2p.SmuxTransport(cfg.Swarm.Transports)),
-		fx.Provide(libp2p.Relay(enableRelay, cfg.Swarm.EnableRelayHop)),
-		fx.Provide(libp2p.Transports(cfg.Swarm.Transports)),
-		fx.Invoke(libp2p.StartListening(cfg.Addresses.Swarm)),
-		// TODO: Reminder. MDN discovery disabled.
-		fx.Invoke(libp2p.SetupDiscovery(false, cfg.Discovery.MDNS.Interval)),
-		fx.Provide(libp2p.Routing),
-		fx.Provide(libp2p.BaseRouting),
-		// Enable IPFS bandwidth metrics.
-		fx.Provide(libp2p.BandwidthCounter),
-
-		// TODO: Here you can see some more of the libp2p dependencies you could set.
-		// fx.Provide(libp2p.Security(!bcfg.DisableEncryptedConnections, cfg.Swarm.Transports)),
-		// maybeProvide(libp2p.PubsubRouter, bcfg.getOpt("ipnsps")),
-		// maybeProvide(libp2p.BandwidthCounter, !cfg.Swarm.DisableBandwidthMetrics),
-		// maybeProvide(libp2p.NatPortMap, !cfg.Swarm.DisableNatPortMap),
-		// maybeProvide(libp2p.AutoRelay, cfg.Swarm.EnableAutoRelay),
-		// autonat,		// Sets autonat
-		// connmgr,		// Set connection manager
-		// ps,			// Sets pubsub router
-		// disc,		// Sets discovery service
-		providingOptions,
-
-		// Core configuration
-		node.Core,
-	)
+	buildCfg.Host = libp2p.DefaultHostOption
+	buildCfg.Online = true
+	return buildCfg
 }
 
 // CreateIPFSNodeWithConfig constructs and returns an IpfsNode using the given cfg.
-func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch ExchangeOpt, DHTEnabled bool, providingEnabled bool) (*IPFSNode, error) {
+func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, DHTEnabled bool, providingEnabled bool, d datastore.Batching) (*IPFSNode, error) {
 	// save this context as the "lifetime" ctx.
-	lctx := ctx
 
 	// derive a new context that ignores cancellations from the lifetime ctx.
 	ctx, cancel := context.WithCancel(ctx)
@@ -269,61 +156,25 @@ func CreateIPFSNodeWithConfig(ctx context.Context, nConfig *NodeConfig, exch Exc
 	// add a metrics scope.
 	ctx = metrics.CtxScope(ctx, "ipfs")
 
-	n := &core.IpfsNode{}
-
-	app := fx.New(
-		// Inject dependencies in the node.
-		setConfig(ctx, nConfig, exch, DHTEnabled, providingEnabled),
-
-		fx.NopLogger,
-		fx.Extract(n),
-	)
+	buildCfg := setConfig(ctx, nConfig, DHTEnabled, providingEnabled, d)
+	n, err := core.NewNode(ctx, buildCfg)
+	if err != nil {
+		return nil, fmt.Errorf("Failed constructing node: %s", err)
+	}
 
 	var once sync.Once
 	var stopErr error
 	stopNode := func() error {
 		once.Do(func() {
-			stopErr = app.Stop(context.Background())
-			if stopErr != nil {
-				fmt.Errorf("failure on stop: %w", stopErr)
-			}
 			// Cancel the context _after_ the app has stopped.
 			cancel()
 		})
 		return stopErr
 	}
-	// Set node to Online mode.
-	n.IsOnline = true
 
-	go func() {
-		// Shut down the application if the lifetime context is canceled.
-		// NOTE: we _should_ stop the application by calling `Close()`
-		// on the process. But we currently manage everything with contexts.
-		select {
-		case <-lctx.Done():
-			err := stopNode()
-			if err != nil {
-				fmt.Errorf("failure on stop: %v", err)
-			}
-		case <-ctx.Done():
-		}
-	}()
-
-	if app.Err() != nil {
-		return nil, app.Err()
-	}
-
-	if err := app.Start(ctx); err != nil {
-		return nil, err
-	}
-
-	if err := n.Bootstrap(bootstrap.DefaultBootstrapConfig); err != nil {
-		return nil, fmt.Errorf("Failed starting the node: %s", err)
-	}
 	api, err := coreapi.NewCoreAPI(n)
 	if err != nil {
 		return nil, fmt.Errorf("Failed starting API: %s", err)
-
 	}
 
 	// Attach the Core API to the constructed node

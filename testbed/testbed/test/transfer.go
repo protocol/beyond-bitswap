@@ -221,14 +221,15 @@ var supportedNodes = map[string]nodeInitializer{
 
 func initializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
 
-	// Create IPFS node
-	runenv.RecordMessage("Preparing exchange for node: %v", testvars.ExchangeInterface)
-	// Set exchange Interface
-	exch, err := utils.SetExchange(ctx, testvars.ExchangeInterface)
+	// Use the same blockstore on all runs for the seed node
+	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
+
+	dStore, err := utils.CreateDatastore(testvars.DiskStore, bstoreDelay)
 	if err != nil {
 		return nil, err
 	}
-	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, baseT.nConfig, exch, testvars.DHTEnabled, testvars.ProvidingEnabled)
+
+	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, baseT.nConfig, testvars.DHTEnabled, testvars.ProvidingEnabled, dStore)
 	if err != nil {
 		runenv.RecordFailure(err)
 		return nil, err
