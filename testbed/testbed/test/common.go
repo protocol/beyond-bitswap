@@ -385,14 +385,13 @@ func (t *NodeTestData) cleanupRun(ctx context.Context, rootCid cid.Cid, runenv *
 }
 
 func (t *NodeTestData) cleanupFile(ctx context.Context, rootCid cid.Cid) error {
-	if t.nodetp == utils.Seed {
-		// Between every file close the seed Node.
-		// ipfsNode.Close()
-		// runenv.RecordMessage("Closed Seed Node")
-		if err := t.node.ClearDatastore(ctx, rootCid); err != nil {
-			return fmt.Errorf("Error clearing datastore: %w", err)
-		}
+	// Between every file close the seed Node.
+	// ipfsNode.Close()
+	// runenv.RecordMessage("Closed Seed Node")
+	if err := t.node.ClearDatastore(ctx, rootCid); err != nil {
+		return fmt.Errorf("Error clearing datastore: %w", err)
 	}
+
 	return nil
 }
 

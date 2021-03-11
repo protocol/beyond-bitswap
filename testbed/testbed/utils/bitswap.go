@@ -2,6 +2,8 @@ package utils
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"time"
@@ -24,6 +26,7 @@ import (
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/pkg/errors"
+	"github.com/testground/sdk-go/runtime"
 	"golang.org/x/sync/errgroup"
 
 	dgbadger "github.com/dgraph-io/badger/v2"
@@ -66,18 +69,21 @@ func CreateBlockstore(ctx context.Context, dStore ds.Batching) (blockstore.Block
 // CreateDatastore creates a data store to use for the transfer.
 // If diskStore=false, it returns an in-memory store that uses the given delay for each read/write.
 // If diskStore=true, it returns a Badger data store and ignores the bsdelay param.
-func CreateDatastore(diskStore bool, bsdelay time.Duration) (ds.Batching, error) {
+func CreateDatastore(runenv *runtime.RunEnv, diskStore bool, bsdelay time.Duration) (ds.Batching, error) {
 	if !diskStore {
 		dstore := ds_sync.MutexWrap(delayed.New(ds.NewMapDatastore(), delay.Fixed(bsdelay)))
 		return dstore, nil
 	}
 
 	// create temporary directory for badger datastore
-	path := filepath.Join(os.TempDir(), "datastore")
+	path := filepath.Join(runenv.TestOutputsPath, fmt.Sprintf("datastore-%d", rand.Uint64()))
+	runenv.RecordMessage("will create Badger at path %s", path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0755); err != nil {
+		runenv.RecordMessage("path %s does NOT exist, creating it...", path)
+		if err := os.MkdirAll(path, 0777); err != nil {
 			return nil, err
 		}
+		runenv.RecordMessage("created path %s for Badger", path)
 	} else if err != nil {
 		return nil, err
 	}
@@ -87,6 +93,8 @@ func CreateDatastore(diskStore bool, bsdelay time.Duration) (ds.Batching, error)
 
 	defopts.Options = dgbadger.DefaultOptions("").WithTruncate(true).
 		WithValueThreshold(1 << 10)
+
+	runenv.RecordMessage("badger sync write is set to %v", defopts.SyncWrites)
 	datastore, err := badgerds.NewDatastore(path, &defopts)
 	if err != nil {
 		return nil, err

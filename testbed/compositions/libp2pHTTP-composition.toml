@@ -5,8 +5,8 @@ name    = "transfer"
 [global]
 plan    = "testbed"
 case    = "transfer"
-builder = "docker:go"
-runner  = "local:docker"
+builder = "exec:go"
+runner  = "local:exec"
 
 total_instances = 2
 
@@ -19,9 +19,9 @@ instances = { count = 2 }
 [groups.run]
 [groups.run.test_params]
 input_data = "random"
-file_size = "4000000000"
-run_timeout_secs = "3000"
-timeout_secs = "12000"
+file_size = "500000000,1000000000,1500000000,2000000000,2500000000,3000000000"
+run_timeout_secs = "300000"
+timeout_secs = "120000"
 run_count = "1"
 leech_count= "1"
 passive_count = "0"

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	files "github.com/ipfs/go-ipfs-files"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -15,7 +16,6 @@ import (
 	"github.com/testground/sdk-go/sync"
 
 	"github.com/ipfs/go-cid"
-	files "github.com/ipfs/go-ipfs-files"
 	"github.com/protocol/beyond-bitswap/testbed/testbed/utils"
 )
 
@@ -152,6 +152,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 							leechFails++
 						} else {
 							runenv.RecordMessage("Fetch complete, proceeding")
+
 							err = files.WriteTo(rcvFile, "/tmp/"+strconv.Itoa(t.tpindex)+time.Now().String())
 							if err != nil {
 								cancel()
@@ -251,7 +252,7 @@ func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars
 	// Use the same blockstore on all runs for the seed node
 	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
 
-	dStore, err := utils.CreateDatastore(testvars.DiskStore, bstoreDelay)
+	dStore, err := utils.CreateDatastore(runenv, testvars.DiskStore, bstoreDelay)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +280,7 @@ func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testva
 
 	// Use the same blockstore on all runs for the seed node
 	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
-	dStore, err := utils.CreateDatastore(testvars.DiskStore, bstoreDelay)
+	dStore, err := utils.CreateDatastore(runenv, testvars.DiskStore, bstoreDelay)
 	if err != nil {
 		return nil, err
 	}
