@@ -8,9 +8,7 @@ import (
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-graphsync"
-	gsimpl "github.com/ipfs/go-graphsync/impl"
 	"github.com/ipfs/go-graphsync/network"
-	"github.com/ipfs/go-graphsync/storeutil"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	files "github.com/ipfs/go-ipfs-files"
@@ -19,6 +17,7 @@ import (
 	unixfile "github.com/ipfs/go-unixfs/file"
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/pkg/errors"
+	"github.com/protocol/beyond-bitswap/testbed/testbed/utils/gsbuilder"
 
 	allselector "github.com/hannahhoward/all-selector"
 	"github.com/ipld/go-ipld-prime"
@@ -41,10 +40,7 @@ func CreateGraphsyncNode(ctx context.Context, h host.Host, bstore blockstore.Blo
 	net := network.NewFromLibp2pHost(h)
 	bserv := blockservice.New(bstore, offline.Exchange(bstore))
 	dserv := merkledag.NewDAGService(bserv)
-	gs := gsimpl.New(ctx, net,
-		storeutil.LoaderForBlockstore(bstore),
-		storeutil.StorerForBlockstore(bstore),
-	)
+	gs := gsbuilder.BuildGraphsync(ctx, net, bstore)
 	n := &GraphsyncNode{gs, bstore, dserv, h, 0, 0, numSeeds}
 	gs.RegisterBlockSentListener(n.onDataSent)
 	gs.RegisterIncomingBlockHook(n.onDataReceived)

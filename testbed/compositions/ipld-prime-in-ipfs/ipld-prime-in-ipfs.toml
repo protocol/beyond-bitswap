@@ -16,8 +16,9 @@ instances = { count = 2 }
 
 [groups.build]
 skip_runtime_image = "true"
+selectors = [ "linksystem" ]
 dependencies = [
-    { module = "github.com/ipfs/go-ipfs", target="github.com/ipfs/go-ipfs", version = "02cbfda8a07d7cc48bae2dfa904cfbd1e47a068e"}
+    { module = "github.com/ipfs/go-ipfs", target="github.com/ipfs/go-ipfs", version = "619b55ce69d830d0d53fb59e57731abeacb3b295"}
 ]
 
 [groups.run]
