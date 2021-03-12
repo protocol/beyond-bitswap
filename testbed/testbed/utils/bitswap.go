@@ -76,7 +76,7 @@ func CreateDatastore(runenv *runtime.RunEnv, diskStore bool, noSync bool, bsdela
 	}
 
 	// create temporary directory for badger datastore
-	path := filepath.Join(fmt.Sprintf("datastore-%d", rand.Uint64()))
+	path := fmt.Sprintf("badger-%d", rand.Uint64())
 	runenv.RecordMessage("will create Badger at path %s", path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		runenv.RecordMessage("path %s does NOT exist, creating it...", path)
