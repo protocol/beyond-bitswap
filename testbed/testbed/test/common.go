@@ -49,6 +49,9 @@ type TestVars struct {
 	NumWaves          int
 	Permutations      []TestPermutation
 	DiskStore         bool
+
+	DiskStoreNoSync bool
+	DisableGC       bool
 }
 
 type TestData struct {
@@ -112,6 +115,14 @@ func getEnvVars(runenv *runtime.RunEnv) (*TestVars, error) {
 
 	if runenv.IsParamSet("disk_store") {
 		tv.DiskStore = runenv.BooleanParam("disk_store")
+	}
+
+	if runenv.IsParamSet("no_sync") {
+		tv.DiskStoreNoSync = runenv.BooleanParam("no_sync")
+	}
+
+	if runenv.IsParamSet("disable_gc") {
+		tv.DisableGC = runenv.BooleanParam("disable_gc")
 	}
 
 	bandwidths, err := utils.ParseIntArray(runenv.StringParam("bandwidth_mb"))

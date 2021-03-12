@@ -17,15 +17,13 @@ instances = { count = 2 }
 [groups.build]
 
 
-
-
 [groups.run]
 [groups.run.test_params]
 input_data = "random"
-file_size = "3500000000,4000000000"
+file_size = "100000"
 run_timeout_secs = "120000000"
 timeout_secs = "120000000"
-run_count = "1"
+run_count = "3"
 leech_count= "1"
 passive_count = "0"
 max_connection_rate = "100"
@@ -38,4 +36,6 @@ enable_dht= "false"
 node_type = "graphsync"
 long_lasting = "true"
 disk_store = "true"
+no_sync = "false"
+disable_gc = "true"
 #bstore_delay_ms = "0"

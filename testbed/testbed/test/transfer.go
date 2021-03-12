@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	dr "runtime/debug"
 	"strconv"
 	"time"
 
@@ -26,6 +27,15 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	if err != nil {
 		return err
 	}
+
+	// Disable GC if the flag has been set by the user
+	if testvars.DisableGC {
+		runenv.RecordMessage("disabling GC as disable GC flag has been set")
+		dr.SetGCPercent(-1)
+	} else {
+		runenv.RecordMessage("NOT disabling GC")
+	}
+
 	nodeType := runenv.StringParam("node_type")
 
 	/// --- Set up
@@ -252,7 +262,7 @@ func initializeBitswapTest(ctx context.Context, runenv *runtime.RunEnv, testvars
 	// Use the same blockstore on all runs for the seed node
 	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
 
-	dStore, err := utils.CreateDatastore(runenv, testvars.DiskStore, bstoreDelay)
+	dStore, err := utils.CreateDatastore(runenv, testvars.DiskStore, testvars.DiskStoreNoSync, bstoreDelay)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +290,7 @@ func initializeGraphsyncTest(ctx context.Context, runenv *runtime.RunEnv, testva
 
 	// Use the same blockstore on all runs for the seed node
 	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
-	dStore, err := utils.CreateDatastore(runenv, testvars.DiskStore, bstoreDelay)
+	dStore, err := utils.CreateDatastore(runenv, testvars.DiskStore, testvars.DiskStoreNoSync, bstoreDelay)
 	if err != nil {
 		return nil, err
 	}

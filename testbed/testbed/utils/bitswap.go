@@ -69,14 +69,14 @@ func CreateBlockstore(ctx context.Context, dStore ds.Batching) (blockstore.Block
 // CreateDatastore creates a data store to use for the transfer.
 // If diskStore=false, it returns an in-memory store that uses the given delay for each read/write.
 // If diskStore=true, it returns a Badger data store and ignores the bsdelay param.
-func CreateDatastore(runenv *runtime.RunEnv, diskStore bool, bsdelay time.Duration) (ds.Batching, error) {
+func CreateDatastore(runenv *runtime.RunEnv, diskStore bool, noSync bool, bsdelay time.Duration) (ds.Batching, error) {
 	if !diskStore {
 		dstore := ds_sync.MutexWrap(delayed.New(ds.NewMapDatastore(), delay.Fixed(bsdelay)))
 		return dstore, nil
 	}
 
 	// create temporary directory for badger datastore
-	path := filepath.Join(runenv.TestOutputsPath, fmt.Sprintf("datastore-%d", rand.Uint64()))
+	path := filepath.Join(fmt.Sprintf("datastore-%d", rand.Uint64()))
 	runenv.RecordMessage("will create Badger at path %s", path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		runenv.RecordMessage("path %s does NOT exist, creating it...", path)
@@ -93,6 +93,12 @@ func CreateDatastore(runenv *runtime.RunEnv, diskStore bool, bsdelay time.Durati
 
 	defopts.Options = dgbadger.DefaultOptions("").WithTruncate(true).
 		WithValueThreshold(1 << 10)
+
+	if noSync {
+		defopts.Options = defopts.Options.WithSyncWrites(false)
+	} else {
+		defopts.Options = defopts.Options.WithSyncWrites(true)
+	}
 
 	runenv.RecordMessage("badger sync write is set to %v", defopts.SyncWrites)
 	datastore, err := badgerds.NewDatastore(path, &defopts)
@@ -163,7 +169,6 @@ func (n *BitswapNode) EmitMetrics(recorder MetricsRecorder) error {
 	recorder.Record("msgs_rcvd", float64(stats.MessagesReceived))
 	recorder.Record("data_sent", float64(stats.DataSent))
 	recorder.Record("data_rcvd", float64(stats.DataReceived))
-	recorder.Record("block_data_rcvd", float64(stats.BlockDataReceived))
 	recorder.Record("dup_data_rcvd", float64(stats.DupDataReceived))
 	recorder.Record("blks_sent", float64(stats.BlocksSent))
 	recorder.Record("blks_rcvd", float64(stats.BlocksReceived))

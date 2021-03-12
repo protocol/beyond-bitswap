@@ -363,15 +363,10 @@ func (n *IPFSNode) EmitMetrics(recorder MetricsRecorder) error {
 	recorder.Record("msgs_rcvd", float64(stats.MessagesReceived))
 	recorder.Record("data_sent", float64(stats.DataSent))
 	recorder.Record("data_rcvd", float64(stats.DataReceived))
-	recorder.Record("block_data_rcvd", float64(stats.BlockDataReceived))
 	recorder.Record("dup_data_rcvd", float64(stats.DupDataReceived))
 	recorder.Record("blks_sent", float64(stats.BlocksSent))
 	recorder.Record("blks_rcvd", float64(stats.BlocksReceived))
 	recorder.Record("dup_blks_rcvd", float64(stats.DupBlksReceived))
-	recorder.Record("wants_rcvd", float64(stats.WantsRecvd))
-	recorder.Record("want_blocks_rcvd", float64(stats.WantBlocksRecvd))
-	recorder.Record("want_haves_rcvd", float64(stats.WantHavesRecvd))
-	recorder.Record("stream_data_sent", float64(stats.StreamDataSent))
 
 	// IPFS Node Stats
 	bwTotal := n.Node.Reporter.GetBandwidthTotals()
@@ -382,7 +377,6 @@ func (n *IPFSNode) EmitMetrics(recorder MetricsRecorder) error {
 
 	// Restart all counters for the next test.
 	n.Node.Reporter.Reset()
-	n.Node.Exchange.(*bs.Bitswap).ResetStatCounters()
 
 	// A few other metrics that could be collected.
 	// GetBandwidthForPeer(peer.ID) Stats

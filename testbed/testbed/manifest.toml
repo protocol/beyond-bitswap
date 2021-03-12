@@ -66,7 +66,8 @@ instances = { min = 2, max = 64, default = 2 }
   long_lasting = {type="bool", desc="Enable to retrieve feedback from running nodes in long-lasting experiments", default=false}
   dialer = { type="string", desc="network topology between nodes", default="default"}
   disk_store = { type="bool", desc="Enable Badger Data Store instead of an in-memory store", default=false}
-
+  no_sync = { type="bool", desc="Disable Sync Writes in Badger", default=false}
+  disable_gc = { type="bool", desc="Disable Garbage collection in the tests", default=false}
 
 [[testcases]]
 name = "tcp-transfer"
