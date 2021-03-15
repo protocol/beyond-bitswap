@@ -1,0 +1,38 @@
+[metadata]
+name    = "transfer"
+
+
+[global]
+plan    = "testbed"
+case    = "transfer"
+builder = "exec:go"
+runner  = "local:exec"
+
+total_instances = 2
+
+[[groups]]
+id = "nodes"
+instances = { count = 2 }
+
+[groups.build]
+
+[groups.run]
+[groups.run.test_params]
+input_data = "random"
+file_size = "1000000000,2000000000,3000000000,4000000000,5000000000"
+run_timeout_secs = "120000000"
+timeout_secs = "120000000"
+run_count = "1"
+leech_count= "1"
+passive_count = "0"
+max_connection_rate = "100"
+latency_ms= "0"
+bandwidth_mb= "0"
+enable_tcp= "false"
+enable_dht= "false"
+node_type = "graphsync"
+long_lasting = "true"
+disk_store = "true"
+no_sync = "true"
+disable_gc = "false"
+#bstore_delay_ms = "0"
