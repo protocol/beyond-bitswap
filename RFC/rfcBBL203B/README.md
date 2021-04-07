@@ -33,6 +33,7 @@ Using the aforementioned techniques, several seeders fulfilling the request for 
 ### Prior Work
 
 This RFC takes inspiration from:
+-   [Liquid Data Networking](https://www.researchgate.net/profile/Michael-Luby-2/publication/347130383_Liquid_Data_Networking/links/5fdfdf8f299bf140882f8435/Liquid-Data-Networking.pdf), and [related work](https://arxiv.org/pdf/2008.13300.pdf)
 
 -   [This paper](https://www.mdpi.com/2076-3417/10/7/2206/htm)
 
