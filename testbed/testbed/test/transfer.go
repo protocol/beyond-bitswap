@@ -46,10 +46,10 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Start still alive process if enabled
 	t.stillAlive(runenv, testvars)
 
-	var tcpFetch int64
-
 	// For each test permutation found in the test
 	for pIndex, testParams := range testvars.Permutations {
+		timings := map[string]time.Duration{}
+
 		// Set up network (with traffic shaping)
 		if err := utils.SetupNetwork(ctx, runenv, t.nwClient, t.nodetp, t.tpindex, testParams.Latency,
 			testParams.Bandwidth, testParams.JitterPct); err != nil {
@@ -68,7 +68,11 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 		switch t.nodetp {
 		case utils.Seed:
+			// TODO: isolate just the adding of the file from the time to publish in testground
+			// probably miniscule but we should still do it
+			start := time.Now()
 			rootCid, err = t.addPublishFile(ctx, pIndex, testParams.File, runenv, testvars)
+			timings["time_to_add"] = time.Since(start)
 		case utils.Leech:
 			rootCid, err = t.readFile(ctx, pIndex, runenv, testvars)
 		}
@@ -89,7 +93,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			case utils.Seed:
 				err = t.runTCPServer(ctx, pIndex, 0, testParams.File, runenv, testvars)
 			case utils.Leech:
-				tcpFetch, err = t.runTCPFetch(ctx, pIndex, 0, runenv, testvars)
+				timings["tcp_fetch"], err = t.runTCPFetch(ctx, pIndex, 0, runenv, testvars)
 			}
 			if err != nil {
 				return err
@@ -126,8 +130,6 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			}
 
 			/// --- Start test
-
-			var timeToFetch time.Duration
 			if t.nodetp == utils.Leech {
 				// For each wave
 				for waveNum := 0; waveNum < testvars.NumWaves; waveNum++ {
@@ -152,14 +154,16 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 							leechFails++
 						} else {
 							runenv.RecordMessage("Fetch complete, proceeding")
+							timings["time_to_fetch"] = time.Since(start)
+							start := time.Now()
 							err = files.WriteTo(rcvFile, "/tmp/"+strconv.Itoa(t.tpindex)+time.Now().String())
 							if err != nil {
 								cancel()
 								return err
 							}
-							timeToFetch = time.Since(start)
+							timings["time_to_output"] = time.Since(start)
 							s, _ := rcvFile.Size()
-							runenv.RecordMessage("Leech fetch of %d complete (%d ns) for wave %d", s, timeToFetch, waveNum)
+							runenv.RecordMessage("Leech fetch of %d complete (%d ns) for wave %d", s, timings["time_to_fetch"], waveNum)
 						}
 						cancel()
 					}
@@ -178,7 +182,7 @@ func Transfer(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			}
 
 			/// --- Report stats
-			err = t.emitMetrics(runenv, runNum, nodeType, testParams, timeToFetch, tcpFetch, leechFails, testvars.MaxConnectionRate)
+			err = t.emitMetrics(runenv, runNum, nodeType, testParams, timings, leechFails, testvars.MaxConnectionRate)
 			if err != nil {
 				return err
 			}
@@ -217,14 +221,15 @@ var supportedNodes = map[string]nodeInitializer{
 
 func initializeIPFSTest(ctx context.Context, runenv *runtime.RunEnv, testvars *TestVars, baseT *TestData) (*NodeTestData, error) {
 
-	// Create IPFS node
-	runenv.RecordMessage("Preparing exchange for node: %v", testvars.ExchangeInterface)
-	// Set exchange Interface
-	exch, err := utils.SetExchange(ctx, testvars.ExchangeInterface)
+	// Use the same blockstore on all runs for the seed node
+	bstoreDelay := time.Duration(runenv.IntParam("bstore_delay_ms")) * time.Millisecond
+
+	dStore, err := utils.CreateDatastore(testvars.DiskStore, bstoreDelay)
 	if err != nil {
 		return nil, err
 	}
-	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, baseT.nConfig, exch, testvars.DHTEnabled, testvars.ProvidingEnabled)
+
+	ipfsNode, err := utils.CreateIPFSNodeWithConfig(ctx, baseT.nConfig, testvars.DHTEnabled, testvars.ProvidingEnabled, dStore)
 	if err != nil {
 		runenv.RecordFailure(err)
 		return nil, err

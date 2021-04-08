@@ -1,0 +1,42 @@
+[metadata]
+name    = "transfer"
+
+
+[global]
+plan    = "testbed"
+case    = "transfer"
+builder = "docker:go"
+runner  = "local:docker"
+
+total_instances = 2
+
+[[groups]]
+id = "nodes"
+instances = { count = 2 }
+
+[groups.build]
+skip_runtime_image = "true"
+selectors = [ "linksystem" ]
+dependencies = [
+    { module = "github.com/ipfs/go-ipfs", target="github.com/ipfs/go-ipfs", version = "619b55ce69d830d0d53fb59e57731abeacb3b295"}
+]
+
+[groups.run]
+[groups.run.test_params]
+input_data = "files"
+data_dir = "../extra/test-datasets"
+run_timeout_secs = "3000"
+timeout_secs = "12000"
+run_count = "4"
+leech_count= "1"
+passive_count = "0"
+max_connection_rate = "100"
+# input_data = "random"
+# file_size = "10000000,30000000,50000000"
+latency_ms= "0"
+bandwidth_mb= "0"
+enable_tcp= "false"
+enable_dht= "false"
+node_type = "ipfs"
+long_lasting = "true"
+bstore_delay_ms = "0"

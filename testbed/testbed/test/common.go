@@ -296,7 +296,7 @@ func (t *TestData) runTCPServer(ctx context.Context, fIndex int, runNum int, f u
 	return nil
 }
 
-func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runNum int, runenv *runtime.RunEnv, testvars *TestVars) (int64, error) {
+func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runNum int, runenv *runtime.RunEnv, testvars *TestVars) (time.Duration, error) {
 	// TCP variables
 	tcpAddrTopic := getTCPAddrTopic(fIndex, runNum)
 	tcpAddrCh := make(chan *string, 1)
@@ -320,7 +320,7 @@ func (t *TestData) runTCPFetch(ctx context.Context, fIndex int, runNum int, rune
 
 	start := time.Now()
 	utils.FetchFileTCP(connection, runenv)
-	tcpFetch := time.Since(start).Nanoseconds()
+	tcpFetch := time.Since(start)
 	runenv.RecordMessage("Fetched TCP file after %d (ns)", tcpFetch)
 
 	// Wait for all nodes to be done with TCP Fetch
@@ -407,14 +407,15 @@ func (t *NodeTestData) close() error {
 }
 
 func (t *NodeTestData) emitMetrics(runenv *runtime.RunEnv, runNum int, transport string,
-	permutation TestPermutation, timeToFetch time.Duration, tcpFetch int64, leechFails int64,
+	permutation TestPermutation, timings map[string]time.Duration, leechFails int64,
 	maxConnectionRate int) error {
 
 	recorder := newMetricsRecorder(runenv, runNum, t.seq, t.grpseq, transport, permutation.Latency, permutation.Bandwidth, int(permutation.File.Size()), t.nodetp, t.tpindex, maxConnectionRate)
 	if t.nodetp == utils.Leech {
-		recorder.Record("time_to_fetch", float64(timeToFetch))
 		recorder.Record("leech_fails", float64(leechFails))
-		recorder.Record("tcp_fetch", float64(tcpFetch))
+	}
+	for name, timing := range timings {
+		recorder.Record(name, float64(timing))
 	}
 
 	return t.node.EmitMetrics(recorder)

@@ -129,6 +129,9 @@ func GetFileList(runenv *runtime.RunEnv) ([]TestFile, error) {
 		}
 
 		for _, file := range files {
+			if file.Name() == ".gitkeep" {
+				continue
+			}
 			var size int64
 
 			// Assign the right size.
