@@ -163,8 +163,30 @@ func (n *BitswapNode) EmitMetrics(recorder MetricsRecorder) error {
 	return err
 }
 
+// completely serialized walk, similar to traversing with unixfs file
+func serialWalk(ctx context.Context, c cid.Cid, ng ipld.NodeGetter) error {
+	nd, err := ng.Get(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	return walkChildren(ctx, nd, ng)
+}
+
+func walkChildren(ctx context.Context, nd ipld.Node, ng ipld.NodeGetter) error {
+	for _, lnk := range nd.Links() {
+		err := serialWalk(ctx, lnk.Cid, ng)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (n *BitswapNode) Fetch(ctx context.Context, c cid.Cid, _ []PeerInfo) (files.Node, error) {
-	err := merkledag.FetchGraph(ctx, c, n.dserv)
+	ng := merkledag.NewSession(ctx, n.dserv)
+	err := serialWalk(ctx, c, ng)
 	if err != nil {
 		return nil, err
 	}
